@@ -18,3 +18,4 @@ Los proyectos a usar durante el transcurso de la materia son
 - Web: [Habitica](https://habitica.com/static/front) [(src)](https://github.com/HabitRPG/habitica)
 - Android 1: [Habitica](https://play.google.com/store/apps/details?id=com.habitrpg.android.habitica&hl=en) [(src)](https://github.com/HabitRPG/habitica-android)
 - Android 2: [GNU Cash](https://play.google.com/store/apps/details?id=org.gnucash.android&hl=es) [(src)](https://github.com/codinguser/gnucash-android)
+.
