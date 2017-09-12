@@ -1,0 +1,1 @@
+adb -e shell monkey -s 7784513 -p org.gnucash.android 15000 > 02-log.txt

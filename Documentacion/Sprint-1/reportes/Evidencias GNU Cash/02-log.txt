@@ -1,0 +1,147 @@
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // activityResuming(org.gnucash.android)
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // activityResuming(org.gnucash.android)
+    // activityResuming(org.gnucash.android)
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // activityResuming(org.gnucash.android)
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // activityResuming(org.gnucash.android)
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // activityResuming(org.gnucash.android)
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // activityResuming(org.gnucash.android)
+    // activityResuming(org.gnucash.android)
+    // Injection Failed
+    // activityResuming(org.gnucash.android)
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // activityResuming(org.gnucash.android)
+    // activityResuming(org.gnucash.android)
+    // Injection Failed
+    // activityResuming(org.gnucash.android)
+    // Injection Failed
+    // Injection Failed
+    // activityResuming(org.gnucash.android)
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // activityResuming(org.gnucash.android)
+    // Injection Failed
+    // activityResuming(org.gnucash.android)
+    // activityResuming(org.gnucash.android)
+    // Injection Failed
+    // Injection Failed
+    // activityResuming(org.gnucash.android)
+    // activityResuming(org.gnucash.android)
+    // Injection Failed
+    // Injection Failed
+    // activityResuming(org.gnucash.android)
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // activityResuming(org.gnucash.android)
+    // activityResuming(org.gnucash.android)
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // activityResuming(org.gnucash.android)
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // activityResuming(org.gnucash.android)
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // activityResuming(org.gnucash.android)
+    // Injection Failed
+    // activityResuming(org.gnucash.android)
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // activityResuming(org.gnucash.android)
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+Events injected: 15000
+## Network stats: elapsed time=278890ms (0ms mobile, 0ms wifi, 278890ms not connected)

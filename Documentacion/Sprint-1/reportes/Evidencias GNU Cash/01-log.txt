@@ -1,0 +1,46 @@
+    // Injection Failed
+    // activityResuming(org.gnucash.android)
+    // activityResuming(org.gnucash.android)
+    // Injection Failed
+    // activityResuming(org.gnucash.android)
+    // activityResuming(org.gnucash.android)
+    // activityResuming(org.gnucash.android)
+    // activityResuming(org.gnucash.android)
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+// CRASH: org.gnucash.android (pid 8174)
+// Short Msg: java.lang.NullPointerException
+// Long Msg: java.lang.NullPointerException: Attempt to invoke virtual method 'android.content.Context android.app.Dialog.getContext()' on a null object reference
+// Build Label: Android/sdk_google_phone_x86/generic_x86:6.0/MASTER/4212456:userdebug/test-keys
+// Build Changelist: 4212456
+// Build Time: 1500966718000
+// java.lang.NullPointerException: Attempt to invoke virtual method 'android.content.Context android.app.Dialog.getContext()' on a null object reference
+// 	at org.gnucash.android.ui.settings.dialog.DeleteAllAccountsConfirmationDialog$2.onClick(DeleteAllAccountsConfirmationDialog.java:54)
+// 	at com.android.internal.app.AlertController$ButtonHandler.handleMessage(AlertController.java:163)
+// 	at android.os.Handler.dispatchMessage(Handler.java:102)
+// 	at android.os.Looper.loop(Looper.java:148)
+// 	at android.app.ActivityThread.main(ActivityThread.java:5417)
+// 	at java.lang.reflect.Method.invoke(Native Method)
+// 	at com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:726)
+// 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:616)
+// 
+** Monkey aborted due to error.
+Events injected: 4526
+## Network stats: elapsed time=91961ms (0ms mobile, 0ms wifi, 91961ms not connected)
+** System appears to have crashed at event 4526 of 15000 using seed 7784512
