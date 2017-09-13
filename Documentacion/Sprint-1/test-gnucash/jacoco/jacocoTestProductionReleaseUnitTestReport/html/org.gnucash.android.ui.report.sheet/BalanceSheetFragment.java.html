@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BalanceSheetFragment.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.ui.report.sheet</a> &gt; <span class="el_source">BalanceSheetFragment.java</span></div><h1>BalanceSheetFragment.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2015 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.gnucash.android.ui.report.sheet;
+
+import android.database.Cursor;
+import android.graphics.Typeface;
+import android.os.Bundle;
+import android.support.annotation.Nullable;
+import android.text.TextUtils;
+import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.View;
+import android.widget.TableLayout;
+import android.widget.TextView;
+
+import org.gnucash.android.R;
+import org.gnucash.android.db.DatabaseSchema;
+import org.gnucash.android.db.adapter.AccountsDbAdapter;
+import org.gnucash.android.model.AccountType;
+import org.gnucash.android.model.Money;
+import org.gnucash.android.ui.report.BaseReportFragment;
+import org.gnucash.android.ui.report.ReportType;
+import org.gnucash.android.ui.transaction.TransactionsActivity;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import butterknife.BindView;
+
+/**
+ * Balance sheet report fragment
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ */
+<span class="nc" id="L47">public class BalanceSheetFragment extends BaseReportFragment {</span>
+
+    @BindView(R.id.table_assets) TableLayout mAssetsTableLayout;
+    @BindView(R.id.table_liabilities) TableLayout mLiabilitiesTableLayout;
+    @BindView(R.id.table_equity) TableLayout mEquityTableLayout;
+
+    @BindView(R.id.total_liability_and_equity) TextView mNetWorth;
+
+<span class="nc" id="L55">    AccountsDbAdapter mAccountsDbAdapter = AccountsDbAdapter.getInstance();</span>
+
+    private Money mAssetsBalance;
+    private Money mLiabilitiesBalance;
+    private List&lt;AccountType&gt; mAssetAccountTypes;
+    private List&lt;AccountType&gt; mLiabilityAccountTypes;
+    private List&lt;AccountType&gt; mEquityAccountTypes;
+
+    @Override
+    public int getLayoutResource() {
+<span class="nc" id="L65">        return R.layout.fragment_text_report;</span>
+    }
+
+    @Override
+    public int getTitle() {
+<span class="nc" id="L70">        return R.string.title_balance_sheet_report;</span>
+    }
+
+    @Override
+    public ReportType getReportType() {
+<span class="nc" id="L75">        return ReportType.TEXT;</span>
+    }
+
+    @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+<span class="nc" id="L80">        super.onActivityCreated(savedInstanceState);</span>
+<span class="nc" id="L81">        mAssetAccountTypes = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L82">        mAssetAccountTypes.add(AccountType.ASSET);</span>
+<span class="nc" id="L83">        mAssetAccountTypes.add(AccountType.CASH);</span>
+<span class="nc" id="L84">        mAssetAccountTypes.add(AccountType.BANK);</span>
+
+<span class="nc" id="L86">        mLiabilityAccountTypes = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L87">        mLiabilityAccountTypes.add(AccountType.LIABILITY);</span>
+<span class="nc" id="L88">        mLiabilityAccountTypes.add(AccountType.CREDIT);</span>
+
+<span class="nc" id="L90">        mEquityAccountTypes = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L91">        mEquityAccountTypes.add(AccountType.EQUITY);</span>
+<span class="nc" id="L92">    }</span>
+
+    @Override
+    public boolean requiresAccountTypeOptions() {
+<span class="nc" id="L96">        return false;</span>
+    }
+
+    @Override
+    public boolean requiresTimeRangeOptions() {
+<span class="nc" id="L101">        return false;</span>
+    }
+
+    @Override
+    protected void generateReport() {
+<span class="nc" id="L106">        mAssetsBalance = mAccountsDbAdapter.getAccountBalance(mAssetAccountTypes, -1, System.currentTimeMillis());</span>
+<span class="nc" id="L107">        mLiabilitiesBalance = mAccountsDbAdapter.getAccountBalance(mLiabilityAccountTypes, -1, System.currentTimeMillis());</span>
+<span class="nc" id="L108">    }</span>
+
+    @Override
+    protected void displayReport() {
+<span class="nc" id="L112">        loadAccountViews(mAssetAccountTypes, mAssetsTableLayout);</span>
+<span class="nc" id="L113">        loadAccountViews(mLiabilityAccountTypes, mLiabilitiesTableLayout);</span>
+<span class="nc" id="L114">        loadAccountViews(mEquityAccountTypes, mEquityTableLayout);</span>
+
+<span class="nc" id="L116">        TransactionsActivity.displayBalance(mNetWorth, mAssetsBalance.subtract(mLiabilitiesBalance));</span>
+<span class="nc" id="L117">    }</span>
+
+    @Override
+    public void onPrepareOptionsMenu(Menu menu) {
+<span class="nc" id="L121">        super.onPrepareOptionsMenu(menu);</span>
+<span class="nc" id="L122">        menu.findItem(R.id.menu_group_reports_by).setVisible(false);</span>
+<span class="nc" id="L123">    }</span>
+
+    /**
+     * Loads rows for the individual accounts and adds them to the report
+     * @param accountTypes Account types for which to load balances
+     * @param tableLayout Table layout into which to load the rows
+     */
+    private void loadAccountViews(List&lt;AccountType&gt; accountTypes, TableLayout tableLayout){
+<span class="nc" id="L131">        LayoutInflater inflater = LayoutInflater.from(getActivity());</span>
+
+<span class="nc" id="L133">        Cursor cursor = mAccountsDbAdapter.fetchAccounts(DatabaseSchema.AccountEntry.COLUMN_TYPE</span>
+<span class="nc" id="L134">                        + &quot; IN ( '&quot; + TextUtils.join(&quot;' , '&quot;, accountTypes) + &quot;' ) AND &quot;</span>
+                        + DatabaseSchema.AccountEntry.COLUMN_PLACEHOLDER + &quot; = 0&quot;,
+                null, DatabaseSchema.AccountEntry.COLUMN_FULL_NAME + &quot; ASC&quot;);
+
+<span class="nc bnc" id="L138" title="All 2 branches missed.">        while (cursor.moveToNext()){</span>
+<span class="nc" id="L139">            String accountUID = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseSchema.AccountEntry.COLUMN_UID));</span>
+<span class="nc" id="L140">            String name = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseSchema.AccountEntry.COLUMN_NAME));</span>
+<span class="nc" id="L141">            Money balance = mAccountsDbAdapter.getAccountBalance(accountUID);</span>
+<span class="nc" id="L142">            View view = inflater.inflate(R.layout.row_balance_sheet, tableLayout, false);</span>
+<span class="nc" id="L143">            ((TextView)view.findViewById(R.id.account_name)).setText(name);</span>
+<span class="nc" id="L144">            TextView balanceTextView = (TextView) view.findViewById(R.id.account_balance);</span>
+<span class="nc" id="L145">            TransactionsActivity.displayBalance(balanceTextView, balance);</span>
+<span class="nc" id="L146">            tableLayout.addView(view);</span>
+<span class="nc" id="L147">        }</span>
+
+<span class="nc" id="L149">        View totalView = inflater.inflate(R.layout.row_balance_sheet, tableLayout, false);</span>
+<span class="nc" id="L150">        TableLayout.LayoutParams layoutParams = (TableLayout.LayoutParams) totalView.getLayoutParams();</span>
+<span class="nc" id="L151">        layoutParams.setMargins(layoutParams.leftMargin, 20, layoutParams.rightMargin, layoutParams.bottomMargin);</span>
+<span class="nc" id="L152">        totalView.setLayoutParams(layoutParams);</span>
+
+<span class="nc" id="L154">        TextView accountName = (TextView) totalView.findViewById(R.id.account_name);</span>
+<span class="nc" id="L155">        accountName.setTextSize(16);</span>
+<span class="nc" id="L156">        accountName.setText(R.string.label_balance_sheet_total);</span>
+<span class="nc" id="L157">        TextView accountBalance = (TextView) totalView.findViewById(R.id.account_balance);</span>
+<span class="nc" id="L158">        accountBalance.setTextSize(16);</span>
+<span class="nc" id="L159">        accountBalance.setTypeface(null, Typeface.BOLD);</span>
+<span class="nc" id="L160">        TransactionsActivity.displayBalance(accountBalance, mAccountsDbAdapter.getAccountBalance(accountTypes, -1, System.currentTimeMillis()));</span>
+
+<span class="nc" id="L162">        tableLayout.addView(totalView);</span>
+<span class="nc" id="L163">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

@@ -1,0 +1,1071 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TransactionFormFragment.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.ui.transaction</a> &gt; <span class="el_source">TransactionFormFragment.java</span></div><h1>TransactionFormFragment.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2012 - 2015 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.ui.transaction;
+
+import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.res.Configuration;
+import android.database.Cursor;
+import android.inputmethodservice.KeyboardView;
+import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.v4.app.Fragment;
+import android.support.v4.widget.SimpleCursorAdapter;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.AppCompatActivity;
+import android.text.format.DateUtils;
+import android.util.Log;
+import android.util.Pair;
+import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.WindowManager;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.AdapterView;
+import android.widget.AutoCompleteTextView;
+import android.widget.CheckBox;
+import android.widget.EditText;
+import android.widget.FilterQueryProvider;
+import android.widget.ImageView;
+import android.widget.Spinner;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.codetroopers.betterpickers.calendardatepicker.CalendarDatePickerDialogFragment;
+import com.codetroopers.betterpickers.radialtimepicker.RadialTimePickerDialogFragment;
+import com.codetroopers.betterpickers.recurrencepicker.EventRecurrence;
+import com.codetroopers.betterpickers.recurrencepicker.EventRecurrenceFormatter;
+import com.codetroopers.betterpickers.recurrencepicker.RecurrencePickerDialogFragment;
+
+import org.gnucash.android.R;
+import org.gnucash.android.app.GnuCashApplication;
+import org.gnucash.android.db.DatabaseSchema;
+import org.gnucash.android.db.adapter.AccountsDbAdapter;
+import org.gnucash.android.db.adapter.CommoditiesDbAdapter;
+import org.gnucash.android.db.adapter.DatabaseAdapter;
+import org.gnucash.android.db.adapter.PricesDbAdapter;
+import org.gnucash.android.db.adapter.ScheduledActionDbAdapter;
+import org.gnucash.android.db.adapter.TransactionsDbAdapter;
+import org.gnucash.android.model.AccountType;
+import org.gnucash.android.model.Commodity;
+import org.gnucash.android.model.Money;
+import org.gnucash.android.model.Recurrence;
+import org.gnucash.android.model.ScheduledAction;
+import org.gnucash.android.model.Split;
+import org.gnucash.android.model.Transaction;
+import org.gnucash.android.model.TransactionType;
+import org.gnucash.android.ui.common.FormActivity;
+import org.gnucash.android.ui.common.UxArgument;
+import org.gnucash.android.ui.homescreen.WidgetConfigurationActivity;
+import org.gnucash.android.ui.settings.PreferenceActivity;
+import org.gnucash.android.ui.transaction.dialog.TransferFundsDialogFragment;
+import org.gnucash.android.ui.util.RecurrenceParser;
+import org.gnucash.android.ui.util.RecurrenceViewClickListener;
+import org.gnucash.android.ui.util.widget.CalculatorEditText;
+import org.gnucash.android.ui.util.widget.TransactionTypeSwitch;
+import org.gnucash.android.util.QualifiedAccountNameCursorAdapter;
+
+import java.math.BigDecimal;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.List;
+
+import butterknife.BindView;
+import butterknife.ButterKnife;
+
+/**
+ * Fragment for creating or editing transactions
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ */
+<span class="pc bpc" id="L103" title="1 of 2 branches missed.">public class TransactionFormFragment extends Fragment implements</span>
+        CalendarDatePickerDialogFragment.OnDateSetListener, RadialTimePickerDialogFragment.OnTimeSetListener,
+        RecurrencePickerDialogFragment.OnRecurrenceSetListener, OnTransferFundsListener {
+
+    private static final int REQUEST_SPLIT_EDITOR = 0x11;
+
+    /**
+	 * Transactions database adapter
+	 */
+	private TransactionsDbAdapter mTransactionsDbAdapter;
+
+	/**
+	 * Accounts database adapter
+	 */
+	private AccountsDbAdapter mAccountsDbAdapter;
+
+	/**
+	 * Adapter for transfer account spinner
+	 */
+	private QualifiedAccountNameCursorAdapter mAccountCursorAdapter;
+
+	/**
+	 * Cursor for transfer account spinner
+	 */
+	private Cursor mCursor;
+
+    /**
+	 * Transaction to be created/updated
+	 */
+	private Transaction mTransaction;
+
+    /**
+	 * Formats a {@link Date} object into a date string of the format dd MMM yyyy e.g. 18 July 2012
+	 */
+<span class="fc" id="L137">	public final static DateFormat DATE_FORMATTER = DateFormat.getDateInstance();</span>
+
+	/**
+	 * Formats a {@link Date} object to time string of format HH:mm e.g. 15:25
+	 */
+<span class="fc" id="L142">	public final static DateFormat TIME_FORMATTER = DateFormat.getTimeInstance();</span>
+
+	/**
+	 * Button for setting the transaction type, either credit or debit
+	 */
+	@BindView(R.id.input_transaction_type) TransactionTypeSwitch mTransactionTypeSwitch;
+
+	/**
+	 * Input field for the transaction name (description)
+	 */
+	@BindView(R.id.input_transaction_name) AutoCompleteTextView mDescriptionEditText;
+
+	/**
+	 * Input field for the transaction amount
+	 */
+	@BindView(R.id.input_transaction_amount) CalculatorEditText mAmountEditText;
+
+	/**
+	 * Field for the transaction currency.
+	 * The transaction uses the currency of the account
+	 */
+	@BindView(R.id.currency_symbol) TextView mCurrencyTextView;
+
+	/**
+	 * Input field for the transaction description (note)
+	 */
+	@BindView(R.id.input_description) EditText mNotesEditText;
+
+	/**
+	 * Input field for the transaction date
+	 */
+	@BindView(R.id.input_date) TextView mDateTextView;
+
+	/**
+	 * Input field for the transaction time
+	 */
+	@BindView(R.id.input_time) TextView mTimeTextView;
+
+	/**
+	 * Spinner for selecting the transfer account
+	 */
+	@BindView(R.id.input_transfer_account_spinner) Spinner mTransferAccountSpinner;
+
+    /**
+     * Checkbox indicating if this transaction should be saved as a template or not
+     */
+    @BindView(R.id.checkbox_save_template) CheckBox mSaveTemplateCheckbox;
+
+    @BindView(R.id.input_recurrence) TextView mRecurrenceTextView;
+
+    /**
+     * View which displays the calculator keyboard
+     */
+    @BindView(R.id.calculator_keyboard) KeyboardView mKeyboardView;
+
+    /**
+     * Open the split editor
+     */
+    @BindView(R.id.btn_split_editor) ImageView mOpenSplitEditor;
+
+    /**
+     * Layout for transfer account and associated views
+     */
+    @BindView(R.id.layout_double_entry) View mDoubleEntryLayout;
+
+    /**
+     * Flag to note if double entry accounting is in use or not
+     */
+	private boolean mUseDoubleEntry;
+
+    /**
+     * {@link Calendar} for holding the set date
+     */
+    private Calendar mDate;
+
+    /**
+     * {@link Calendar} object holding the set time
+     */
+    private Calendar mTime;
+
+    /**
+     * The AccountType of the account to which this transaction belongs.
+     * Used for determining the accounting rules for credits and debits
+     */
+    AccountType mAccountType;
+
+
+    private String mRecurrenceRule;
+<span class="nc" id="L230">    private EventRecurrence mEventRecurrence = new EventRecurrence();</span>
+
+    private String mAccountUID;
+
+<span class="nc" id="L234">    private List&lt;Split&gt; mSplitsList = new ArrayList&lt;&gt;();</span>
+
+<span class="nc" id="L236">    private boolean mEditMode = false;</span>
+
+    /**
+     * Split quantity which will be set from the funds transfer dialog
+     */
+    private Money mSplitQuantity;
+
+    /**
+	 * Create the view and retrieve references to the UI elements
+	 */
+	@Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+			Bundle savedInstanceState) {
+<span class="nc" id="L249">		View v = inflater.inflate(R.layout.fragment_transaction_form, container, false);</span>
+<span class="nc" id="L250">        ButterKnife.bind(this, v);</span>
+<span class="nc" id="L251">        mAmountEditText.bindListeners(mKeyboardView);</span>
+<span class="nc" id="L252">        mOpenSplitEditor.setOnClickListener(new View.OnClickListener() {</span>
+            @Override
+            public void onClick(View v) {
+<span class="nc" id="L255">                openSplitEditor();</span>
+<span class="nc" id="L256">            }</span>
+        });
+<span class="nc" id="L258">        return v;</span>
+	}
+
+    /**
+     * Starts the transfer of funds from one currency to another
+     */
+    private void startTransferFunds() {
+<span class="nc" id="L265">        Commodity fromCommodity = Commodity.getInstance((mTransactionsDbAdapter.getAccountCurrencyCode(mAccountUID)));</span>
+<span class="nc" id="L266">        long id = mTransferAccountSpinner.getSelectedItemId();</span>
+<span class="nc" id="L267">        String targetCurrencyCode = mAccountsDbAdapter.getCurrencyCode(mAccountsDbAdapter.getUID(id));</span>
+
+<span class="nc bnc" id="L269" title="All 2 branches missed.">        if (fromCommodity.equals(Commodity.getInstance(targetCurrencyCode))</span>
+<span class="nc bnc" id="L270" title="All 4 branches missed.">                || !mAmountEditText.isInputModified()</span>
+                || mSplitQuantity != null) //if both accounts have same currency
+<span class="nc" id="L272">            return;</span>
+
+<span class="nc" id="L274">        BigDecimal amountBigd = mAmountEditText.getValue();</span>
+<span class="nc bnc" id="L275" title="All 4 branches missed.">        if ((amountBigd == null) || amountBigd.equals(BigDecimal.ZERO))</span>
+<span class="nc" id="L276">            return;</span>
+<span class="nc" id="L277">        Money amount 	= new Money(amountBigd, fromCommodity).abs();</span>
+
+<span class="nc" id="L279">        TransferFundsDialogFragment fragment</span>
+<span class="nc" id="L280">                = TransferFundsDialogFragment.getInstance(amount, targetCurrencyCode, this);</span>
+<span class="nc" id="L281">        fragment.show(getFragmentManager(), &quot;transfer_funds_editor&quot;);</span>
+<span class="nc" id="L282">    }</span>
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+<span class="nc" id="L286">        super.onConfigurationChanged(newConfig);</span>
+<span class="nc" id="L287">        mAmountEditText.bindListeners(mKeyboardView);</span>
+<span class="nc" id="L288">    }</span>
+
+    @Override
+	public void onActivityCreated(Bundle savedInstanceState) {
+<span class="nc" id="L292">		super.onActivityCreated(savedInstanceState);</span>
+<span class="nc" id="L293">		setHasOptionsMenu(true);</span>
+
+<span class="nc" id="L295">		SharedPreferences sharedPrefs = PreferenceActivity.getActiveBookSharedPreferences();</span>
+<span class="nc" id="L296">		mUseDoubleEntry = sharedPrefs.getBoolean(getString(R.string.key_use_double_entry), false);</span>
+<span class="nc bnc" id="L297" title="All 2 branches missed.">		if (!mUseDoubleEntry){</span>
+<span class="nc" id="L298">			mDoubleEntryLayout.setVisibility(View.GONE);</span>
+<span class="nc" id="L299">            mOpenSplitEditor.setVisibility(View.GONE);</span>
+		}
+
+<span class="nc" id="L302">        mAccountUID = getArguments().getString(UxArgument.SELECTED_ACCOUNT_UID);</span>
+<span class="nc bnc" id="L303" title="All 4 branches missed.">        assert(mAccountUID != null);</span>
+<span class="nc" id="L304">		mAccountsDbAdapter = AccountsDbAdapter.getInstance();</span>
+<span class="nc" id="L305">        mAccountType = mAccountsDbAdapter.getAccountType(mAccountUID);</span>
+
+<span class="nc" id="L307">        String transactionUID = getArguments().getString(UxArgument.SELECTED_TRANSACTION_UID);</span>
+<span class="nc" id="L308">		mTransactionsDbAdapter = TransactionsDbAdapter.getInstance();</span>
+<span class="nc bnc" id="L309" title="All 2 branches missed.">		if (transactionUID != null) {</span>
+<span class="nc" id="L310">            mTransaction = mTransactionsDbAdapter.getRecord(transactionUID);</span>
+        }
+
+<span class="nc" id="L313">        setListeners();</span>
+        //updateTransferAccountsList must only be called after initializing mAccountsDbAdapter
+<span class="nc" id="L315">        updateTransferAccountsList();</span>
+<span class="nc" id="L316">        mTransferAccountSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {</span>
+            /**
+             * Flag for ignoring first call to this listener.
+             * The first call is during layout, but we want it called only in response to user interaction
+             */
+<span class="nc" id="L321">            boolean userInteraction = false;</span>
+
+            @Override
+            public void onItemSelected(AdapterView&lt;?&gt; adapterView, View view, int position, long id) {
+                // Remove the favorite star from the view to avoid visual clutter.
+<span class="nc" id="L326">                TextView qualifiedAccountName = (TextView) view;</span>
+<span class="nc" id="L327">                qualifiedAccountName.setCompoundDrawablesWithIntrinsicBounds(0,0,0,0);</span>
+
+<span class="nc bnc" id="L329" title="All 2 branches missed.">                if (mSplitsList.size() == 2) { //when handling simple transfer to one account</span>
+<span class="nc bnc" id="L330" title="All 2 branches missed.">                    for (Split split : mSplitsList) {</span>
+<span class="nc bnc" id="L331" title="All 2 branches missed.">                        if (!split.getAccountUID().equals(mAccountUID)) {</span>
+<span class="nc" id="L332">                            split.setAccountUID(mAccountsDbAdapter.getUID(id));</span>
+                        }
+                        // else case is handled when saving the transactions
+<span class="nc" id="L335">                    }</span>
+                }
+<span class="nc bnc" id="L337" title="All 2 branches missed.">                if (!userInteraction) {</span>
+<span class="nc" id="L338">                    userInteraction = true;</span>
+<span class="nc" id="L339">                    return;</span>
+                }
+<span class="nc" id="L341">                startTransferFunds();</span>
+<span class="nc" id="L342">            }</span>
+
+            @Override
+            public void onNothingSelected(AdapterView&lt;?&gt; adapterView) {
+                //nothing to see here, move along
+<span class="nc" id="L347">            }</span>
+        });
+
+<span class="nc" id="L350">        ActionBar actionBar = ((AppCompatActivity) getActivity()).getSupportActionBar();</span>
+<span class="nc bnc" id="L351" title="All 4 branches missed.">        assert actionBar != null;</span>
+//        actionBar.setSubtitle(mAccountsDbAdapter.getFullyQualifiedAccountName(mAccountUID));
+
+<span class="nc bnc" id="L354" title="All 2 branches missed.">        if (mTransaction == null) {</span>
+<span class="nc" id="L355">            actionBar.setTitle(R.string.title_add_transaction);</span>
+<span class="nc" id="L356">            initalizeViews();</span>
+<span class="nc" id="L357">            initTransactionNameAutocomplete();</span>
+        } else {
+<span class="nc" id="L359">            actionBar.setTitle(R.string.title_edit_transaction);</span>
+<span class="nc" id="L360">			initializeViewsWithTransaction();</span>
+<span class="nc" id="L361">            mEditMode = true;</span>
+		}
+
+<span class="nc" id="L364">        getActivity().getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);</span>
+<span class="nc" id="L365">	}</span>
+
+    /**
+     * Extension of SimpleCursorAdapter which is used to populate the fields for the list items
+     * in the transactions suggestions (auto-complete transaction description).
+     */
+    private class DropDownCursorAdapter extends SimpleCursorAdapter{
+
+<span class="nc" id="L373">        public DropDownCursorAdapter(Context context, int layout, Cursor c, String[] from, int[] to) {</span>
+<span class="nc" id="L374">            super(context, layout, c, from, to, 0);</span>
+<span class="nc" id="L375">        }</span>
+
+        @Override
+        public void bindView(View view, Context context, Cursor cursor) {
+<span class="nc" id="L379">            super.bindView(view, context, cursor);</span>
+<span class="nc" id="L380">            String transactionUID = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseSchema.TransactionEntry.COLUMN_UID));</span>
+<span class="nc" id="L381">            Money balance = TransactionsDbAdapter.getInstance().getBalance(transactionUID, mAccountUID);</span>
+
+<span class="nc" id="L383">            long timestamp = cursor.getLong(cursor.getColumnIndexOrThrow(DatabaseSchema.TransactionEntry.COLUMN_TIMESTAMP));</span>
+<span class="nc" id="L384">            String dateString = DateUtils.formatDateTime(getActivity(), timestamp,</span>
+                    DateUtils.FORMAT_SHOW_WEEKDAY | DateUtils.FORMAT_SHOW_DATE | DateUtils.FORMAT_SHOW_YEAR);
+
+<span class="nc" id="L387">            TextView secondaryTextView = (TextView) view.findViewById(R.id.secondary_text);</span>
+<span class="nc" id="L388">            secondaryTextView.setText(balance.formattedString() + &quot; on &quot; + dateString); //TODO: Extract string</span>
+<span class="nc" id="L389">        }</span>
+    }
+
+    /**
+     * Initializes the transaction name field for autocompletion with existing transaction names in the database
+     */
+    private void initTransactionNameAutocomplete() {
+<span class="nc" id="L396">        final int[] to = new int[]{R.id.primary_text};</span>
+<span class="nc" id="L397">        final String[] from = new String[]{DatabaseSchema.TransactionEntry.COLUMN_DESCRIPTION};</span>
+
+<span class="nc" id="L399">        SimpleCursorAdapter adapter = new DropDownCursorAdapter(</span>
+<span class="nc" id="L400">                getActivity(), R.layout.dropdown_item_2lines, null, from, to);</span>
+
+<span class="nc" id="L402">        adapter.setCursorToStringConverter(new SimpleCursorAdapter.CursorToStringConverter() {</span>
+            @Override
+            public CharSequence convertToString(Cursor cursor) {
+<span class="nc" id="L405">                final int colIndex = cursor.getColumnIndexOrThrow(DatabaseSchema.TransactionEntry.COLUMN_DESCRIPTION);</span>
+<span class="nc" id="L406">                return cursor.getString(colIndex);</span>
+            }
+        });
+
+<span class="nc" id="L410">        adapter.setFilterQueryProvider(new FilterQueryProvider() {</span>
+            @Override
+            public Cursor runQuery(CharSequence name) {
+<span class="nc bnc" id="L413" title="All 2 branches missed.">                return mTransactionsDbAdapter.fetchTransactionSuggestions(name == null ? &quot;&quot; : name.toString(), mAccountUID);</span>
+            }
+        });
+
+<span class="nc" id="L417">        mDescriptionEditText.setOnItemClickListener(new AdapterView.OnItemClickListener() {</span>
+            @Override
+            public void onItemClick(AdapterView&lt;?&gt; adapterView, View view, int position, long id) {
+<span class="nc" id="L420">                mTransaction = new Transaction(mTransactionsDbAdapter.getRecord(id), true);</span>
+<span class="nc" id="L421">                mTransaction.setTime(System.currentTimeMillis());</span>
+                //we check here because next method will modify it and we want to catch user-modification
+<span class="nc" id="L423">                boolean amountEntered = mAmountEditText.isInputModified();</span>
+<span class="nc" id="L424">                initializeViewsWithTransaction();</span>
+<span class="nc" id="L425">                List&lt;Split&gt; splitList = mTransaction.getSplits();</span>
+<span class="nc bnc" id="L426" title="All 4 branches missed.">                boolean isSplitPair = splitList.size() == 2 &amp;&amp; splitList.get(0).isPairOf(splitList.get(1));</span>
+<span class="nc bnc" id="L427" title="All 2 branches missed.">                if (isSplitPair){</span>
+<span class="nc" id="L428">                    mSplitsList.clear();</span>
+<span class="nc bnc" id="L429" title="All 2 branches missed.">                    if (!amountEntered) //if user already entered an amount</span>
+<span class="nc" id="L430">                        mAmountEditText.setValue(splitList.get(0).getValue().asBigDecimal());</span>
+                } else {
+<span class="nc bnc" id="L432" title="All 2 branches missed.">                    if (amountEntered){ //if user entered own amount, clear loaded splits and use the user value</span>
+<span class="nc" id="L433">                        mSplitsList.clear();</span>
+<span class="nc" id="L434">                        setDoubleEntryViewsVisibility(View.VISIBLE);</span>
+                    } else {
+<span class="nc bnc" id="L436" title="All 2 branches missed.">                        if (mUseDoubleEntry) { //don't hide the view in single entry mode</span>
+<span class="nc" id="L437">                            setDoubleEntryViewsVisibility(View.GONE);</span>
+                        }
+                    }
+                }
+<span class="nc" id="L441">                mTransaction = null; //we are creating a new transaction after all</span>
+<span class="nc" id="L442">            }</span>
+        });
+
+<span class="nc" id="L445">        mDescriptionEditText.setAdapter(adapter);</span>
+<span class="nc" id="L446">    }</span>
+
+    /**
+	 * Initialize views in the fragment with information from a transaction.
+	 * This method is called if the fragment is used for editing a transaction
+	 */
+	private void initializeViewsWithTransaction(){
+<span class="nc" id="L453">		mDescriptionEditText.setText(mTransaction.getDescription());</span>
+<span class="nc" id="L454">        mDescriptionEditText.setSelection(mDescriptionEditText.getText().length());</span>
+
+<span class="nc" id="L456">        mTransactionTypeSwitch.setAccountType(mAccountType);</span>
+<span class="nc" id="L457">        mTransactionTypeSwitch.setChecked(mTransaction.getBalance(mAccountUID).isNegative());</span>
+
+<span class="nc bnc" id="L459" title="All 2 branches missed.">		if (!mAmountEditText.isInputModified()){</span>
+            //when autocompleting, only change the amount if the user has not manually changed it already
+<span class="nc" id="L461">            mAmountEditText.setValue(mTransaction.getBalance(mAccountUID).asBigDecimal());</span>
+        }
+<span class="nc" id="L463">		mCurrencyTextView.setText(mTransaction.getCommodity().getSymbol());</span>
+<span class="nc" id="L464">		mNotesEditText.setText(mTransaction.getNote());</span>
+<span class="nc" id="L465">		mDateTextView.setText(DATE_FORMATTER.format(mTransaction.getTimeMillis()));</span>
+<span class="nc" id="L466">		mTimeTextView.setText(TIME_FORMATTER.format(mTransaction.getTimeMillis()));</span>
+<span class="nc" id="L467">		Calendar cal = GregorianCalendar.getInstance();</span>
+<span class="nc" id="L468">		cal.setTimeInMillis(mTransaction.getTimeMillis());</span>
+<span class="nc" id="L469">		mDate = mTime = cal;</span>
+
+        //TODO: deep copy the split list. We need a copy so we can modify with impunity
+<span class="nc" id="L472">        mSplitsList = new ArrayList&lt;&gt;(mTransaction.getSplits());</span>
+<span class="nc bnc" id="L473" title="All 2 branches missed.">        toggleAmountInputEntryMode(mSplitsList.size() &lt;= 2);</span>
+
+<span class="nc bnc" id="L475" title="All 2 branches missed.">        if (mSplitsList.size() == 2){</span>
+<span class="nc bnc" id="L476" title="All 2 branches missed.">            for (Split split : mSplitsList) {</span>
+<span class="nc bnc" id="L477" title="All 2 branches missed.">                if (split.getAccountUID().equals(mAccountUID)) {</span>
+<span class="nc bnc" id="L478" title="All 2 branches missed.">                    if (!split.getQuantity().getCommodity().equals(mTransaction.getCommodity())){</span>
+<span class="nc" id="L479">                        mSplitQuantity = split.getQuantity();</span>
+                    }
+                }
+<span class="nc" id="L482">            }</span>
+        }
+        //if there are more than two splits (which is the default for one entry), then
+        //disable editing of the transfer account. User should open editor
+<span class="nc bnc" id="L486" title="All 4 branches missed.">        if (mSplitsList.size() == 2 &amp;&amp; mSplitsList.get(0).isPairOf(mSplitsList.get(1))) {</span>
+<span class="nc bnc" id="L487" title="All 2 branches missed.">            for (Split split : mTransaction.getSplits()) {</span>
+                //two splits, one belongs to this account and the other to another account
+<span class="nc bnc" id="L489" title="All 4 branches missed.">                if (mUseDoubleEntry &amp;&amp; !split.getAccountUID().equals(mAccountUID)) {</span>
+<span class="nc" id="L490">                    setSelectedTransferAccount(mAccountsDbAdapter.getID(split.getAccountUID()));</span>
+                }
+<span class="nc" id="L492">            }</span>
+        } else {
+<span class="nc" id="L494">                setDoubleEntryViewsVisibility(View.GONE);</span>
+        }
+
+<span class="nc" id="L497">		String currencyCode = mTransactionsDbAdapter.getAccountCurrencyCode(mAccountUID);</span>
+<span class="nc" id="L498">		Commodity accountCommodity = Commodity.getInstance(currencyCode);</span>
+<span class="nc" id="L499">		mCurrencyTextView.setText(accountCommodity.getSymbol());</span>
+
+<span class="nc" id="L501">        Commodity commodity = Commodity.getInstance(currencyCode);</span>
+<span class="nc" id="L502">        mAmountEditText.setCommodity(commodity);</span>
+
+<span class="nc" id="L504">        mSaveTemplateCheckbox.setChecked(mTransaction.isTemplate());</span>
+<span class="nc" id="L505">        String scheduledActionUID = getArguments().getString(UxArgument.SCHEDULED_ACTION_UID);</span>
+<span class="nc bnc" id="L506" title="All 4 branches missed.">        if (scheduledActionUID != null &amp;&amp; !scheduledActionUID.isEmpty()) {</span>
+<span class="nc" id="L507">            ScheduledAction scheduledAction = ScheduledActionDbAdapter.getInstance().getRecord(scheduledActionUID);</span>
+<span class="nc" id="L508">            mRecurrenceRule = scheduledAction.getRuleString();</span>
+<span class="nc" id="L509">            mEventRecurrence.parse(mRecurrenceRule);</span>
+<span class="nc" id="L510">            mRecurrenceTextView.setText(scheduledAction.getRepeatString());</span>
+        }
+<span class="nc" id="L512">    }</span>
+
+    private void setDoubleEntryViewsVisibility(int visibility) {
+<span class="nc" id="L515">        mDoubleEntryLayout.setVisibility(visibility);</span>
+<span class="nc" id="L516">        mTransactionTypeSwitch.setVisibility(visibility);</span>
+<span class="nc" id="L517">    }</span>
+
+    private void toggleAmountInputEntryMode(boolean enabled){
+<span class="nc bnc" id="L520" title="All 2 branches missed.">        if (enabled){</span>
+<span class="nc" id="L521">            mAmountEditText.setFocusable(true);</span>
+<span class="nc" id="L522">            mAmountEditText.bindListeners(mKeyboardView);</span>
+        } else {
+<span class="nc" id="L524">            mAmountEditText.setFocusable(false);</span>
+<span class="nc" id="L525">            mAmountEditText.setOnClickListener(new View.OnClickListener() {</span>
+                @Override
+                public void onClick(View v) {
+<span class="nc" id="L528">                    openSplitEditor();</span>
+<span class="nc" id="L529">                }</span>
+            });
+        }
+<span class="nc" id="L532">    }</span>
+
+    /**
+	 * Initialize views with default data for new transactions
+	 */
+	private void initalizeViews() {
+<span class="nc" id="L538">		Date time = new Date(System.currentTimeMillis());</span>
+<span class="nc" id="L539">		mDateTextView.setText(DATE_FORMATTER.format(time));</span>
+<span class="nc" id="L540">		mTimeTextView.setText(TIME_FORMATTER.format(time));</span>
+<span class="nc" id="L541">		mTime = mDate = Calendar.getInstance();</span>
+
+<span class="nc" id="L543">        mTransactionTypeSwitch.setAccountType(mAccountType);</span>
+<span class="nc" id="L544">		String typePref = PreferenceActivity.getActiveBookSharedPreferences().getString(getString(R.string.key_default_transaction_type), &quot;DEBIT&quot;);</span>
+<span class="nc" id="L545">        mTransactionTypeSwitch.setChecked(TransactionType.valueOf(typePref));</span>
+
+<span class="nc" id="L547">		String code = GnuCashApplication.getDefaultCurrencyCode();</span>
+<span class="nc bnc" id="L548" title="All 2 branches missed.">		if (mAccountUID != null){</span>
+<span class="nc" id="L549">			code = mTransactionsDbAdapter.getAccountCurrencyCode(mAccountUID);</span>
+		}
+
+<span class="nc" id="L552">		Commodity commodity = Commodity.getInstance(code);</span>
+<span class="nc" id="L553">        mCurrencyTextView.setText(commodity.getSymbol());</span>
+<span class="nc" id="L554">        mAmountEditText.setCommodity(commodity);</span>
+
+<span class="nc bnc" id="L556" title="All 2 branches missed.">        if (mUseDoubleEntry){</span>
+<span class="nc" id="L557">            String currentAccountUID = mAccountUID;</span>
+            long defaultTransferAccountID;
+<span class="nc" id="L559">            String rootAccountUID = mAccountsDbAdapter.getOrCreateGnuCashRootAccountUID();</span>
+            do {
+<span class="nc" id="L561">                defaultTransferAccountID = mAccountsDbAdapter.getDefaultTransferAccountID(mAccountsDbAdapter.getID(currentAccountUID));</span>
+<span class="nc bnc" id="L562" title="All 2 branches missed.">                if (defaultTransferAccountID &gt; 0) {</span>
+<span class="nc" id="L563">                    setSelectedTransferAccount(defaultTransferAccountID);</span>
+<span class="nc" id="L564">                    break; //we found a parent with default transfer setting</span>
+                }
+<span class="nc" id="L566">                currentAccountUID = mAccountsDbAdapter.getParentAccountUID(currentAccountUID);</span>
+<span class="nc bnc" id="L567" title="All 2 branches missed.">            } while (!currentAccountUID.equals(rootAccountUID));</span>
+        }
+<span class="nc" id="L569">	}</span>
+
+    /**
+     * Updates the list of possible transfer accounts.
+     * Only accounts with the same currency can be transferred to
+     */
+	private void updateTransferAccountsList(){
+<span class="nc" id="L576">		String conditions = &quot;(&quot; + DatabaseSchema.AccountEntry.COLUMN_UID + &quot; != ?&quot;</span>
+                            + &quot; AND &quot; + DatabaseSchema.AccountEntry.COLUMN_TYPE + &quot; != ?&quot;
+                            + &quot; AND &quot; + DatabaseSchema.AccountEntry.COLUMN_PLACEHOLDER + &quot; = 0&quot;
+                            + &quot;)&quot;;
+
+<span class="nc bnc" id="L581" title="All 2 branches missed.">        if (mCursor != null) {</span>
+<span class="nc" id="L582">            mCursor.close();</span>
+        }
+<span class="nc" id="L584">		mCursor = mAccountsDbAdapter.fetchAccountsOrderedByFavoriteAndFullName(conditions, new String[]{mAccountUID, AccountType.ROOT.name()});</span>
+
+<span class="nc" id="L586">        mAccountCursorAdapter = new QualifiedAccountNameCursorAdapter(getActivity(), mCursor);</span>
+<span class="nc" id="L587">		mTransferAccountSpinner.setAdapter(mAccountCursorAdapter);</span>
+<span class="nc" id="L588">	}</span>
+
+    /**
+     * Opens the split editor dialog
+     */
+    private void openSplitEditor(){
+<span class="nc bnc" id="L594" title="All 2 branches missed.">        if (mAmountEditText.getValue() == null){</span>
+<span class="nc" id="L595">            Toast.makeText(getActivity(), R.string.toast_enter_amount_to_split, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L596">            return;</span>
+        }
+
+        String baseAmountString;
+
+<span class="nc bnc" id="L601" title="All 2 branches missed.">        if (mTransaction == null){ //if we are creating a new transaction (not editing an existing one)</span>
+<span class="nc" id="L602">            BigDecimal enteredAmount = mAmountEditText.getValue();</span>
+<span class="nc" id="L603">            baseAmountString = enteredAmount.toPlainString();</span>
+<span class="nc" id="L604">        } else {</span>
+<span class="nc" id="L605">            Money biggestAmount = Money.createZeroInstance(mTransaction.getCurrencyCode());</span>
+<span class="nc bnc" id="L606" title="All 2 branches missed.">            for (Split split : mTransaction.getSplits()) {</span>
+<span class="nc bnc" id="L607" title="All 2 branches missed.">                if (split.getValue().asBigDecimal().compareTo(biggestAmount.asBigDecimal()) &gt; 0)</span>
+<span class="nc" id="L608">                    biggestAmount = split.getValue();</span>
+<span class="nc" id="L609">            }</span>
+<span class="nc" id="L610">            baseAmountString = biggestAmount.toPlainString();</span>
+        }
+
+<span class="nc" id="L613">        Intent intent = new Intent(getActivity(), FormActivity.class);</span>
+<span class="nc" id="L614">        intent.putExtra(UxArgument.FORM_TYPE, FormActivity.FormType.SPLIT_EDITOR.name());</span>
+<span class="nc" id="L615">        intent.putExtra(UxArgument.SELECTED_ACCOUNT_UID, mAccountUID);</span>
+<span class="nc" id="L616">        intent.putExtra(UxArgument.AMOUNT_STRING, baseAmountString);</span>
+<span class="nc" id="L617">        intent.putParcelableArrayListExtra(UxArgument.SPLIT_LIST, (ArrayList&lt;Split&gt;) extractSplitsFromView());</span>
+
+<span class="nc" id="L619">        startActivityForResult(intent, REQUEST_SPLIT_EDITOR);</span>
+<span class="nc" id="L620">    }</span>
+
+	/**
+	 * Sets click listeners for the dialog buttons
+	 */
+	private void setListeners() {
+<span class="nc" id="L626">		mTransactionTypeSwitch.setAmountFormattingListener(mAmountEditText, mCurrencyTextView);</span>
+
+<span class="nc" id="L628">		mDateTextView.setOnClickListener(new View.OnClickListener() {</span>
+
+            @Override
+            public void onClick(View v) {
+<span class="nc" id="L632">                long dateMillis = 0;</span>
+                try {
+<span class="nc" id="L634">                    Date date = DATE_FORMATTER.parse(mDateTextView.getText().toString());</span>
+<span class="nc" id="L635">                    dateMillis = date.getTime();</span>
+<span class="nc" id="L636">                } catch (ParseException e) {</span>
+<span class="nc" id="L637">                    Log.e(getTag(), &quot;Error converting input time to Date object&quot;);</span>
+<span class="nc" id="L638">                }</span>
+<span class="nc" id="L639">                Calendar calendar = Calendar.getInstance();</span>
+<span class="nc" id="L640">                calendar.setTimeInMillis(dateMillis);</span>
+
+<span class="nc" id="L642">                int year = calendar.get(Calendar.YEAR);</span>
+<span class="nc" id="L643">                int monthOfYear = calendar.get(Calendar.MONTH);</span>
+<span class="nc" id="L644">                int dayOfMonth = calendar.get(Calendar.DAY_OF_MONTH);</span>
+<span class="nc" id="L645">                CalendarDatePickerDialogFragment datePickerDialog = new CalendarDatePickerDialogFragment()</span>
+<span class="nc" id="L646">                        .setOnDateSetListener(TransactionFormFragment.this)</span>
+<span class="nc" id="L647">                        .setPreselectedDate(year, monthOfYear, dayOfMonth);</span>
+<span class="nc" id="L648">                datePickerDialog.show(getFragmentManager(), &quot;date_picker_fragment&quot;);</span>
+<span class="nc" id="L649">            }</span>
+        });
+
+<span class="nc" id="L652">		mTimeTextView.setOnClickListener(new View.OnClickListener() {</span>
+
+            @Override
+            public void onClick(View v) {
+<span class="nc" id="L656">                long timeMillis = 0;</span>
+                try {
+<span class="nc" id="L658">                    Date date = TIME_FORMATTER.parse(mTimeTextView.getText().toString());</span>
+<span class="nc" id="L659">                    timeMillis = date.getTime();</span>
+<span class="nc" id="L660">                } catch (ParseException e) {</span>
+<span class="nc" id="L661">                    Log.e(getTag(), &quot;Error converting input time to Date object&quot;);</span>
+<span class="nc" id="L662">                }</span>
+
+<span class="nc" id="L664">                Calendar calendar = Calendar.getInstance();</span>
+<span class="nc" id="L665">                calendar.setTimeInMillis(timeMillis);</span>
+
+<span class="nc" id="L667">                RadialTimePickerDialogFragment timePickerDialog = new RadialTimePickerDialogFragment()</span>
+<span class="nc" id="L668">                        .setOnTimeSetListener(TransactionFormFragment.this)</span>
+<span class="nc" id="L669">                        .setStartTime(calendar.get(Calendar.HOUR_OF_DAY),</span>
+<span class="nc" id="L670">                                calendar.get(Calendar.MINUTE));</span>
+<span class="nc" id="L671">                timePickerDialog.show(getFragmentManager(), &quot;time_picker_dialog_fragment&quot;);</span>
+<span class="nc" id="L672">            }</span>
+        });
+
+<span class="nc" id="L675">        mRecurrenceTextView.setOnClickListener(new RecurrenceViewClickListener((AppCompatActivity) getActivity(), mRecurrenceRule, this));</span>
+<span class="nc" id="L676">	}</span>
+
+    /**
+     * Updates the spinner to the selected transfer account
+     * @param accountId Database ID of the transfer account
+     */
+	private void setSelectedTransferAccount(long accountId){
+<span class="nc" id="L683">        int position = mAccountCursorAdapter.getPosition(mAccountsDbAdapter.getUID(accountId));</span>
+<span class="nc bnc" id="L684" title="All 2 branches missed.">        if (position &gt;= 0)</span>
+<span class="nc" id="L685">            mTransferAccountSpinner.setSelection(position);</span>
+<span class="nc" id="L686">	}</span>
+
+    /**
+     * Returns a list of splits based on the input in the transaction form.
+     * This only gets the splits from the simple view, and not those from the Split Editor.
+     * If the Split Editor has been used and there is more than one split, then it returns {@link #mSplitsList}
+     * @return List of splits in the view or {@link #mSplitsList} is there are more than 2 splits in the transaction
+     */
+    private List&lt;Split&gt; extractSplitsFromView(){
+<span class="nc bnc" id="L695" title="All 2 branches missed.">        if (mTransactionTypeSwitch.getVisibility() != View.VISIBLE){</span>
+<span class="nc" id="L696">            return mSplitsList;</span>
+        }
+
+<span class="nc" id="L699">        BigDecimal amountBigd = mAmountEditText.getValue();</span>
+<span class="nc" id="L700">        String baseCurrencyCode = mTransactionsDbAdapter.getAccountCurrencyCode(mAccountUID);</span>
+<span class="nc" id="L701">        Money value = new Money(amountBigd, Commodity.getInstance(baseCurrencyCode));</span>
+<span class="nc" id="L702">        Money quantity = new Money(value);</span>
+
+<span class="nc" id="L704">        String transferAcctUID = getTransferAccountUID();</span>
+<span class="nc" id="L705">        CommoditiesDbAdapter cmdtyDbAdapter = CommoditiesDbAdapter.getInstance();</span>
+
+<span class="nc bnc" id="L707" title="All 2 branches missed.">        if (isMultiCurrencyTransaction()){ //if multi-currency transaction</span>
+<span class="nc" id="L708">            String transferCurrencyCode = mAccountsDbAdapter.getCurrencyCode(transferAcctUID);</span>
+<span class="nc" id="L709">            String commodityUID = cmdtyDbAdapter.getCommodityUID(baseCurrencyCode);</span>
+<span class="nc" id="L710">            String targetCmdtyUID = cmdtyDbAdapter.getCommodityUID(transferCurrencyCode);</span>
+            
+<span class="nc" id="L712">            Pair&lt;Long, Long&gt; pricePair = PricesDbAdapter.getInstance()</span>
+<span class="nc" id="L713">                    .getPrice(commodityUID, targetCmdtyUID);</span>
+
+<span class="nc bnc" id="L715" title="All 4 branches missed.">            if (pricePair.first &gt; 0 &amp;&amp; pricePair.second &gt; 0) {</span>
+<span class="nc" id="L716">                quantity = quantity.multiply(pricePair.first.intValue())</span>
+<span class="nc" id="L717">                        .divide(pricePair.second.intValue())</span>
+<span class="nc" id="L718">                        .withCurrency(cmdtyDbAdapter.getRecord(targetCmdtyUID));</span>
+            }
+        }
+
+        Split split1;
+        Split split2;
+        // Try to preserve the other split attributes.
+<span class="nc bnc" id="L725" title="All 2 branches missed.">        if (mSplitsList.size() &gt;= 2) {</span>
+<span class="nc" id="L726">            split1 = mSplitsList.get(0);</span>
+<span class="nc" id="L727">            split1.setValue(value);</span>
+<span class="nc" id="L728">            split1.setQuantity(value);</span>
+<span class="nc" id="L729">            split1.setAccountUID(mAccountUID);</span>
+
+<span class="nc" id="L731">            split2 = mSplitsList.get(1);</span>
+<span class="nc" id="L732">            split2.setValue(value);</span>
+<span class="nc" id="L733">            split2.setQuantity(quantity);</span>
+<span class="nc" id="L734">            split2.setAccountUID(transferAcctUID);</span>
+        } else {
+<span class="nc" id="L736">            split1 = new Split(value, mAccountUID);</span>
+<span class="nc" id="L737">            split2 = new Split(value, quantity, transferAcctUID);</span>
+        }
+<span class="nc" id="L739">        split1.setType(mTransactionTypeSwitch.getTransactionType());</span>
+<span class="nc" id="L740">        split2.setType(mTransactionTypeSwitch.getTransactionType().invert());</span>
+
+<span class="nc" id="L742">        List&lt;Split&gt; splitList = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L743">        splitList.add(split1);</span>
+<span class="nc" id="L744">        splitList.add(split2);</span>
+
+<span class="nc" id="L746">        return splitList;</span>
+    }
+
+    /**
+     * Returns the GUID of the currently selected transfer account.
+     * If double-entry is disabled, this method returns the GUID of the imbalance account for the currently active account
+     * @return GUID of transfer account
+     */
+    private @NonNull String getTransferAccountUID() {
+        String transferAcctUID;
+<span class="nc bnc" id="L756" title="All 2 branches missed.">        if (mUseDoubleEntry) {</span>
+<span class="nc" id="L757">            long transferAcctId = mTransferAccountSpinner.getSelectedItemId();</span>
+<span class="nc" id="L758">            transferAcctUID = mAccountsDbAdapter.getUID(transferAcctId);</span>
+<span class="nc" id="L759">        } else {</span>
+<span class="nc" id="L760">            Commodity baseCommodity = mAccountsDbAdapter.getRecord(mAccountUID).getCommodity();</span>
+<span class="nc" id="L761">            transferAcctUID = mAccountsDbAdapter.getOrCreateImbalanceAccountUID(baseCommodity);</span>
+        }
+<span class="nc" id="L763">        return transferAcctUID;</span>
+    }
+
+    /**
+     * Extracts a transaction from the input in the form fragment
+     * @return New transaction object containing all info in the form
+     */
+    private @NonNull Transaction extractTransactionFromView(){
+<span class="nc" id="L771">        Calendar cal = new GregorianCalendar(</span>
+<span class="nc" id="L772">                mDate.get(Calendar.YEAR),</span>
+<span class="nc" id="L773">                mDate.get(Calendar.MONTH),</span>
+<span class="nc" id="L774">                mDate.get(Calendar.DAY_OF_MONTH),</span>
+<span class="nc" id="L775">                mTime.get(Calendar.HOUR_OF_DAY),</span>
+<span class="nc" id="L776">                mTime.get(Calendar.MINUTE),</span>
+<span class="nc" id="L777">                mTime.get(Calendar.SECOND));</span>
+<span class="nc" id="L778">        String description = mDescriptionEditText.getText().toString();</span>
+<span class="nc" id="L779">        String notes = mNotesEditText.getText().toString();</span>
+<span class="nc" id="L780">        String currencyCode = mAccountsDbAdapter.getAccountCurrencyCode(mAccountUID);</span>
+<span class="nc" id="L781">        Commodity commodity = CommoditiesDbAdapter.getInstance().getCommodity(currencyCode);</span>
+
+<span class="nc" id="L783">        List&lt;Split&gt; splits = extractSplitsFromView();</span>
+
+<span class="nc" id="L785">        Transaction transaction = new Transaction(description);</span>
+<span class="nc" id="L786">        transaction.setTime(cal.getTimeInMillis());</span>
+<span class="nc" id="L787">        transaction.setCommodity(commodity);</span>
+<span class="nc" id="L788">        transaction.setNote(notes);</span>
+<span class="nc" id="L789">        transaction.setSplits(splits);</span>
+<span class="nc" id="L790">        transaction.setExported(false); //not necessary as exports use timestamps now. Because, legacy</span>
+
+<span class="nc" id="L792">        return transaction;</span>
+    }
+
+    /**
+     * Checks whether the split editor has been used for editing this transaction.
+     * &lt;p&gt;The Split Editor is considered to have been used if the transaction type switch is not visible&lt;/p&gt;
+     * @return {@code true} if split editor was used, {@code false} otherwise
+     */
+    private boolean splitEditorUsed(){
+<span class="nc bnc" id="L801" title="All 2 branches missed.">        return mTransactionTypeSwitch.getVisibility() != View.VISIBLE;</span>
+    }
+
+    /**
+     * Checks if this is a multi-currency transaction being created/edited
+     * &lt;p&gt;A multi-currency transaction is one in which the main account and transfer account have different currencies. &lt;br&gt;
+     *     Single-entry transactions cannot be multi-currency&lt;/p&gt;
+     * @return {@code true} if multi-currency transaction, {@code false} otherwise
+     */
+    private boolean isMultiCurrencyTransaction(){
+<span class="nc bnc" id="L811" title="All 2 branches missed.">        if (!mUseDoubleEntry)</span>
+<span class="nc" id="L812">            return false;</span>
+
+<span class="nc" id="L814">        String transferAcctUID = mAccountsDbAdapter.getUID(mTransferAccountSpinner.getSelectedItemId());</span>
+<span class="nc" id="L815">        String currencyCode = mAccountsDbAdapter.getAccountCurrencyCode(mAccountUID);</span>
+<span class="nc" id="L816">        String transferCurrencyCode = mAccountsDbAdapter.getCurrencyCode(transferAcctUID);</span>
+
+<span class="nc bnc" id="L818" title="All 2 branches missed.">        return !currencyCode.equals(transferCurrencyCode);</span>
+    }
+
+	/**
+	 * Collects information from the fragment views and uses it to create
+	 * and save a transaction
+	 */
+	private void saveNewTransaction() {
+<span class="nc" id="L826">        mAmountEditText.getCalculatorKeyboard().hideCustomKeyboard();</span>
+
+        //determine whether we need to do currency conversion
+
+<span class="nc bnc" id="L830" title="All 6 branches missed.">        if (isMultiCurrencyTransaction() &amp;&amp; !splitEditorUsed() &amp;&amp; !mCurrencyConversionDone){</span>
+<span class="nc" id="L831">            startTransferFunds();</span>
+<span class="nc" id="L832">            return;</span>
+        }
+
+<span class="nc" id="L835">        Transaction transaction = extractTransactionFromView();</span>
+<span class="nc bnc" id="L836" title="All 2 branches missed.">        if (mEditMode) { //if editing an existing transaction</span>
+<span class="nc" id="L837">            transaction.setUID(mTransaction.getUID());</span>
+        }
+
+<span class="nc" id="L840">        mTransaction = transaction;</span>
+<span class="nc" id="L841">        mAccountsDbAdapter.beginTransaction();</span>
+
+        try {
+            // 1) mTransactions may be existing or non-existing
+            // 2) when mTransactions exists in the db, the splits may exist or not exist in the db
+            // So replace is chosen.
+<span class="nc" id="L847">            mTransactionsDbAdapter.addRecord(mTransaction, DatabaseAdapter.UpdateMethod.replace);</span>
+
+<span class="nc bnc" id="L849" title="All 2 branches missed.">            if (mSaveTemplateCheckbox.isChecked()) {//template is automatically checked when a transaction is scheduled</span>
+<span class="nc bnc" id="L850" title="All 2 branches missed.">                if (!mEditMode) { //means it was new transaction, so a new template</span>
+<span class="nc" id="L851">                    Transaction templateTransaction = new Transaction(mTransaction, true);</span>
+<span class="nc" id="L852">                    templateTransaction.setTemplate(true);</span>
+<span class="nc" id="L853">                    mTransactionsDbAdapter.addRecord(templateTransaction, DatabaseAdapter.UpdateMethod.replace);</span>
+<span class="nc" id="L854">                    scheduleRecurringTransaction(templateTransaction.getUID());</span>
+<span class="nc" id="L855">                } else</span>
+<span class="nc" id="L856">                    scheduleRecurringTransaction(mTransaction.getUID());</span>
+            } else {
+<span class="nc" id="L858">                String scheduledActionUID = getArguments().getString(UxArgument.SCHEDULED_ACTION_UID);</span>
+<span class="nc bnc" id="L859" title="All 2 branches missed.">                if (scheduledActionUID != null){ //we were editing a schedule and it was turned off</span>
+<span class="nc" id="L860">                    ScheduledActionDbAdapter.getInstance().deleteRecord(scheduledActionUID);</span>
+                }
+            }
+
+<span class="nc" id="L864">            mAccountsDbAdapter.setTransactionSuccessful();</span>
+        }
+        finally {
+<span class="nc" id="L867">            mAccountsDbAdapter.endTransaction();</span>
+<span class="nc" id="L868">        }</span>
+
+        //update widgets, if any
+<span class="nc" id="L871">		WidgetConfigurationActivity.updateAllWidgets(getActivity().getApplicationContext());</span>
+
+<span class="nc" id="L873">		finish(Activity.RESULT_OK);</span>
+<span class="nc" id="L874">	}</span>
+
+    /**
+     * Schedules a recurring transaction (if necessary) after the transaction has been saved
+     * @see #saveNewTransaction()
+     */
+    private void scheduleRecurringTransaction(String transactionUID) {
+<span class="nc" id="L881">        ScheduledActionDbAdapter scheduledActionDbAdapter = ScheduledActionDbAdapter.getInstance();</span>
+
+<span class="nc" id="L883">        Recurrence recurrence = RecurrenceParser.parse(mEventRecurrence);</span>
+
+<span class="nc" id="L885">        ScheduledAction scheduledAction = new ScheduledAction(ScheduledAction.ActionType.TRANSACTION);</span>
+<span class="nc" id="L886">        scheduledAction.setRecurrence(recurrence);</span>
+
+<span class="nc" id="L888">        String scheduledActionUID = getArguments().getString(UxArgument.SCHEDULED_ACTION_UID);</span>
+
+<span class="nc bnc" id="L890" title="All 2 branches missed.">        if (scheduledActionUID != null) { //if we are editing an existing schedule</span>
+<span class="nc bnc" id="L891" title="All 2 branches missed.">            if (recurrence == null){</span>
+<span class="nc" id="L892">                scheduledActionDbAdapter.deleteRecord(scheduledActionUID);</span>
+            } else {
+<span class="nc" id="L894">                scheduledAction.setUID(scheduledActionUID);</span>
+<span class="nc" id="L895">                scheduledActionDbAdapter.updateRecurrenceAttributes(scheduledAction);</span>
+<span class="nc" id="L896">                Toast.makeText(getActivity(), R.string.toast_updated_transaction_recurring_schedule, Toast.LENGTH_SHORT).show();</span>
+            }
+        } else {
+<span class="nc bnc" id="L899" title="All 2 branches missed.">            if (recurrence != null) {</span>
+<span class="nc" id="L900">                scheduledAction.setActionUID(transactionUID);</span>
+<span class="nc" id="L901">                scheduledActionDbAdapter.addRecord(scheduledAction, DatabaseAdapter.UpdateMethod.replace);</span>
+<span class="nc" id="L902">                Toast.makeText(getActivity(), R.string.toast_scheduled_recurring_transaction, Toast.LENGTH_SHORT).show();</span>
+            }
+        }
+
+<span class="nc" id="L906">    }</span>
+
+
+    @Override
+	public void onDestroyView() {
+<span class="nc" id="L911">		super.onDestroyView();</span>
+<span class="nc bnc" id="L912" title="All 2 branches missed.">		if (mCursor != null)</span>
+<span class="nc" id="L913">			mCursor.close();</span>
+<span class="nc" id="L914">	}</span>
+
+	@Override
+	public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+<span class="nc" id="L918">		inflater.inflate(R.menu.default_save_actions, menu);</span>
+<span class="nc" id="L919">	}</span>
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		//hide the keyboard if it is visible
+<span class="nc" id="L924">		InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);</span>
+<span class="nc" id="L925">		imm.hideSoftInputFromWindow(mDescriptionEditText.getApplicationWindowToken(), 0);</span>
+
+<span class="nc bnc" id="L927" title="All 3 branches missed.">		switch (item.getItemId()) {</span>
+            case android.R.id.home:
+<span class="nc" id="L929">                finish(Activity.RESULT_CANCELED);</span>
+<span class="nc" id="L930">                return true;</span>
+
+		case R.id.menu_save:
+<span class="nc bnc" id="L933" title="All 2 branches missed.">            if (canSave()){</span>
+<span class="nc" id="L934">                saveNewTransaction();</span>
+            } else {
+<span class="nc bnc" id="L936" title="All 2 branches missed.">                if (mAmountEditText.getValue() == null) {</span>
+<span class="nc" id="L937">                    Toast.makeText(getActivity(), R.string.toast_transanction_amount_required, Toast.LENGTH_SHORT).show();</span>
+                }
+<span class="nc bnc" id="L939" title="All 4 branches missed.">                if (mUseDoubleEntry &amp;&amp; mTransferAccountSpinner.getCount() == 0){</span>
+<span class="nc" id="L940">                    Toast.makeText(getActivity(),</span>
+                            R.string.toast_disable_double_entry_to_save_transaction,
+<span class="nc" id="L942">                            Toast.LENGTH_LONG).show();</span>
+                }
+            }
+<span class="nc" id="L945">			return true;</span>
+
+		default:
+<span class="nc" id="L948">			return super.onOptionsItemSelected(item);</span>
+		}
+	}
+
+    /**
+     * Checks if the pre-requisites for saving the transaction are fulfilled
+     * &lt;p&gt;The conditions checked are that a valid amount is entered and that a transfer account is set (where applicable)&lt;/p&gt;
+     * @return {@code true} if the transaction can be saved, {@code false} otherwise
+     */
+    private boolean canSave(){
+<span class="nc bnc" id="L958" title="All 4 branches missed.">        return (mUseDoubleEntry &amp;&amp; mAmountEditText.isInputValid()</span>
+<span class="nc bnc" id="L959" title="All 4 branches missed.">                                &amp;&amp; mTransferAccountSpinner.getCount() &gt; 0)</span>
+<span class="nc bnc" id="L960" title="All 2 branches missed.">               || (!mUseDoubleEntry &amp;&amp; mAmountEditText.isInputValid());</span>
+    }
+
+    /**
+     * Called by the split editor fragment to notify of finished editing
+     * @param splitList List of splits produced in the fragment
+     */
+    public void setSplitList(List&lt;Split&gt; splitList){
+<span class="nc" id="L968">        mSplitsList = splitList;</span>
+<span class="nc" id="L969">        Money balance = Transaction.computeBalance(mAccountUID, mSplitsList);</span>
+
+<span class="nc" id="L971">        mAmountEditText.setValue(balance.asBigDecimal());</span>
+<span class="nc" id="L972">        mTransactionTypeSwitch.setChecked(balance.isNegative());</span>
+<span class="nc" id="L973">    }</span>
+
+
+	/**
+	 * Finishes the fragment appropriately.
+	 * Depends on how the fragment was loaded, it might have a backstack or not
+	 */
+	private void finish(int resultCode) {
+<span class="nc bnc" id="L981" title="All 2 branches missed.">		if (getActivity().getSupportFragmentManager().getBackStackEntryCount() == 0){</span>
+<span class="nc" id="L982">            getActivity().setResult(resultCode);</span>
+			//means we got here directly from the accounts list activity, need to finish
+<span class="nc" id="L984">			getActivity().finish();</span>
+		} else {
+			//go back to transactions list
+<span class="nc" id="L987">			getActivity().getSupportFragmentManager().popBackStack();</span>
+		}
+<span class="nc" id="L989">	}</span>
+
+    @Override
+    public void onDateSet(CalendarDatePickerDialogFragment calendarDatePickerDialog, int year, int monthOfYear, int dayOfMonth) {
+<span class="nc" id="L993">        Calendar cal = new GregorianCalendar(year, monthOfYear, dayOfMonth);</span>
+<span class="nc" id="L994">        mDateTextView.setText(DATE_FORMATTER.format(cal.getTime()));</span>
+<span class="nc" id="L995">        mDate.set(Calendar.YEAR, year);</span>
+<span class="nc" id="L996">        mDate.set(Calendar.MONTH, monthOfYear);</span>
+<span class="nc" id="L997">        mDate.set(Calendar.DAY_OF_MONTH, dayOfMonth);</span>
+<span class="nc" id="L998">    }</span>
+
+    @Override
+    public void onTimeSet(RadialTimePickerDialogFragment radialTimePickerDialog, int hourOfDay, int minute) {
+<span class="nc" id="L1002">        Calendar cal = new GregorianCalendar(0, 0, 0, hourOfDay, minute);</span>
+<span class="nc" id="L1003">        mTimeTextView.setText(TIME_FORMATTER.format(cal.getTime()));</span>
+<span class="nc" id="L1004">        mTime.set(Calendar.HOUR_OF_DAY, hourOfDay);</span>
+<span class="nc" id="L1005">        mTime.set(Calendar.MINUTE, minute);</span>
+<span class="nc" id="L1006">    }</span>
+
+	/**
+	 * Strips formatting from a currency string.
+	 * All non-digit information is removed, but the sign is preserved.
+	 * @param s String to be stripped
+	 * @return Stripped string with all non-digits removed
+	 */
+	public static String stripCurrencyFormatting(String s){
+<span class="pc bpc" id="L1015" title="1 of 2 branches missed.">        if (s.length() == 0)</span>
+<span class="nc" id="L1016">            return s;</span>
+		//remove all currency formatting and anything else which is not a number
+<span class="fc" id="L1018">        String sign = s.trim().substring(0,1);</span>
+<span class="fc" id="L1019">        String stripped = s.trim().replaceAll(&quot;\\D*&quot;, &quot;&quot;);</span>
+<span class="pc bpc" id="L1020" title="1 of 2 branches missed.">        if (stripped.length() == 0)</span>
+<span class="nc" id="L1021">            return &quot;&quot;;</span>
+<span class="pc bpc" id="L1022" title="2 of 4 branches missed.">        if (sign.equals(&quot;+&quot;) || sign.equals(&quot;-&quot;)){</span>
+<span class="nc" id="L1023">            stripped = sign + stripped;</span>
+        }
+<span class="fc" id="L1025">		return stripped;</span>
+	}
+
+    /**
+     * Flag for checking where the TransferFunds dialog has already been displayed to the user
+     */
+<span class="nc" id="L1031">    boolean mCurrencyConversionDone = false;</span>
+
+    @Override
+    public void transferComplete(Money amount) {
+<span class="nc" id="L1035">        mCurrencyConversionDone = true;</span>
+<span class="nc" id="L1036">        mSplitQuantity = amount;</span>
+<span class="nc" id="L1037">    }</span>
+
+    @Override
+    public void onRecurrenceSet(String rrule) {
+<span class="nc" id="L1041">        mRecurrenceRule = rrule;</span>
+<span class="nc" id="L1042">        String repeatString = getString(R.string.label_tap_to_create_schedule);</span>
+<span class="nc bnc" id="L1043" title="All 2 branches missed.">        if (mRecurrenceRule != null){</span>
+<span class="nc" id="L1044">            mEventRecurrence.parse(mRecurrenceRule);</span>
+<span class="nc" id="L1045">            repeatString = EventRecurrenceFormatter.getRepeatString(getActivity(), getResources(), mEventRecurrence, true);</span>
+
+            //when recurrence is set, we will definitely be saving a template
+<span class="nc" id="L1048">            mSaveTemplateCheckbox.setChecked(true);</span>
+<span class="nc" id="L1049">            mSaveTemplateCheckbox.setEnabled(false);</span>
+        } else {
+<span class="nc" id="L1051">            mSaveTemplateCheckbox.setEnabled(true);</span>
+<span class="nc" id="L1052">            mSaveTemplateCheckbox.setChecked(false);</span>
+        }
+
+<span class="nc" id="L1055">        mRecurrenceTextView.setText(repeatString);</span>
+<span class="nc" id="L1056">    }</span>
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+<span class="nc bnc" id="L1060" title="All 2 branches missed.">        if (resultCode == Activity.RESULT_OK){</span>
+<span class="nc" id="L1061">            List&lt;Split&gt; splitList = data.getParcelableArrayListExtra(UxArgument.SPLIT_LIST);</span>
+<span class="nc" id="L1062">            setSplitList(splitList);</span>
+
+            //once split editor has been used and saved, only allow editing through it
+<span class="nc" id="L1065">            toggleAmountInputEntryMode(false);</span>
+<span class="nc" id="L1066">            setDoubleEntryViewsVisibility(View.GONE);</span>
+<span class="nc" id="L1067">            mOpenSplitEditor.setVisibility(View.VISIBLE);</span>
+        }
+<span class="nc" id="L1069">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

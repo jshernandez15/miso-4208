@@ -1,0 +1,446 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SplitsDbAdapter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.db.adapter</a> &gt; <span class="el_source">SplitsDbAdapter.java</span></div><h1>SplitsDbAdapter.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2014 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ * Copyright (c) 2014 Yongxin Wang &lt;fefe.wyx@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.db.adapter;
+
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteQueryBuilder;
+import android.database.sqlite.SQLiteStatement;
+import android.support.annotation.NonNull;
+import android.text.TextUtils;
+import android.util.Log;
+import android.util.Pair;
+
+import org.gnucash.android.app.GnuCashApplication;
+import org.gnucash.android.db.DatabaseSchema;
+import org.gnucash.android.model.Commodity;
+import org.gnucash.android.model.Money;
+import org.gnucash.android.model.Split;
+import org.gnucash.android.model.TransactionType;
+import org.gnucash.android.util.TimestampHelper;
+
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.gnucash.android.db.DatabaseSchema.SplitEntry;
+import static org.gnucash.android.db.DatabaseSchema.TransactionEntry;
+
+/**
+ * Database adapter for managing transaction splits in the database
+ *
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ * @author Yongxin Wang &lt;fefe.wyx@gmail.com&gt;
+ * @author Oleksandr Tyshkovets &lt;olexandr.tyshkovets@gmail.com&gt;
+ */
+public class SplitsDbAdapter extends DatabaseAdapter&lt;Split&gt; {
+
+    public SplitsDbAdapter(SQLiteDatabase db) {
+<span class="nc" id="L54">        super(db, SplitEntry.TABLE_NAME, new String[]{</span>
+                SplitEntry.COLUMN_MEMO,
+                SplitEntry.COLUMN_TYPE,
+                SplitEntry.COLUMN_VALUE_NUM,
+                SplitEntry.COLUMN_VALUE_DENOM,
+                SplitEntry.COLUMN_QUANTITY_NUM,
+                SplitEntry.COLUMN_QUANTITY_DENOM,
+                SplitEntry.COLUMN_CREATED_AT,
+                SplitEntry.COLUMN_RECONCILE_STATE,
+                SplitEntry.COLUMN_RECONCILE_DATE,
+                SplitEntry.COLUMN_ACCOUNT_UID,
+                SplitEntry.COLUMN_TRANSACTION_UID
+        });
+<span class="nc" id="L67">    }</span>
+
+    /**
+     * Returns application-wide instance of the database adapter
+     * @return SplitsDbAdapter instance
+     */
+    public static SplitsDbAdapter getInstance(){
+<span class="nc" id="L74">        return GnuCashApplication.getSplitsDbAdapter();</span>
+    }
+
+    /**
+     * Adds a split to the database.
+     * The transactions belonging to the split are marked as exported
+     * @param split {@link org.gnucash.android.model.Split} to be recorded in DB
+     */
+    public void addRecord(@NonNull final Split split, UpdateMethod updateMethod){
+<span class="nc" id="L83">        Log.d(LOG_TAG, &quot;Replace transaction split in db&quot;);</span>
+<span class="nc" id="L84">        super.addRecord(split, updateMethod);</span>
+
+<span class="nc" id="L86">        long transactionId = getTransactionID(split.getTransactionUID());</span>
+        //when a split is updated, we want mark the transaction as not exported
+<span class="nc" id="L88">        updateRecord(TransactionEntry.TABLE_NAME, transactionId,</span>
+<span class="nc" id="L89">                TransactionEntry.COLUMN_EXPORTED, String.valueOf(0));</span>
+
+        //modifying a split means modifying the accompanying transaction as well
+<span class="nc" id="L92">        updateRecord(TransactionEntry.TABLE_NAME, transactionId,</span>
+<span class="nc" id="L93">                TransactionEntry.COLUMN_MODIFIED_AT, TimestampHelper.getUtcStringFromTimestamp(TimestampHelper.getTimestampFromNow()));</span>
+<span class="nc" id="L94">    }</span>
+
+    @Override
+    protected @NonNull SQLiteStatement setBindings(@NonNull SQLiteStatement stmt, @NonNull final Split split) {
+<span class="nc" id="L98">        stmt.clearBindings();</span>
+<span class="nc bnc" id="L99" title="All 2 branches missed.">        if (split.getMemo() != null) {</span>
+<span class="nc" id="L100">            stmt.bindString(1, split.getMemo());</span>
+        }
+<span class="nc" id="L102">        stmt.bindString(2, split.getType().name());</span>
+<span class="nc" id="L103">        stmt.bindLong(3, split.getValue().getNumerator());</span>
+<span class="nc" id="L104">        stmt.bindLong(4, split.getValue().getDenominator());</span>
+<span class="nc" id="L105">        stmt.bindLong(5, split.getQuantity().getNumerator());</span>
+<span class="nc" id="L106">        stmt.bindLong(6, split.getQuantity().getDenominator());</span>
+<span class="nc" id="L107">        stmt.bindString(7, split.getCreatedTimestamp().toString());</span>
+<span class="nc" id="L108">        stmt.bindString(8, String.valueOf(split.getReconcileState()));</span>
+<span class="nc" id="L109">        stmt.bindString(9, split.getReconcileDate().toString());</span>
+<span class="nc" id="L110">        stmt.bindString(10, split.getAccountUID());</span>
+<span class="nc" id="L111">        stmt.bindString(11, split.getTransactionUID());</span>
+<span class="nc" id="L112">        stmt.bindString(12, split.getUID());</span>
+
+<span class="nc" id="L114">        return stmt;</span>
+    }
+    /**
+     * Builds a split instance from the data pointed to by the cursor provided
+     * &lt;p&gt;This method will not move the cursor in any way. So the cursor should already by pointing to the correct entry&lt;/p&gt;
+     * @param cursor Cursor pointing to transaction record in database
+     * @return {@link org.gnucash.android.model.Split} instance
+     */
+    public Split buildModelInstance(@NonNull final Cursor cursor){
+<span class="nc" id="L123">        long valueNum       = cursor.getLong(cursor.getColumnIndexOrThrow(SplitEntry.COLUMN_VALUE_NUM));</span>
+<span class="nc" id="L124">        long valueDenom     = cursor.getLong(cursor.getColumnIndexOrThrow(SplitEntry.COLUMN_VALUE_DENOM));</span>
+<span class="nc" id="L125">        long quantityNum    = cursor.getLong(cursor.getColumnIndexOrThrow(SplitEntry.COLUMN_QUANTITY_NUM));</span>
+<span class="nc" id="L126">        long quantityDenom  = cursor.getLong(cursor.getColumnIndexOrThrow(SplitEntry.COLUMN_QUANTITY_DENOM));</span>
+<span class="nc" id="L127">        String typeName     = cursor.getString(cursor.getColumnIndexOrThrow(SplitEntry.COLUMN_TYPE));</span>
+<span class="nc" id="L128">        String accountUID   = cursor.getString(cursor.getColumnIndexOrThrow(SplitEntry.COLUMN_ACCOUNT_UID));</span>
+<span class="nc" id="L129">        String transxUID    = cursor.getString(cursor.getColumnIndexOrThrow(SplitEntry.COLUMN_TRANSACTION_UID));</span>
+<span class="nc" id="L130">        String memo         = cursor.getString(cursor.getColumnIndexOrThrow(SplitEntry.COLUMN_MEMO));</span>
+<span class="nc" id="L131">        String reconcileState = cursor.getString(cursor.getColumnIndexOrThrow(SplitEntry.COLUMN_RECONCILE_STATE));</span>
+<span class="nc" id="L132">        String reconcileDate  = cursor.getString(cursor.getColumnIndexOrThrow(SplitEntry.COLUMN_RECONCILE_DATE));</span>
+
+<span class="nc" id="L134">        String transactionCurrency = getAttribute(TransactionEntry.TABLE_NAME, transxUID, TransactionEntry.COLUMN_CURRENCY);</span>
+<span class="nc" id="L135">        Money value = new Money(valueNum, valueDenom, transactionCurrency);</span>
+<span class="nc" id="L136">        String currencyCode = getAccountCurrencyCode(accountUID);</span>
+<span class="nc" id="L137">        Money quantity = new Money(quantityNum, quantityDenom, currencyCode);</span>
+
+<span class="nc" id="L139">        Split split = new Split(value, accountUID);</span>
+<span class="nc" id="L140">        split.setQuantity(quantity);</span>
+<span class="nc" id="L141">        populateBaseModelAttributes(cursor, split);</span>
+<span class="nc" id="L142">        split.setTransactionUID(transxUID);</span>
+<span class="nc" id="L143">        split.setType(TransactionType.valueOf(typeName));</span>
+<span class="nc" id="L144">        split.setMemo(memo);</span>
+<span class="nc" id="L145">        split.setReconcileState(reconcileState.charAt(0));</span>
+<span class="nc bnc" id="L146" title="All 4 branches missed.">        if (reconcileDate != null &amp;&amp; !reconcileDate.isEmpty())</span>
+<span class="nc" id="L147">            split.setReconcileDate(TimestampHelper.getTimestampFromUtcString(reconcileDate));</span>
+
+<span class="nc" id="L149">        return split;</span>
+    }
+
+    /**
+     * Returns the sum of the splits for given set of accounts.
+     * This takes into account the kind of movement caused by the split in the account (which also depends on account type)
+     * The Caller must make sure all accounts have the currency, which is passed in as currencyCode
+     * @param accountUIDList List of String unique IDs of given set of accounts
+     * @param currencyCode currencyCode for all the accounts in the list
+     * @param hasDebitNormalBalance Does the final balance has normal debit credit meaning
+     * @return Balance of the splits for this account
+     */
+    public Money computeSplitBalance(List&lt;String&gt; accountUIDList, String currencyCode, boolean hasDebitNormalBalance){
+<span class="nc" id="L162">        return calculateSplitBalance(accountUIDList, currencyCode, hasDebitNormalBalance, -1, -1);</span>
+    }
+
+    /**
+     * Returns the sum of the splits for given set of accounts within the specified time range.
+     * This takes into account the kind of movement caused by the split in the account (which also depends on account type)
+     * The Caller must make sure all accounts have the currency, which is passed in as currencyCode
+     * @param accountUIDList List of String unique IDs of given set of accounts
+     * @param currencyCode currencyCode for all the accounts in the list
+     * @param hasDebitNormalBalance Does the final balance has normal debit credit meaning
+     * @param startTimestamp the start timestamp of the time range
+     * @param endTimestamp the end timestamp of the time range
+     * @return Balance of the splits for this account within the specified time range
+     */
+    public Money computeSplitBalance(List&lt;String&gt; accountUIDList, String currencyCode, boolean hasDebitNormalBalance,
+                                     long startTimestamp, long endTimestamp){
+<span class="nc" id="L178">        return calculateSplitBalance(accountUIDList, currencyCode, hasDebitNormalBalance, startTimestamp, endTimestamp);</span>
+    }
+
+
+    private Money calculateSplitBalance(List&lt;String&gt; accountUIDList, String currencyCode, boolean hasDebitNormalBalance,
+                          long startTimestamp, long endTimestamp){
+<span class="nc bnc" id="L184" title="All 2 branches missed.">        if (accountUIDList.size() == 0){</span>
+<span class="nc" id="L185">            return new Money(&quot;0&quot;, currencyCode);</span>
+        }
+
+        Cursor cursor;
+<span class="nc" id="L189">        String[] selectionArgs = null;</span>
+<span class="nc" id="L190">        String selection = DatabaseSchema.AccountEntry.TABLE_NAME + &quot;_&quot; + DatabaseSchema.CommonColumns.COLUMN_UID + &quot; in ( '&quot; + TextUtils.join(&quot;' , '&quot;, accountUIDList) + &quot;' ) AND &quot; +</span>
+                TransactionEntry.TABLE_NAME + &quot;_&quot; + TransactionEntry.COLUMN_TEMPLATE + &quot; = 0&quot;;
+
+<span class="nc bnc" id="L193" title="All 4 branches missed.">        if (startTimestamp != -1 &amp;&amp; endTimestamp != -1) {</span>
+<span class="nc" id="L194">            selection += &quot; AND &quot; + TransactionEntry.TABLE_NAME + &quot;_&quot; + TransactionEntry.COLUMN_TIMESTAMP + &quot; BETWEEN ? AND ? &quot;;</span>
+<span class="nc" id="L195">            selectionArgs = new String[]{String.valueOf(startTimestamp), String.valueOf(endTimestamp)};</span>
+<span class="nc bnc" id="L196" title="All 4 branches missed.">        } else if (startTimestamp == -1 &amp;&amp; endTimestamp != -1) {</span>
+<span class="nc" id="L197">            selection += &quot; AND &quot; + TransactionEntry.TABLE_NAME + &quot;_&quot; + TransactionEntry.COLUMN_TIMESTAMP + &quot; &lt;= ?&quot;;</span>
+<span class="nc" id="L198">            selectionArgs = new String[]{String.valueOf(endTimestamp)};</span>
+<span class="nc bnc" id="L199" title="All 2 branches missed.">        } else if (startTimestamp != -1/* &amp;&amp; endTimestamp == -1*/) {</span>
+<span class="nc" id="L200">            selection += &quot; AND &quot; + TransactionEntry.TABLE_NAME + &quot;_&quot; + TransactionEntry.COLUMN_TIMESTAMP + &quot; &gt;= ?&quot;;</span>
+<span class="nc" id="L201">            selectionArgs = new String[]{String.valueOf(startTimestamp)};</span>
+        }
+
+<span class="nc" id="L204">        cursor = mDb.query(&quot;trans_split_acct&quot;,</span>
+                new String[]{&quot;TOTAL ( CASE WHEN &quot; + SplitEntry.TABLE_NAME + &quot;_&quot; + SplitEntry.COLUMN_TYPE + &quot; = 'DEBIT' THEN &quot; +
+                        SplitEntry.TABLE_NAME + &quot;_&quot; + SplitEntry.COLUMN_QUANTITY_NUM + &quot; ELSE - &quot; +
+                        SplitEntry.TABLE_NAME + &quot;_&quot; + SplitEntry.COLUMN_QUANTITY_NUM + &quot; END )&quot;,
+                        SplitEntry.TABLE_NAME + &quot;_&quot; + SplitEntry.COLUMN_QUANTITY_DENOM,
+                        DatabaseSchema.AccountEntry.TABLE_NAME + &quot;_&quot; + DatabaseSchema.AccountEntry.COLUMN_CURRENCY},
+                selection, selectionArgs, DatabaseSchema.AccountEntry.TABLE_NAME + &quot;_&quot; + DatabaseSchema.AccountEntry.COLUMN_CURRENCY, null, null);
+
+        try {
+<span class="nc" id="L213">            Money total = Money.createZeroInstance(currencyCode);</span>
+<span class="nc" id="L214">            CommoditiesDbAdapter commoditiesDbAdapter = null;</span>
+<span class="nc" id="L215">            PricesDbAdapter pricesDbAdapter = null;</span>
+<span class="nc" id="L216">            Commodity commodity = null;</span>
+<span class="nc" id="L217">            String currencyUID = null;</span>
+<span class="nc bnc" id="L218" title="All 2 branches missed.">            while (cursor.moveToNext()) {</span>
+<span class="nc" id="L219">                long amount_num = cursor.getLong(0);</span>
+<span class="nc" id="L220">                long amount_denom = cursor.getLong(1);</span>
+<span class="nc" id="L221">                String commodityCode = cursor.getString(2);</span>
+                //Log.d(getClass().getName(), commodity + &quot; &quot; + amount_num + &quot;/&quot; + amount_denom);
+<span class="nc bnc" id="L223" title="All 4 branches missed.">                if (commodityCode.equals(&quot;XXX&quot;) || amount_num == 0) {</span>
+                    // ignore custom currency
+<span class="nc" id="L225">                    continue;</span>
+                }
+<span class="nc bnc" id="L227" title="All 2 branches missed.">                if (!hasDebitNormalBalance) {</span>
+<span class="nc" id="L228">                    amount_num = -amount_num;</span>
+                }
+<span class="nc bnc" id="L230" title="All 2 branches missed.">                if (commodityCode.equals(currencyCode)) {</span>
+                    // currency matches
+<span class="nc" id="L232">                    total = total.add(new Money(amount_num, amount_denom, currencyCode));</span>
+                    //Log.d(getClass().getName(), &quot;currency &quot; + commodity + &quot; sub - total &quot; + total);
+                } else {
+                    // there is a second currency involved
+<span class="nc bnc" id="L236" title="All 2 branches missed.">                    if (commoditiesDbAdapter == null) {</span>
+<span class="nc" id="L237">                        commoditiesDbAdapter = new CommoditiesDbAdapter(mDb);</span>
+<span class="nc" id="L238">                        pricesDbAdapter = new PricesDbAdapter(mDb);</span>
+<span class="nc" id="L239">                        commodity = commoditiesDbAdapter.getCommodity(currencyCode);</span>
+<span class="nc" id="L240">                        currencyUID = commoditiesDbAdapter.getCommodityUID(currencyCode);</span>
+                    }
+                    // get price
+<span class="nc" id="L243">                    String commodityUID = commoditiesDbAdapter.getCommodityUID(commodityCode);</span>
+<span class="nc" id="L244">                    Pair&lt;Long, Long&gt; price = pricesDbAdapter.getPrice(commodityUID, currencyUID);</span>
+<span class="nc bnc" id="L245" title="All 4 branches missed.">                    if (price.first &lt;= 0 || price.second &lt;= 0) {</span>
+                        // no price exists, just ignore it
+<span class="nc" id="L247">                        continue;</span>
+                    }
+<span class="nc" id="L249">                    BigDecimal amount = Money.getBigDecimal(amount_num, amount_denom);</span>
+<span class="nc" id="L250">                    BigDecimal amountConverted = amount.multiply(new BigDecimal(price.first))</span>
+<span class="nc" id="L251">                            .divide(new BigDecimal(price.second), commodity.getSmallestFractionDigits(), BigDecimal.ROUND_HALF_EVEN);</span>
+<span class="nc" id="L252">                    total = total.add(new Money(amountConverted, commodity));</span>
+                    //Log.d(getClass().getName(), &quot;currency &quot; + commodity + &quot; sub - total &quot; + total);
+                }
+<span class="nc" id="L255">            }</span>
+<span class="nc" id="L256">            return total;</span>
+        } finally {
+<span class="nc" id="L258">            cursor.close();</span>
+        }
+    }
+
+    /**
+     * Returns the list of splits for a transaction
+     * @param transactionUID String unique ID of transaction
+     * @return List of {@link org.gnucash.android.model.Split}s
+     */
+    public List&lt;Split&gt; getSplitsForTransaction(String transactionUID){
+<span class="nc" id="L268">        Cursor cursor = fetchSplitsForTransaction(transactionUID);</span>
+<span class="nc" id="L269">        List&lt;Split&gt; splitList = new ArrayList&lt;Split&gt;();</span>
+        try {
+<span class="nc bnc" id="L271" title="All 2 branches missed.">            while (cursor.moveToNext()) {</span>
+<span class="nc" id="L272">                splitList.add(buildModelInstance(cursor));</span>
+            }
+        } finally {
+<span class="nc" id="L275">            cursor.close();</span>
+<span class="nc" id="L276">        }</span>
+<span class="nc" id="L277">        return splitList;</span>
+    }
+
+    /**
+     * Returns the list of splits for a transaction
+     * @param transactionID DB record ID of the transaction
+     * @return List of {@link org.gnucash.android.model.Split}s
+     * @see #getSplitsForTransaction(String)
+     * @see #getTransactionUID(long)
+     */
+    public List&lt;Split&gt; getSplitsForTransaction(long transactionID){
+<span class="nc" id="L288">        return getSplitsForTransaction(getTransactionUID(transactionID));</span>
+    }
+
+    /**
+     * Fetch splits for a given transaction within a specific account
+     * @param transactionUID String unique ID of transaction
+     * @param accountUID String unique ID of account
+     * @return List of splits
+     */
+    public List&lt;Split&gt; getSplitsForTransactionInAccount(String transactionUID, String accountUID){
+<span class="nc" id="L298">        Cursor cursor = fetchSplitsForTransactionAndAccount(transactionUID, accountUID);</span>
+<span class="nc" id="L299">        List&lt;Split&gt; splitList = new ArrayList&lt;Split&gt;();</span>
+<span class="nc bnc" id="L300" title="All 2 branches missed.">        if (cursor != null){</span>
+<span class="nc bnc" id="L301" title="All 2 branches missed.">            while (cursor.moveToNext()){</span>
+<span class="nc" id="L302">                splitList.add(buildModelInstance(cursor));</span>
+            }
+<span class="nc" id="L304">            cursor.close();</span>
+        }
+<span class="nc" id="L306">        return splitList;</span>
+    }
+
+    /**
+     * Fetches a collection of splits for a given condition and sorted by &lt;code&gt;sortOrder&lt;/code&gt;
+     * @param where String condition, formatted as SQL WHERE clause
+     * @param whereArgs where args
+     * @param sortOrder Sort order for the returned records
+     * @return Cursor to split records
+     */
+    public Cursor fetchSplits(String where, String[] whereArgs, String sortOrder){
+<span class="nc" id="L317">        return mDb.query(SplitEntry.TABLE_NAME,</span>
+                null, where, whereArgs, null, null, sortOrder);
+    }
+
+    /**
+     * Returns a Cursor to a dataset of splits belonging to a specific transaction
+     * @param transactionUID Unique idendtifier of the transaction
+     * @return Cursor to splits
+     */
+    public Cursor fetchSplitsForTransaction(String transactionUID){
+<span class="nc" id="L327">        Log.v(LOG_TAG, &quot;Fetching all splits for transaction UID &quot; + transactionUID);</span>
+<span class="nc" id="L328">        return mDb.query(SplitEntry.TABLE_NAME,</span>
+                null, SplitEntry.COLUMN_TRANSACTION_UID + &quot; = ?&quot;,
+                new String[]{transactionUID},
+                null, null, null);
+    }
+
+    /**
+     * Fetches splits for a given account
+     * @param accountUID String unique ID of account
+     * @return Cursor containing splits dataset
+     */
+    public Cursor fetchSplitsForAccount(String accountUID){
+<span class="nc" id="L340">        Log.d(LOG_TAG, &quot;Fetching all splits for account UID &quot; + accountUID);</span>
+
+        //This is more complicated than a simple &quot;where account_uid=?&quot; query because
+        // we need to *not* return any splits which belong to recurring transactions
+<span class="nc" id="L344">        SQLiteQueryBuilder queryBuilder = new SQLiteQueryBuilder();</span>
+<span class="nc" id="L345">        queryBuilder.setTables(TransactionEntry.TABLE_NAME</span>
+                + &quot; INNER JOIN &quot; +  SplitEntry.TABLE_NAME + &quot; ON &quot;
+                + TransactionEntry.TABLE_NAME + &quot;.&quot; + TransactionEntry.COLUMN_UID + &quot; = &quot;
+                + SplitEntry.TABLE_NAME + &quot;.&quot; + SplitEntry.COLUMN_TRANSACTION_UID);
+<span class="nc" id="L349">        queryBuilder.setDistinct(true);</span>
+<span class="nc" id="L350">        String[] projectionIn = new String[]{SplitEntry.TABLE_NAME + &quot;.*&quot;};</span>
+<span class="nc" id="L351">        String selection = SplitEntry.TABLE_NAME + &quot;.&quot; + SplitEntry.COLUMN_ACCOUNT_UID + &quot; = ?&quot;</span>
+                + &quot; AND &quot; + TransactionEntry.TABLE_NAME + &quot;.&quot; + TransactionEntry.COLUMN_TEMPLATE + &quot; = 0&quot;;
+<span class="nc" id="L353">        String[] selectionArgs = new String[]{accountUID};</span>
+<span class="nc" id="L354">        String sortOrder = TransactionEntry.TABLE_NAME + &quot;.&quot; + TransactionEntry.COLUMN_TIMESTAMP + &quot; DESC&quot;;</span>
+
+<span class="nc" id="L356">        return queryBuilder.query(mDb, projectionIn, selection, selectionArgs, null, null, sortOrder);</span>
+
+    }
+
+    /**
+     * Returns a cursor to splits for a given transaction and account
+     * @param transactionUID Unique idendtifier of the transaction
+     * @param accountUID String unique ID of account
+     * @return Cursor to splits data set
+     */
+    public Cursor fetchSplitsForTransactionAndAccount(String transactionUID, String accountUID){
+<span class="nc bnc" id="L367" title="All 4 branches missed.">        if (transactionUID == null || accountUID == null)</span>
+<span class="nc" id="L368">            return null;</span>
+
+<span class="nc" id="L370">        Log.v(LOG_TAG, &quot;Fetching all splits for transaction ID &quot; + transactionUID</span>
+                + &quot;and account ID &quot; + accountUID);
+<span class="nc" id="L372">        return mDb.query(SplitEntry.TABLE_NAME,</span>
+                null, SplitEntry.COLUMN_TRANSACTION_UID + &quot; = ? AND &quot;
+                        + SplitEntry.COLUMN_ACCOUNT_UID + &quot; = ?&quot;,
+                new String[]{transactionUID, accountUID},
+                null, null, SplitEntry.COLUMN_VALUE_NUM + &quot; ASC&quot;);
+    }
+
+    /**
+     * Returns the unique ID of a transaction given the database record ID of same
+     * @param transactionId Database record ID of the transaction
+     * @return String unique ID of the transaction or null if transaction with the ID cannot be found.
+     */
+    public String getTransactionUID(long transactionId){
+<span class="nc" id="L385">        Cursor cursor = mDb.query(TransactionEntry.TABLE_NAME,</span>
+                new String[]{TransactionEntry.COLUMN_UID},
+                TransactionEntry._ID + &quot; = &quot; + transactionId,
+                null, null, null, null);
+
+        try {
+<span class="nc bnc" id="L391" title="All 2 branches missed.">            if (cursor.moveToFirst()) {</span>
+<span class="nc" id="L392">                return cursor.getString(cursor.getColumnIndexOrThrow(TransactionEntry.COLUMN_UID));</span>
+            } else {
+<span class="nc" id="L394">                throw new IllegalArgumentException(&quot;transaction &quot; + transactionId + &quot; does not exist&quot;);</span>
+            }
+        } finally {
+<span class="nc" id="L397">            cursor.close();</span>
+        }
+    }
+
+    @Override
+    public boolean deleteRecord(long rowId) {
+<span class="nc" id="L403">        Split split = getRecord(rowId);</span>
+<span class="nc" id="L404">        String transactionUID = split.getTransactionUID();</span>
+<span class="nc bnc" id="L405" title="All 2 branches missed.">        boolean result = mDb.delete(SplitEntry.TABLE_NAME, SplitEntry._ID + &quot;=&quot; + rowId, null) &gt; 0;</span>
+
+<span class="nc bnc" id="L407" title="All 2 branches missed.">        if (!result) //we didn't delete for whatever reason, invalid rowId etc</span>
+<span class="nc" id="L408">            return false;</span>
+
+        //if we just deleted the last split, then remove the transaction from db
+<span class="nc" id="L411">        Cursor cursor = fetchSplitsForTransaction(transactionUID);</span>
+        try {
+<span class="nc bnc" id="L413" title="All 2 branches missed.">            if (cursor.getCount() &gt; 0) {</span>
+<span class="nc" id="L414">                long transactionID = getTransactionID(transactionUID);</span>
+<span class="nc bnc" id="L415" title="All 2 branches missed.">                result = mDb.delete(TransactionEntry.TABLE_NAME,</span>
+                        TransactionEntry._ID + &quot;=&quot; + transactionID, null) &gt; 0;
+            }
+        } finally {
+<span class="nc" id="L419">            cursor.close();</span>
+<span class="nc" id="L420">        }</span>
+<span class="nc" id="L421">        return result;</span>
+    }
+
+    /**
+     * Returns the database record ID for the specified transaction UID
+     * @param transactionUID Unique idendtifier of the transaction
+     * @return Database record ID for the transaction
+     */
+    public long getTransactionID(String transactionUID) {
+<span class="nc" id="L430">        Cursor c = mDb.query(TransactionEntry.TABLE_NAME,</span>
+                new String[]{TransactionEntry._ID},
+                TransactionEntry.COLUMN_UID + &quot;=?&quot;,
+                new String[]{transactionUID}, null, null, null);
+        try {
+<span class="nc bnc" id="L435" title="All 2 branches missed.">            if (c.moveToFirst()) {</span>
+<span class="nc" id="L436">                return c.getLong(0);</span>
+            } else {
+<span class="nc" id="L438">                throw new IllegalArgumentException(&quot;transaction &quot; + transactionUID + &quot; does not exist&quot;);</span>
+            }
+        } finally {
+<span class="nc" id="L441">            c.close();</span>
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

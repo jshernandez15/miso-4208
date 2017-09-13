@@ -1,0 +1,385 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TransactionsListFragment.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.ui.transaction</a> &gt; <span class="el_source">TransactionsListFragment.java</span></div><h1>TransactionsListFragment.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2012 - 2014 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.ui.transaction;
+
+import android.content.Context;
+import android.content.Intent;
+import android.content.res.Configuration;
+import android.database.Cursor;
+import android.os.Bundle;
+import android.support.annotation.Nullable;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.LoaderManager.LoaderCallbacks;
+import android.support.v4.content.Loader;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.PopupMenu;
+import android.support.v7.widget.RecyclerView;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.TextView;
+
+import org.gnucash.android.R;
+import org.gnucash.android.app.GnuCashApplication;
+import org.gnucash.android.db.DatabaseCursorLoader;
+import org.gnucash.android.db.DatabaseSchema;
+import org.gnucash.android.db.adapter.AccountsDbAdapter;
+import org.gnucash.android.db.adapter.DatabaseAdapter;
+import org.gnucash.android.db.adapter.SplitsDbAdapter;
+import org.gnucash.android.db.adapter.TransactionsDbAdapter;
+import org.gnucash.android.model.Money;
+import org.gnucash.android.model.Split;
+import org.gnucash.android.model.Transaction;
+import org.gnucash.android.ui.common.FormActivity;
+import org.gnucash.android.ui.common.Refreshable;
+import org.gnucash.android.ui.common.UxArgument;
+import org.gnucash.android.ui.homescreen.WidgetConfigurationActivity;
+import org.gnucash.android.ui.settings.PreferenceActivity;
+import org.gnucash.android.ui.transaction.dialog.BulkMoveDialogFragment;
+import org.gnucash.android.ui.util.CursorRecyclerAdapter;
+import org.gnucash.android.ui.util.widget.EmptyRecyclerView;
+
+import java.util.List;
+
+import butterknife.BindView;
+import butterknife.ButterKnife;
+
+/**
+ * List Fragment for displaying list of transactions for an account
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ */
+<span class="nc" id="L74">public class TransactionsListFragment extends Fragment implements</span>
+        Refreshable, LoaderCallbacks&lt;Cursor&gt;{
+
+	/**
+	 * Logging tag
+	 */
+	protected static final String LOG_TAG = &quot;TransactionListFragment&quot;;
+
+    private TransactionsDbAdapter mTransactionsDbAdapter;
+    private String mAccountUID;
+
+<span class="nc" id="L85">	private boolean mUseCompactView = false;</span>
+
+	private TransactionRecyclerAdapter mTransactionRecyclerAdapter;
+	@BindView(R.id.transaction_recycler_view) EmptyRecyclerView mRecyclerView;
+
+
+	@Override
+ 	public void onCreate(Bundle savedInstanceState) {		
+<span class="nc" id="L93">		super.onCreate(savedInstanceState);</span>
+<span class="nc" id="L94">		setHasOptionsMenu(true);</span>
+<span class="nc" id="L95">		Bundle args = getArguments();</span>
+<span class="nc" id="L96">		mAccountUID = args.getString(UxArgument.SELECTED_ACCOUNT_UID);</span>
+
+<span class="nc" id="L98">		mUseCompactView = PreferenceActivity.getActiveBookSharedPreferences()</span>
+<span class="nc bnc" id="L99" title="All 2 branches missed.">				.getBoolean(getActivity().getString(R.string.key_use_compact_list), !GnuCashApplication.isDoubleEntryEnabled());</span>
+		//if there was a local override of the global setting, respect it
+<span class="nc bnc" id="L101" title="All 2 branches missed.">		if (savedInstanceState != null)</span>
+<span class="nc" id="L102">			mUseCompactView = savedInstanceState.getBoolean(getString(R.string.key_use_compact_list), mUseCompactView);</span>
+
+<span class="nc" id="L104">		mTransactionsDbAdapter = TransactionsDbAdapter.getInstance();</span>
+<span class="nc" id="L105">	}</span>
+
+	@Override
+	public void onSaveInstanceState(Bundle outState) {
+<span class="nc" id="L109">		super.onSaveInstanceState(outState);</span>
+<span class="nc" id="L110">		outState.putBoolean(getString(R.string.key_use_compact_list), mUseCompactView);</span>
+<span class="nc" id="L111">	}</span>
+
+	@Override
+	public View onCreateView(LayoutInflater inflater, ViewGroup container,
+			Bundle savedInstanceState) {
+<span class="nc" id="L116">		View view = inflater.inflate(R.layout.fragment_transactions_list, container, false);</span>
+<span class="nc" id="L117">		ButterKnife.bind(this, view);</span>
+
+<span class="nc" id="L119">		mRecyclerView.setHasFixedSize(true);</span>
+<span class="nc bnc" id="L120" title="All 2 branches missed.">		if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {</span>
+<span class="nc" id="L121">			GridLayoutManager gridLayoutManager = new GridLayoutManager(getActivity(), 2);</span>
+<span class="nc" id="L122">			mRecyclerView.setLayoutManager(gridLayoutManager);</span>
+<span class="nc" id="L123">		} else {</span>
+<span class="nc" id="L124">			LinearLayoutManager mLayoutManager = new LinearLayoutManager(getActivity());</span>
+<span class="nc" id="L125">			mRecyclerView.setLayoutManager(mLayoutManager);</span>
+		}
+<span class="nc" id="L127">		mRecyclerView.setEmptyView(view.findViewById(R.id.empty_view));</span>
+
+<span class="nc" id="L129">		return view;</span>
+	}
+
+	@Override
+	public void onActivityCreated(Bundle savedInstanceState) {
+<span class="nc" id="L134">		super.onActivityCreated(savedInstanceState);</span>
+		
+<span class="nc" id="L136">		ActionBar aBar = ((AppCompatActivity) getActivity()).getSupportActionBar();</span>
+<span class="nc" id="L137">		aBar.setDisplayShowTitleEnabled(false);</span>
+<span class="nc" id="L138">		aBar.setDisplayHomeAsUpEnabled(true);</span>
+
+<span class="nc" id="L140">		mTransactionRecyclerAdapter = new TransactionRecyclerAdapter(null);</span>
+<span class="nc" id="L141">		mRecyclerView.setAdapter(mTransactionRecyclerAdapter);</span>
+
+<span class="nc" id="L143">		setHasOptionsMenu(true);		</span>
+<span class="nc" id="L144">	}</span>
+
+    /**
+     * Refresh the list with transactions from account with ID &lt;code&gt;accountId&lt;/code&gt;
+     * @param accountUID GUID of account to load transactions from
+     */
+    @Override
+	public void refresh(String accountUID){
+<span class="nc" id="L152">		mAccountUID = accountUID;</span>
+<span class="nc" id="L153">		refresh();</span>
+<span class="nc" id="L154">	}</span>
+
+    /**
+     * Reload the list of transactions and recompute account balances
+     */
+    @Override
+	public void refresh(){
+<span class="nc" id="L161">		getLoaderManager().restartLoader(0, null, this);</span>
+<span class="nc" id="L162">	}</span>
+	
+	@Override
+	public void onResume() {
+<span class="nc" id="L166">		super.onResume();</span>
+<span class="nc" id="L167">		((TransactionsActivity)getActivity()).updateNavigationSelection();</span>
+<span class="nc" id="L168">		refresh();</span>
+<span class="nc" id="L169">	}</span>
+
+	public void onListItemClick(long id) {
+<span class="nc" id="L172">		Intent intent = new Intent(getActivity(), TransactionDetailActivity.class);</span>
+<span class="nc" id="L173">		intent.putExtra(UxArgument.SELECTED_TRANSACTION_UID, mTransactionsDbAdapter.getUID(id));</span>
+<span class="nc" id="L174">		intent.putExtra(UxArgument.SELECTED_ACCOUNT_UID, mAccountUID);</span>
+<span class="nc" id="L175">		startActivity(intent);</span>
+//		mTransactionEditListener.editTransaction(mTransactionsDbAdapter.getUID(id));
+<span class="nc" id="L177">	}</span>
+
+	@Override
+	public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+<span class="nc" id="L181">		inflater.inflate(R.menu.transactions_list_actions, menu);	</span>
+<span class="nc" id="L182">	}</span>
+
+	@Override
+	public void onPrepareOptionsMenu(Menu menu) {
+<span class="nc" id="L186">		super.onPrepareOptionsMenu(menu);</span>
+<span class="nc" id="L187">		MenuItem item = menu.findItem(R.id.menu_compact_trn_view);</span>
+<span class="nc" id="L188">		item.setChecked(mUseCompactView);</span>
+<span class="nc" id="L189">		item.setEnabled(GnuCashApplication.isDoubleEntryEnabled()); //always compact for single-entry</span>
+<span class="nc" id="L190">	}</span>
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+<span class="nc bnc" id="L194" title="All 2 branches missed.">		switch (item.getItemId()) {</span>
+			case R.id.menu_compact_trn_view:
+<span class="nc bnc" id="L196" title="All 2 branches missed.">				item.setChecked(!item.isChecked());</span>
+<span class="nc bnc" id="L197" title="All 2 branches missed.">				mUseCompactView = !mUseCompactView;</span>
+<span class="nc" id="L198">				refresh();</span>
+<span class="nc" id="L199">				return true;</span>
+			default:
+<span class="nc" id="L201">                return super.onOptionsItemSelected(item);</span>
+        }
+	}
+	
+	@Override
+	public Loader&lt;Cursor&gt; onCreateLoader(int arg0, Bundle arg1) {
+<span class="nc" id="L207">		Log.d(LOG_TAG, &quot;Creating transactions loader&quot;);</span>
+<span class="nc" id="L208">		return new TransactionsCursorLoader(getActivity(), mAccountUID);</span>
+	}
+
+	@Override
+	public void onLoadFinished(Loader&lt;Cursor&gt; loader, Cursor cursor) {
+<span class="nc" id="L213">		Log.d(LOG_TAG, &quot;Transactions loader finished. Swapping in cursor&quot;);</span>
+<span class="nc" id="L214">		mTransactionRecyclerAdapter.swapCursor(cursor);</span>
+<span class="nc" id="L215">		mTransactionRecyclerAdapter.notifyDataSetChanged();</span>
+<span class="nc" id="L216">	}</span>
+
+	@Override
+	public void onLoaderReset(Loader&lt;Cursor&gt; loader) {
+<span class="nc" id="L220">		Log.d(LOG_TAG, &quot;Resetting transactions loader&quot;);</span>
+<span class="nc" id="L221">		mTransactionRecyclerAdapter.swapCursor(null);</span>
+<span class="nc" id="L222">	}</span>
+
+	/**
+	 * {@link DatabaseCursorLoader} for loading transactions asynchronously from the database
+	 * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+	 */
+	protected static class TransactionsCursorLoader extends DatabaseCursorLoader {
+		private String accountUID;
+		
+		public TransactionsCursorLoader(Context context, String accountUID) {
+<span class="nc" id="L232">			super(context);			</span>
+<span class="nc" id="L233">			this.accountUID = accountUID;</span>
+<span class="nc" id="L234">		}</span>
+		
+		@Override
+		public Cursor loadInBackground() {
+<span class="nc" id="L238">			mDatabaseAdapter = TransactionsDbAdapter.getInstance();</span>
+<span class="nc" id="L239">			Cursor c = ((TransactionsDbAdapter) mDatabaseAdapter).fetchAllTransactionsForAccount(accountUID);</span>
+<span class="nc bnc" id="L240" title="All 2 branches missed.">			if (c != null)</span>
+<span class="nc" id="L241">				registerContentObserver(c);</span>
+<span class="nc" id="L242">			return c;</span>
+		}		
+	}
+
+	public class TransactionRecyclerAdapter extends CursorRecyclerAdapter&lt;TransactionRecyclerAdapter.ViewHolder&gt;{
+
+		public static final int ITEM_TYPE_COMPACT 	= 0x111;
+		public static final int ITEM_TYPE_FULL		= 0x100;
+
+<span class="nc" id="L251">		public TransactionRecyclerAdapter(Cursor cursor) {</span>
+<span class="nc" id="L252">			super(cursor);</span>
+<span class="nc" id="L253">		}</span>
+
+		@Override
+		public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+<span class="nc bnc" id="L257" title="All 2 branches missed.">			int layoutRes = viewType == ITEM_TYPE_COMPACT ? R.layout.cardview_compact_transaction : R.layout.cardview_transaction;</span>
+<span class="nc" id="L258">			View v = LayoutInflater.from(parent.getContext())</span>
+<span class="nc" id="L259">					.inflate(layoutRes, parent, false);</span>
+<span class="nc" id="L260">			return new ViewHolder(v);</span>
+		}
+
+		@Override
+		public int getItemViewType(int position) {
+<span class="nc bnc" id="L265" title="All 2 branches missed.">			return mUseCompactView ? ITEM_TYPE_COMPACT : ITEM_TYPE_FULL;</span>
+		}
+
+		@Override
+		public void onBindViewHolderCursor(ViewHolder holder, Cursor cursor) {
+<span class="nc" id="L270">			holder.transactionId = cursor.getLong(cursor.getColumnIndexOrThrow(DatabaseSchema.TransactionEntry._ID));</span>
+
+<span class="nc" id="L272">			String description = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseSchema.TransactionEntry.COLUMN_DESCRIPTION));</span>
+<span class="nc" id="L273">			holder.primaryText.setText(description);</span>
+
+<span class="nc" id="L275">			final String transactionUID = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseSchema.TransactionEntry.COLUMN_UID));</span>
+<span class="nc" id="L276">			Money amount = mTransactionsDbAdapter.getBalance(transactionUID, mAccountUID);</span>
+<span class="nc" id="L277">			TransactionsActivity.displayBalance(holder.transactionAmount, amount);</span>
+
+<span class="nc" id="L279">			long dateMillis = cursor.getLong(cursor.getColumnIndexOrThrow(DatabaseSchema.TransactionEntry.COLUMN_TIMESTAMP));</span>
+<span class="nc" id="L280">			String dateText = TransactionsActivity.getPrettyDateFormat(getActivity(), dateMillis);</span>
+
+<span class="nc" id="L282">			final long id = holder.transactionId;</span>
+<span class="nc" id="L283">			holder.itemView.setOnClickListener(new View.OnClickListener() {</span>
+				@Override
+				public void onClick(View v) {
+<span class="nc" id="L286">					onListItemClick(id);</span>
+<span class="nc" id="L287">				}</span>
+			});
+
+<span class="nc bnc" id="L290" title="All 2 branches missed.">			if (mUseCompactView) {</span>
+<span class="nc" id="L291">				holder.secondaryText.setText(dateText);</span>
+			} else {
+
+<span class="nc" id="L294">				List&lt;Split&gt; splits = SplitsDbAdapter.getInstance().getSplitsForTransaction(transactionUID);</span>
+<span class="nc" id="L295">				String text = &quot;&quot;;</span>
+
+<span class="nc bnc" id="L297" title="All 4 branches missed.">				if (splits.size() == 2 &amp;&amp; splits.get(0).isPairOf(splits.get(1))) {</span>
+<span class="nc bnc" id="L298" title="All 2 branches missed.">					for (Split split : splits) {</span>
+<span class="nc bnc" id="L299" title="All 2 branches missed.">						if (!split.getAccountUID().equals(mAccountUID)) {</span>
+<span class="nc" id="L300">							text = AccountsDbAdapter.getInstance().getFullyQualifiedAccountName(split.getAccountUID());</span>
+<span class="nc" id="L301">							break;</span>
+						}
+<span class="nc" id="L303">					}</span>
+				}
+
+<span class="nc bnc" id="L306" title="All 2 branches missed.">				if (splits.size() &gt; 2) {</span>
+<span class="nc" id="L307">					text = splits.size() + &quot; splits&quot;;</span>
+				}
+<span class="nc" id="L309">				holder.secondaryText.setText(text);</span>
+<span class="nc" id="L310">				holder.transactionDate.setText(dateText);</span>
+
+<span class="nc" id="L312">				holder.editTransaction.setOnClickListener(new View.OnClickListener() {</span>
+					@Override
+					public void onClick(View v) {
+<span class="nc" id="L315">						Intent intent = new Intent(getActivity(), FormActivity.class);</span>
+<span class="nc" id="L316">						intent.putExtra(UxArgument.FORM_TYPE, FormActivity.FormType.TRANSACTION.name());</span>
+<span class="nc" id="L317">						intent.putExtra(UxArgument.SELECTED_TRANSACTION_UID, transactionUID);</span>
+<span class="nc" id="L318">						intent.putExtra(UxArgument.SELECTED_ACCOUNT_UID, mAccountUID);</span>
+<span class="nc" id="L319">						startActivity(intent);</span>
+<span class="nc" id="L320">					}</span>
+				});
+			}
+<span class="nc" id="L323">		}</span>
+
+		public class ViewHolder extends RecyclerView.ViewHolder implements PopupMenu.OnMenuItemClickListener{
+			@BindView(R.id.primary_text) 		public TextView primaryText;
+			@BindView(R.id.secondary_text) 		public TextView secondaryText;
+			@BindView(R.id.transaction_amount)	public TextView transactionAmount;
+			@BindView(R.id.options_menu)		public ImageView optionsMenu;
+
+			//these views are not used in the compact view, hence the nullability
+			@Nullable @BindView(R.id.transaction_date)	public TextView transactionDate;
+			@Nullable @BindView(R.id.edit_transaction)	public ImageView editTransaction;
+
+			long transactionId;
+
+<span class="nc" id="L337">			public ViewHolder(View itemView) {</span>
+<span class="nc" id="L338">				super(itemView);</span>
+<span class="nc" id="L339">				ButterKnife.bind(this, itemView);</span>
+<span class="nc" id="L340">				primaryText.setTextSize(18);</span>
+<span class="nc" id="L341">				optionsMenu.setOnClickListener(new View.OnClickListener() {</span>
+					@Override
+					public void onClick(View v) {
+<span class="nc" id="L344">						PopupMenu popup = new PopupMenu(getActivity(), v);</span>
+<span class="nc" id="L345">						popup.setOnMenuItemClickListener(ViewHolder.this);</span>
+<span class="nc" id="L346">						MenuInflater inflater = popup.getMenuInflater();</span>
+<span class="nc" id="L347">						inflater.inflate(R.menu.transactions_context_menu, popup.getMenu());</span>
+<span class="nc" id="L348">						popup.show();</span>
+<span class="nc" id="L349">					}</span>
+				});
+<span class="nc" id="L351">			}</span>
+
+			@Override
+			public boolean onMenuItemClick(MenuItem item) {
+<span class="nc bnc" id="L355" title="All 4 branches missed.">				switch (item.getItemId()) {</span>
+					case R.id.context_menu_delete:
+<span class="nc" id="L357">						mTransactionsDbAdapter.deleteRecord(transactionId);</span>
+<span class="nc" id="L358">						WidgetConfigurationActivity.updateAllWidgets(getActivity());</span>
+<span class="nc" id="L359">						refresh();</span>
+<span class="nc" id="L360">						return true;</span>
+
+					case R.id.context_menu_duplicate_transaction:
+<span class="nc" id="L363">						Transaction transaction = mTransactionsDbAdapter.getRecord(transactionId);</span>
+<span class="nc" id="L364">						Transaction duplicate = new Transaction(transaction, true);</span>
+<span class="nc" id="L365">						duplicate.setTime(System.currentTimeMillis());</span>
+<span class="nc" id="L366">						mTransactionsDbAdapter.addRecord(duplicate, DatabaseAdapter.UpdateMethod.insert);</span>
+<span class="nc" id="L367">						refresh();</span>
+<span class="nc" id="L368">						return true;</span>
+
+					case R.id.context_menu_move_transaction:
+<span class="nc" id="L371">						long[] ids = new long[]{transactionId};</span>
+<span class="nc" id="L372">						BulkMoveDialogFragment fragment = BulkMoveDialogFragment.newInstance(ids, mAccountUID);</span>
+<span class="nc" id="L373">						fragment.show(getActivity().getSupportFragmentManager(), &quot;bulk_move_transactions&quot;);</span>
+<span class="nc" id="L374">						fragment.setTargetFragment(TransactionsListFragment.this, 0);</span>
+<span class="nc" id="L375">						return true;</span>
+
+					default:
+<span class="nc" id="L378">						return false;</span>
+
+				}
+			}
+		}
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

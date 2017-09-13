@@ -1,0 +1,1139 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GncXmlHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.importer</a> &gt; <span class="el_source">GncXmlHandler.java</span></div><h1>GncXmlHandler.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2013 - 2015 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ * Copyright (c) 2014 - 2015 Yongxin Wang &lt;fefe.wyx@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.importer;
+
+import android.database.sqlite.SQLiteDatabase;
+import android.support.annotation.NonNull;
+import android.util.Log;
+
+import com.crashlytics.android.Crashlytics;
+
+import org.gnucash.android.app.GnuCashApplication;
+import org.gnucash.android.db.DatabaseHelper;
+import org.gnucash.android.db.adapter.AccountsDbAdapter;
+import org.gnucash.android.db.adapter.BooksDbAdapter;
+import org.gnucash.android.db.adapter.BudgetAmountsDbAdapter;
+import org.gnucash.android.db.adapter.BudgetsDbAdapter;
+import org.gnucash.android.db.adapter.CommoditiesDbAdapter;
+import org.gnucash.android.db.adapter.DatabaseAdapter;
+import org.gnucash.android.db.adapter.PricesDbAdapter;
+import org.gnucash.android.db.adapter.RecurrenceDbAdapter;
+import org.gnucash.android.db.adapter.ScheduledActionDbAdapter;
+import org.gnucash.android.db.adapter.SplitsDbAdapter;
+import org.gnucash.android.db.adapter.TransactionsDbAdapter;
+import org.gnucash.android.export.xml.GncXmlHelper;
+import org.gnucash.android.model.Account;
+import org.gnucash.android.model.AccountType;
+import org.gnucash.android.model.BaseModel;
+import org.gnucash.android.model.Book;
+import org.gnucash.android.model.Budget;
+import org.gnucash.android.model.BudgetAmount;
+import org.gnucash.android.model.Commodity;
+import org.gnucash.android.model.Money;
+import org.gnucash.android.model.PeriodType;
+import org.gnucash.android.model.Price;
+import org.gnucash.android.model.Recurrence;
+import org.gnucash.android.model.ScheduledAction;
+import org.gnucash.android.model.Split;
+import org.gnucash.android.model.Transaction;
+import org.gnucash.android.model.TransactionType;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
+
+import java.math.BigDecimal;
+import java.sql.Timestamp;
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Stack;
+import java.util.regex.Pattern;
+
+/**
+ * Handler for parsing the GnuCash XML file.
+ * The discovered accounts and transactions are automatically added to the database
+ *
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ * @author Yongxin Wang &lt;fefe.wyx@gmail.com&gt;
+ */
+public class GncXmlHandler extends DefaultHandler {
+
+    /**
+     * ISO 4217 currency code for &quot;No Currency&quot;
+     */
+    private static final String NO_CURRENCY_CODE    = &quot;XXX&quot;;
+
+    /**
+     * Tag for logging
+     */
+    private static final String LOG_TAG = &quot;GnuCashAccountImporter&quot;;
+
+    /*
+        ^             anchor for start of string
+        #             the literal #
+        (             start of group
+        ?:            indicate a non-capturing group that doesn't generate back-references
+        [0-9a-fA-F]   hexadecimal digit
+        {3}           three times
+        )             end of group
+        {2}           repeat twice
+        $             anchor for end of string
+     */
+    /**
+     * Regular expression for validating color code strings.
+     * Accepts #rgb and #rrggbb
+     */
+    //TODO: Allow use of #aarrggbb format as well
+    public static final String ACCOUNT_COLOR_HEX_REGEX = &quot;^#(?:[0-9a-fA-F]{3}){2}$&quot;;
+
+    /**
+     * Adapter for saving the imported accounts
+     */
+    AccountsDbAdapter mAccountsDbAdapter;
+
+    /**
+     * StringBuilder for accumulating characters between XML tags
+     */
+    StringBuilder mContent;
+
+    /**
+     * Reference to account which is built when each account tag is parsed in the XML file
+     */
+    Account mAccount;
+
+    /**
+     * All the accounts found in a file to be imported, used for bulk import mode
+     */
+    List&lt;Account&gt; mAccountList;
+
+    /**
+     * List of all the template accounts found
+     */
+    List&lt;Account&gt; mTemplatAccountList;
+
+    /**
+     * Map of the tempate accounts to the template transactions UIDs
+     */
+    Map&lt;String, String&gt; mTemplateAccountToTransactionMap;
+
+    /**
+     * Account map for quick referencing from UID
+     */
+    HashMap&lt;String, Account&gt; mAccountMap;
+
+    /**
+     * ROOT account of the imported book
+     */
+    Account mRootAccount;
+
+    /**
+     * Transaction instance which will be built for each transaction found
+     */
+    Transaction mTransaction;
+
+    /**
+     * All the transaction instances found in a file to be inserted, used in bulk mode
+     */
+    List&lt;Transaction&gt; mTransactionList;
+
+    /**
+     * All the template transactions found during parsing of the XML
+     */
+    List&lt;Transaction&gt; mTemplateTransactions;
+
+    /**
+     * Accumulate attributes of splits found in this object
+     */
+    Split mSplit;
+
+    /**
+     * (Absolute) quantity of the split, which uses split account currency
+     */
+    BigDecimal mQuantity;
+
+    /**
+     * (Absolute) value of the split, which uses transaction currency
+     */
+    BigDecimal mValue;
+
+    /**
+     * price table entry
+     */
+    Price mPrice;
+
+    boolean mPriceCommodity;
+    boolean mPriceCurrency;
+
+    List&lt;Price&gt; mPriceList;
+
+    /**
+     * Whether the quantity is negative
+     */
+    boolean mNegativeQuantity;
+
+    /**
+     * The list for all added split for autobalancing
+     */
+    List&lt;Split&gt; mAutoBalanceSplits;
+
+    /**
+     * Ignore certain elements in GnuCash XML file, such as &quot;&lt;gnc:template-transactions&gt;&quot;
+     */
+<span class="nc" id="L202">    String mIgnoreElement = null;</span>
+
+    /**
+     * {@link ScheduledAction} instance for each scheduled action parsed
+     */
+    ScheduledAction mScheduledAction;
+
+    /**
+     * List of scheduled actions to be bulk inserted
+     */
+    List&lt;ScheduledAction&gt; mScheduledActionsList;
+
+    /**
+     * List of budgets which have been parsed from XML
+     */
+    List&lt;Budget&gt; mBudgetList;
+    Budget mBudget;
+    Recurrence mRecurrence;
+    BudgetAmount mBudgetAmount;
+
+<span class="nc" id="L222">    boolean mInColorSlot        = false;</span>
+<span class="nc" id="L223">    boolean mInPlaceHolderSlot  = false;</span>
+<span class="nc" id="L224">    boolean mInFavoriteSlot     = false;</span>
+<span class="nc" id="L225">    boolean mISO4217Currency    = false;</span>
+<span class="nc" id="L226">    boolean mIsDatePosted       = false;</span>
+<span class="nc" id="L227">    boolean mIsDateEntered      = false;</span>
+<span class="nc" id="L228">    boolean mIsNote             = false;</span>
+<span class="nc" id="L229">    boolean mInDefaultTransferAccount = false;</span>
+<span class="nc" id="L230">    boolean mInExported         = false;</span>
+<span class="nc" id="L231">    boolean mInTemplates        = false;</span>
+<span class="nc" id="L232">    boolean mInSplitAccountSlot = false;</span>
+<span class="nc" id="L233">    boolean mInCreditNumericSlot = false;</span>
+<span class="nc" id="L234">    boolean mInDebitNumericSlot = false;</span>
+<span class="nc" id="L235">    boolean mIsScheduledStart   = false;</span>
+<span class="nc" id="L236">    boolean mIsScheduledEnd     = false;</span>
+<span class="nc" id="L237">    boolean mIsLastRun          = false;</span>
+<span class="nc" id="L238">    boolean mIsRecurrenceStart  = false;</span>
+<span class="nc" id="L239">    boolean mInBudgetSlot       = false;</span>
+
+    /**
+     * Saves the attribute of the slot tag
+     * Used for determining where we are in the budget amounts
+     */
+<span class="nc" id="L245">    String mSlotTagAttribute = null;</span>
+
+<span class="nc" id="L247">    String mBudgetAmountAccountUID = null;</span>
+
+    /**
+     * Multiplier for the recurrence period type. e.g. period type of week and multiplier of 2 means bi-weekly
+     */
+<span class="nc" id="L252">    int mRecurrenceMultiplier   = 1;</span>
+
+    /**
+     * Flag which says to ignore template transactions until we successfully parse a split amount
+     * Is updated for each transaction template split parsed
+     */
+<span class="nc" id="L258">    boolean mIgnoreTemplateTransaction = true;</span>
+
+    /**
+     * Flag which notifies the handler to ignore a scheduled action because some error occurred during parsing
+     */
+<span class="nc" id="L263">    boolean mIgnoreScheduledAction = false;</span>
+
+    /**
+     * Used for parsing old backup files where recurrence was saved inside the transaction.
+     * Newer backup files will not require this
+     * @deprecated Use the new scheduled action elements instead
+     */
+<span class="nc" id="L270">    @Deprecated</span>
+    private long mRecurrencePeriod = 0;
+
+    private TransactionsDbAdapter mTransactionsDbAdapter;
+
+    private ScheduledActionDbAdapter mScheduledActionsDbAdapter;
+
+    private CommoditiesDbAdapter mCommoditiesDbAdapter;
+
+    private PricesDbAdapter mPricesDbAdapter;
+
+    private Map&lt;String, Integer&gt; mCurrencyCount;
+
+    private BudgetsDbAdapter mBudgetsDbAdapter;
+    private Book mBook;
+    private SQLiteDatabase mainDb;
+
+    /**
+     * Creates a handler for handling XML stream events when parsing the XML backup file
+     */
+<span class="nc" id="L290">    public GncXmlHandler() {</span>
+<span class="nc" id="L291">        init();</span>
+<span class="nc" id="L292">    }</span>
+
+    /**
+     * Initialize the GnuCash XML handler
+     */
+    private void init() {
+<span class="nc" id="L298">        mBook = new Book();</span>
+
+<span class="nc" id="L300">        DatabaseHelper databaseHelper = new DatabaseHelper(GnuCashApplication.getAppContext(), mBook.getUID());</span>
+<span class="nc" id="L301">        mainDb = databaseHelper.getWritableDatabase();</span>
+<span class="nc" id="L302">        mTransactionsDbAdapter = new TransactionsDbAdapter(mainDb, new SplitsDbAdapter(mainDb));</span>
+<span class="nc" id="L303">        mAccountsDbAdapter = new AccountsDbAdapter(mainDb, mTransactionsDbAdapter);</span>
+<span class="nc" id="L304">        RecurrenceDbAdapter recurrenceDbAdapter = new RecurrenceDbAdapter(mainDb);</span>
+<span class="nc" id="L305">        mScheduledActionsDbAdapter = new ScheduledActionDbAdapter(mainDb, recurrenceDbAdapter);</span>
+<span class="nc" id="L306">        mCommoditiesDbAdapter = new CommoditiesDbAdapter(mainDb);</span>
+<span class="nc" id="L307">        mPricesDbAdapter = new PricesDbAdapter(mainDb);</span>
+<span class="nc" id="L308">        mBudgetsDbAdapter = new BudgetsDbAdapter(mainDb, new BudgetAmountsDbAdapter(mainDb), recurrenceDbAdapter);</span>
+
+
+<span class="nc" id="L311">        mContent = new StringBuilder();</span>
+
+<span class="nc" id="L313">        mAccountList = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L314">        mAccountMap = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L315">        mTransactionList = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L316">        mScheduledActionsList = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L317">        mBudgetList = new ArrayList&lt;&gt;();</span>
+
+<span class="nc" id="L319">        mTemplatAccountList = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L320">        mTemplateTransactions = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L321">        mTemplateAccountToTransactionMap = new HashMap&lt;&gt;();</span>
+
+<span class="nc" id="L323">        mAutoBalanceSplits = new ArrayList&lt;&gt;();</span>
+
+<span class="nc" id="L325">        mPriceList = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L326">        mCurrencyCount = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L327">    }</span>
+
+    @Override
+    public void startElement(String uri, String localName,
+                             String qualifiedName, Attributes attributes) throws SAXException {
+<span class="nc bnc" id="L332" title="All 81 branches missed.">        switch (qualifiedName){</span>
+            case GncXmlHelper.TAG_ACCOUNT:
+<span class="nc" id="L334">                mAccount = new Account(&quot;&quot;); // dummy name, will be replaced when we find name tag</span>
+<span class="nc" id="L335">                mISO4217Currency = false;</span>
+<span class="nc" id="L336">                break;</span>
+            case GncXmlHelper.TAG_TRANSACTION:
+<span class="nc" id="L338">                mTransaction = new Transaction(&quot;&quot;); // dummy name will be replaced</span>
+<span class="nc" id="L339">                mTransaction.setExported(true);     // default to exported when import transactions</span>
+<span class="nc" id="L340">                mISO4217Currency = false;</span>
+<span class="nc" id="L341">                break;</span>
+            case GncXmlHelper.TAG_TRN_SPLIT:
+<span class="nc" id="L343">                mSplit = new Split(Money.getZeroInstance(), &quot;&quot;);</span>
+<span class="nc" id="L344">                break;</span>
+            case GncXmlHelper.TAG_DATE_POSTED:
+<span class="nc" id="L346">                mIsDatePosted = true;</span>
+<span class="nc" id="L347">                break;</span>
+            case GncXmlHelper.TAG_DATE_ENTERED:
+<span class="nc" id="L349">                mIsDateEntered = true;</span>
+<span class="nc" id="L350">                break;</span>
+            case GncXmlHelper.TAG_TEMPLATE_TRANSACTIONS:
+<span class="nc" id="L352">                mInTemplates = true;</span>
+<span class="nc" id="L353">                break;</span>
+            case GncXmlHelper.TAG_SCHEDULED_ACTION:
+                //default to transaction type, will be changed during parsing
+<span class="nc" id="L356">                mScheduledAction = new ScheduledAction(ScheduledAction.ActionType.TRANSACTION);</span>
+<span class="nc" id="L357">                break;</span>
+            case GncXmlHelper.TAG_SX_START:
+<span class="nc" id="L359">                mIsScheduledStart = true;</span>
+<span class="nc" id="L360">                break;</span>
+            case GncXmlHelper.TAG_SX_END:
+<span class="nc" id="L362">                mIsScheduledEnd = true;</span>
+<span class="nc" id="L363">                break;</span>
+            case GncXmlHelper.TAG_SX_LAST:
+<span class="nc" id="L365">                mIsLastRun = true;</span>
+<span class="nc" id="L366">                break;</span>
+            case GncXmlHelper.TAG_RX_START:
+<span class="nc" id="L368">                mIsRecurrenceStart = true;</span>
+<span class="nc" id="L369">                break;</span>
+            case GncXmlHelper.TAG_PRICE:
+<span class="nc" id="L371">                mPrice = new Price();</span>
+<span class="nc" id="L372">                break;</span>
+            case GncXmlHelper.TAG_PRICE_CURRENCY:
+<span class="nc" id="L374">                mPriceCurrency = true;</span>
+<span class="nc" id="L375">                mPriceCommodity = false;</span>
+<span class="nc" id="L376">                mISO4217Currency = false;</span>
+<span class="nc" id="L377">                break;</span>
+            case GncXmlHelper.TAG_PRICE_COMMODITY:
+<span class="nc" id="L379">                mPriceCurrency = false;</span>
+<span class="nc" id="L380">                mPriceCommodity = true;</span>
+<span class="nc" id="L381">                mISO4217Currency = false;</span>
+<span class="nc" id="L382">                break;</span>
+
+            case GncXmlHelper.TAG_BUDGET:
+<span class="nc" id="L385">                mBudget = new Budget();</span>
+<span class="nc" id="L386">                break;</span>
+
+            case GncXmlHelper.TAG_GNC_RECURRENCE:
+            case GncXmlHelper.TAG_BUDGET_RECURRENCE:
+<span class="nc" id="L390">                mRecurrenceMultiplier = 1;</span>
+<span class="nc" id="L391">                mRecurrence = new Recurrence(PeriodType.MONTH);</span>
+<span class="nc" id="L392">                break;</span>
+            case GncXmlHelper.TAG_BUDGET_SLOTS:
+<span class="nc" id="L394">                mInBudgetSlot = true;</span>
+<span class="nc" id="L395">                break;</span>
+            case GncXmlHelper.TAG_SLOT:
+<span class="nc bnc" id="L397" title="All 2 branches missed.">                if (mInBudgetSlot){</span>
+<span class="nc" id="L398">                    mBudgetAmount = new BudgetAmount(mBudget.getUID(), mBudgetAmountAccountUID);</span>
+                }
+                break;
+            case GncXmlHelper.TAG_SLOT_VALUE:
+<span class="nc" id="L402">                mSlotTagAttribute = attributes.getValue(GncXmlHelper.ATTR_KEY_TYPE);</span>
+                break;
+        }
+<span class="nc" id="L405">    }</span>
+
+    @Override
+    public void endElement(String uri, String localName, String qualifiedName) throws SAXException {
+        // FIXME: 22.10.2015 First parse the number of accounts/transactions and use the numer to init the array lists
+<span class="nc" id="L410">        String characterString = mContent.toString().trim();</span>
+
+<span class="nc bnc" id="L412" title="All 2 branches missed.">        if (mIgnoreElement != null) {</span>
+            // Ignore everything inside
+<span class="nc bnc" id="L414" title="All 2 branches missed.">            if (qualifiedName.equals(mIgnoreElement)) {</span>
+<span class="nc" id="L415">                mIgnoreElement = null;</span>
+            }
+<span class="nc" id="L417">            mContent.setLength(0);</span>
+<span class="nc" id="L418">            return;</span>
+        }
+
+<span class="nc bnc" id="L421" title="All 182 branches missed.">        switch (qualifiedName) {</span>
+            case GncXmlHelper.TAG_ACCT_NAME:
+<span class="nc" id="L423">                mAccount.setName(characterString);</span>
+<span class="nc" id="L424">                mAccount.setFullName(characterString);</span>
+<span class="nc" id="L425">                break;</span>
+            case GncXmlHelper.TAG_ACCT_ID:
+<span class="nc" id="L427">                mAccount.setUID(characterString);</span>
+<span class="nc" id="L428">                break;</span>
+            case GncXmlHelper.TAG_ACCT_TYPE:
+<span class="nc" id="L430">                AccountType accountType = AccountType.valueOf(characterString);</span>
+<span class="nc" id="L431">                mAccount.setAccountType(accountType);</span>
+<span class="nc bnc" id="L432" title="All 2 branches missed.">                mAccount.setHidden(accountType == AccountType.ROOT); //flag root account as hidden</span>
+<span class="nc" id="L433">                break;</span>
+            case GncXmlHelper.TAG_COMMODITY_SPACE:
+<span class="nc bnc" id="L435" title="All 2 branches missed.">                if (characterString.equals(&quot;ISO4217&quot;)) {</span>
+<span class="nc" id="L436">                    mISO4217Currency = true;</span>
+                } else {
+                    // price of non-ISO4217 commodities cannot be handled
+<span class="nc" id="L439">                    mPrice = null;</span>
+                }
+<span class="nc" id="L441">                break;</span>
+            case GncXmlHelper.TAG_COMMODITY_ID:
+<span class="nc bnc" id="L443" title="All 2 branches missed.">                String currencyCode = mISO4217Currency ? characterString : NO_CURRENCY_CODE;</span>
+<span class="nc" id="L444">                Commodity commodity = mCommoditiesDbAdapter.getCommodity(currencyCode);</span>
+<span class="nc bnc" id="L445" title="All 2 branches missed.">                if (mAccount != null) {</span>
+<span class="nc bnc" id="L446" title="All 2 branches missed.">                    if (commodity != null) {</span>
+<span class="nc" id="L447">                        mAccount.setCommodity(commodity);</span>
+                    } else {
+<span class="nc" id="L449">                        throw new SAXException(&quot;Commodity with '&quot; + currencyCode</span>
+                                + &quot;' currency code not found in the database&quot;);
+                    }
+<span class="nc bnc" id="L452" title="All 2 branches missed.">                    if (mCurrencyCount.containsKey(currencyCode)) {</span>
+<span class="nc" id="L453">                        mCurrencyCount.put(currencyCode, mCurrencyCount.get(currencyCode) + 1);</span>
+                    } else {
+<span class="nc" id="L455">                        mCurrencyCount.put(currencyCode, 1);</span>
+                    }
+                }
+<span class="nc bnc" id="L458" title="All 2 branches missed.">                if (mTransaction != null) {</span>
+<span class="nc" id="L459">                    mTransaction.setCommodity(commodity);</span>
+                }
+<span class="nc bnc" id="L461" title="All 2 branches missed.">                if (mPrice != null) {</span>
+<span class="nc bnc" id="L462" title="All 2 branches missed.">                    if (mPriceCommodity) {</span>
+<span class="nc" id="L463">                        mPrice.setCommodityUID(mCommoditiesDbAdapter.getCommodityUID(currencyCode));</span>
+<span class="nc" id="L464">                        mPriceCommodity = false;</span>
+                    }
+<span class="nc bnc" id="L466" title="All 2 branches missed.">                    if (mPriceCurrency) {</span>
+<span class="nc" id="L467">                        mPrice.setCurrencyUID(mCommoditiesDbAdapter.getCommodityUID(currencyCode));</span>
+<span class="nc" id="L468">                        mPriceCurrency = false;</span>
+                    }
+                }
+                break;
+            case GncXmlHelper.TAG_ACCT_DESCRIPTION:
+<span class="nc" id="L473">                mAccount.setDescription(characterString);</span>
+<span class="nc" id="L474">                break;</span>
+            case GncXmlHelper.TAG_PARENT_UID:
+<span class="nc" id="L476">                mAccount.setParentUID(characterString);</span>
+<span class="nc" id="L477">                break;</span>
+            case GncXmlHelper.TAG_ACCOUNT:
+<span class="nc bnc" id="L479" title="All 2 branches missed.">                if (!mInTemplates) { //we ignore template accounts, we have no use for them. FIXME someday and import the templates too</span>
+<span class="nc" id="L480">                    mAccountList.add(mAccount);</span>
+<span class="nc" id="L481">                    mAccountMap.put(mAccount.getUID(), mAccount);</span>
+                    // check ROOT account
+<span class="nc bnc" id="L483" title="All 2 branches missed.">                    if (mAccount.getAccountType() == AccountType.ROOT) {</span>
+<span class="nc bnc" id="L484" title="All 2 branches missed.">                        if (mRootAccount == null) {</span>
+<span class="nc" id="L485">                            mRootAccount = mAccount;</span>
+                        } else {
+<span class="nc" id="L487">                            throw new SAXException(&quot;Multiple ROOT accounts exist in book&quot;);</span>
+                        }
+                    }
+                    // prepare for next input
+<span class="nc" id="L491">                    mAccount = null;</span>
+                    //reset ISO 4217 flag for next account
+<span class="nc" id="L493">                    mISO4217Currency = false;</span>
+                }
+                break;
+            case GncXmlHelper.TAG_SLOT:
+<span class="nc" id="L497">                break;</span>
+            case GncXmlHelper.TAG_SLOT_KEY:
+<span class="nc bnc" id="L499" title="All 38 branches missed.">                switch (characterString) {</span>
+                    case GncXmlHelper.KEY_PLACEHOLDER:
+<span class="nc" id="L501">                        mInPlaceHolderSlot = true;</span>
+<span class="nc" id="L502">                        break;</span>
+                    case GncXmlHelper.KEY_COLOR:
+<span class="nc" id="L504">                        mInColorSlot = true;</span>
+<span class="nc" id="L505">                        break;</span>
+                    case GncXmlHelper.KEY_FAVORITE:
+<span class="nc" id="L507">                        mInFavoriteSlot = true;</span>
+<span class="nc" id="L508">                        break;</span>
+                    case GncXmlHelper.KEY_NOTES:
+<span class="nc" id="L510">                        mIsNote = true;</span>
+<span class="nc" id="L511">                        break;</span>
+                    case GncXmlHelper.KEY_DEFAULT_TRANSFER_ACCOUNT:
+<span class="nc" id="L513">                        mInDefaultTransferAccount = true;</span>
+<span class="nc" id="L514">                        break;</span>
+                    case GncXmlHelper.KEY_EXPORTED:
+<span class="nc" id="L516">                        mInExported = true;</span>
+<span class="nc" id="L517">                        break;</span>
+                    case GncXmlHelper.KEY_SPLIT_ACCOUNT_SLOT:
+<span class="nc" id="L519">                        mInSplitAccountSlot = true;</span>
+<span class="nc" id="L520">                        break;</span>
+                    case GncXmlHelper.KEY_CREDIT_NUMERIC:
+<span class="nc" id="L522">                        mInCreditNumericSlot = true;</span>
+<span class="nc" id="L523">                        break;</span>
+                    case GncXmlHelper.KEY_DEBIT_NUMERIC:
+<span class="nc" id="L525">                        mInDebitNumericSlot = true;</span>
+                        break;
+                }
+<span class="nc bnc" id="L528" title="All 4 branches missed.">                if (mInBudgetSlot &amp;&amp; mBudgetAmountAccountUID == null){</span>
+<span class="nc" id="L529">                    mBudgetAmountAccountUID = characterString;</span>
+<span class="nc" id="L530">                    mBudgetAmount.setAccountUID(characterString);</span>
+<span class="nc bnc" id="L531" title="All 2 branches missed.">                } else if (mInBudgetSlot){</span>
+<span class="nc" id="L532">                    mBudgetAmount.setPeriodNum(Long.parseLong(characterString));</span>
+                }
+                break;
+            case GncXmlHelper.TAG_SLOT_VALUE:
+<span class="nc bnc" id="L536" title="All 2 branches missed.">                if (mInPlaceHolderSlot) {</span>
+                    //Log.v(LOG_TAG, &quot;Setting account placeholder flag&quot;);
+<span class="nc" id="L538">                    mAccount.setPlaceHolderFlag(Boolean.parseBoolean(characterString));</span>
+<span class="nc" id="L539">                    mInPlaceHolderSlot = false;</span>
+<span class="nc bnc" id="L540" title="All 2 branches missed.">                } else if (mInColorSlot) {</span>
+                    //Log.d(LOG_TAG, &quot;Parsing color code: &quot; + characterString);
+<span class="nc" id="L542">                    String color = characterString.trim();</span>
+                    //Gnucash exports the account color in format #rrrgggbbb, but we need only #rrggbb.
+                    //so we trim the last digit in each block, doesn't affect the color much
+<span class="nc bnc" id="L545" title="All 2 branches missed.">                    if (!color.equals(&quot;Not Set&quot;)) {</span>
+                        // avoid known exception, printStackTrace is very time consuming
+<span class="nc bnc" id="L547" title="All 2 branches missed.">                        if (!Pattern.matches(ACCOUNT_COLOR_HEX_REGEX, color))</span>
+<span class="nc" id="L548">                            color = &quot;#&quot; + color.replaceAll(&quot;.(.)?&quot;, &quot;$1&quot;).replace(&quot;null&quot;, &quot;&quot;);</span>
+                        try {
+<span class="nc bnc" id="L550" title="All 2 branches missed.">                            if (mAccount != null)</span>
+<span class="nc" id="L551">                                mAccount.setColor(color);</span>
+<span class="nc" id="L552">                        } catch (IllegalArgumentException ex) {</span>
+                            //sometimes the color entry in the account file is &quot;Not set&quot; instead of just blank. So catch!
+<span class="nc" id="L554">                            Log.e(LOG_TAG, &quot;Invalid color code '&quot; + color + &quot;' for account &quot; + mAccount.getName());</span>
+<span class="nc" id="L555">                            Crashlytics.logException(ex);</span>
+<span class="nc" id="L556">                        }</span>
+                    }
+<span class="nc" id="L558">                    mInColorSlot = false;</span>
+<span class="nc bnc" id="L559" title="All 2 branches missed.">                } else if (mInFavoriteSlot) {</span>
+<span class="nc" id="L560">                    mAccount.setFavorite(Boolean.parseBoolean(characterString));</span>
+<span class="nc" id="L561">                    mInFavoriteSlot = false;</span>
+<span class="nc bnc" id="L562" title="All 2 branches missed.">                } else if (mIsNote) {</span>
+<span class="nc bnc" id="L563" title="All 2 branches missed.">                    if (mTransaction != null) {</span>
+<span class="nc" id="L564">                        mTransaction.setNote(characterString);</span>
+<span class="nc" id="L565">                        mIsNote = false;</span>
+                    }
+<span class="nc bnc" id="L567" title="All 2 branches missed.">                } else if (mInDefaultTransferAccount) {</span>
+<span class="nc" id="L568">                    mAccount.setDefaultTransferAccountUID(characterString);</span>
+<span class="nc" id="L569">                    mInDefaultTransferAccount = false;</span>
+<span class="nc bnc" id="L570" title="All 2 branches missed.">                } else if (mInExported) {</span>
+<span class="nc bnc" id="L571" title="All 2 branches missed.">                    if (mTransaction != null) {</span>
+<span class="nc" id="L572">                        mTransaction.setExported(Boolean.parseBoolean(characterString));</span>
+<span class="nc" id="L573">                        mInExported = false;</span>
+                    }
+<span class="nc bnc" id="L575" title="All 4 branches missed.">                } else if (mInTemplates &amp;&amp; mInSplitAccountSlot) {</span>
+<span class="nc" id="L576">                    mSplit.setAccountUID(characterString);</span>
+<span class="nc" id="L577">                    mInSplitAccountSlot = false;</span>
+<span class="nc bnc" id="L578" title="All 4 branches missed.">                } else if (mInTemplates &amp;&amp; mInCreditNumericSlot) {</span>
+<span class="nc" id="L579">                    handleEndOfTemplateNumericSlot(characterString, TransactionType.CREDIT);</span>
+<span class="nc bnc" id="L580" title="All 4 branches missed.">                } else if (mInTemplates &amp;&amp; mInDebitNumericSlot) {</span>
+<span class="nc" id="L581">                    handleEndOfTemplateNumericSlot(characterString, TransactionType.DEBIT);</span>
+<span class="nc bnc" id="L582" title="All 2 branches missed.">                } else if (mInBudgetSlot){</span>
+<span class="nc bnc" id="L583" title="All 2 branches missed.">                    if (mSlotTagAttribute.equals(GncXmlHelper.ATTR_VALUE_NUMERIC)) {</span>
+                        try {
+<span class="nc" id="L585">                            BigDecimal bigDecimal = GncXmlHelper.parseSplitAmount(characterString);</span>
+                            //currency doesn't matter since we don't persist it in the budgets table
+<span class="nc" id="L587">                            mBudgetAmount.setAmount(new Money(bigDecimal, Commodity.DEFAULT_COMMODITY));</span>
+<span class="nc" id="L588">                        } catch (ParseException e) {</span>
+<span class="nc" id="L589">                            mBudgetAmount.setAmount(Money.getZeroInstance()); //just put zero, in case it was a formula we couldnt parse</span>
+<span class="nc" id="L590">                            e.printStackTrace();</span>
+                        } finally {
+<span class="nc" id="L592">                            mBudget.addBudgetAmount(mBudgetAmount);</span>
+<span class="nc" id="L593">                        }</span>
+<span class="nc" id="L594">                        mSlotTagAttribute = GncXmlHelper.ATTR_VALUE_FRAME;</span>
+                    } else {
+<span class="nc" id="L596">                        mBudgetAmountAccountUID = null;</span>
+                    }
+                }
+                break;
+
+            case GncXmlHelper.TAG_BUDGET_SLOTS:
+<span class="nc" id="L602">                mInBudgetSlot = false;</span>
+<span class="nc" id="L603">                break;</span>
+
+            //================  PROCESSING OF TRANSACTION TAGS =====================================
+            case GncXmlHelper.TAG_TRX_ID:
+<span class="nc" id="L607">                mTransaction.setUID(characterString);</span>
+<span class="nc" id="L608">                break;</span>
+            case GncXmlHelper.TAG_TRN_DESCRIPTION:
+<span class="nc" id="L610">                mTransaction.setDescription(characterString);</span>
+<span class="nc" id="L611">                break;</span>
+            case GncXmlHelper.TAG_TS_DATE:
+                try {
+<span class="nc bnc" id="L614" title="All 4 branches missed.">                    if (mIsDatePosted &amp;&amp; mTransaction != null) {</span>
+<span class="nc" id="L615">                        mTransaction.setTime(GncXmlHelper.parseDate(characterString));</span>
+<span class="nc" id="L616">                        mIsDatePosted = false;</span>
+                    }
+<span class="nc bnc" id="L618" title="All 4 branches missed.">                    if (mIsDateEntered &amp;&amp; mTransaction != null) {</span>
+<span class="nc" id="L619">                        Timestamp timestamp = new Timestamp(GncXmlHelper.parseDate(characterString));</span>
+<span class="nc" id="L620">                        mTransaction.setCreatedTimestamp(timestamp);</span>
+<span class="nc" id="L621">                        mIsDateEntered = false;</span>
+                    }
+<span class="nc bnc" id="L623" title="All 2 branches missed.">                    if (mPrice != null) {</span>
+<span class="nc" id="L624">                        mPrice.setDate(new Timestamp(GncXmlHelper.parseDate(characterString)));</span>
+                    }
+<span class="nc" id="L626">                } catch (ParseException e) {</span>
+<span class="nc" id="L627">                    Crashlytics.logException(e);</span>
+<span class="nc" id="L628">                    String message = &quot;Unable to parse transaction time - &quot; + characterString;</span>
+<span class="nc" id="L629">                    Log.e(LOG_TAG, message + &quot;\n&quot; + e.getMessage());</span>
+<span class="nc" id="L630">                    Crashlytics.log(message);</span>
+<span class="nc" id="L631">                    throw new SAXException(message, e);</span>
+<span class="nc" id="L632">                }</span>
+                break;
+            case GncXmlHelper.TAG_RECURRENCE_PERIOD: //for parsing of old backup files
+<span class="nc" id="L635">                mRecurrencePeriod = Long.parseLong(characterString);</span>
+<span class="nc bnc" id="L636" title="All 2 branches missed.">                mTransaction.setTemplate(mRecurrencePeriod &gt; 0);</span>
+<span class="nc" id="L637">                break;</span>
+            case GncXmlHelper.TAG_SPLIT_ID:
+<span class="nc" id="L639">                mSplit.setUID(characterString);</span>
+<span class="nc" id="L640">                break;</span>
+            case GncXmlHelper.TAG_SPLIT_MEMO:
+<span class="nc" id="L642">                mSplit.setMemo(characterString);</span>
+<span class="nc" id="L643">                break;</span>
+            case GncXmlHelper.TAG_SPLIT_VALUE:
+                try {
+                    // The value and quantity can have different sign for custom currency(stock).
+                    // Use the sign of value for split, as it would not be custom currency
+<span class="nc" id="L648">                    String q = characterString;</span>
+<span class="nc bnc" id="L649" title="All 2 branches missed.">                    if (q.charAt(0) == '-') {</span>
+<span class="nc" id="L650">                        mNegativeQuantity = true;</span>
+<span class="nc" id="L651">                        q = q.substring(1);</span>
+                    } else {
+<span class="nc" id="L653">                        mNegativeQuantity = false;</span>
+                    }
+<span class="nc" id="L655">                    mValue = GncXmlHelper.parseSplitAmount(characterString).abs(); // use sign from quantity</span>
+<span class="nc" id="L656">                } catch (ParseException e) {</span>
+<span class="nc" id="L657">                    String msg = &quot;Error parsing split quantity - &quot; + characterString;</span>
+<span class="nc" id="L658">                    Crashlytics.log(msg);</span>
+<span class="nc" id="L659">                    Crashlytics.logException(e);</span>
+<span class="nc" id="L660">                    throw new SAXException(msg, e);</span>
+<span class="nc" id="L661">                }</span>
+                break;
+            case GncXmlHelper.TAG_SPLIT_QUANTITY:
+                // delay the assignment of currency when the split account is seen
+                try {
+<span class="nc" id="L666">                    mQuantity = GncXmlHelper.parseSplitAmount(characterString).abs();</span>
+<span class="nc" id="L667">                } catch (ParseException e) {</span>
+<span class="nc" id="L668">                    String msg = &quot;Error parsing split quantity - &quot; + characterString;</span>
+<span class="nc" id="L669">                    Crashlytics.log(msg);</span>
+<span class="nc" id="L670">                    Crashlytics.logException(e);</span>
+<span class="nc" id="L671">                    throw new SAXException(msg, e);</span>
+<span class="nc" id="L672">                }</span>
+                break;
+            case GncXmlHelper.TAG_SPLIT_ACCOUNT:
+<span class="nc bnc" id="L675" title="All 2 branches missed.">                if (!mInTemplates) {</span>
+                    //this is intentional: GnuCash XML formats split amounts, credits are negative, debits are positive.
+<span class="nc bnc" id="L677" title="All 2 branches missed.">                    mSplit.setType(mNegativeQuantity ? TransactionType.CREDIT : TransactionType.DEBIT);</span>
+                    //the split amount uses the account currency
+<span class="nc" id="L679">                    mSplit.setQuantity(new Money(mQuantity, getCommodityForAccount(characterString)));</span>
+                    //the split value uses the transaction currency
+<span class="nc" id="L681">                    mSplit.setValue(new Money(mValue, mTransaction.getCommodity()));</span>
+<span class="nc" id="L682">                    mSplit.setAccountUID(characterString);</span>
+                } else {
+<span class="nc bnc" id="L684" title="All 2 branches missed.">                    if (!mIgnoreTemplateTransaction)</span>
+<span class="nc" id="L685">                        mTemplateAccountToTransactionMap.put(characterString, mTransaction.getUID());</span>
+                }
+                break;
+            //todo: import split reconciled state and date
+            case GncXmlHelper.TAG_TRN_SPLIT:
+<span class="nc" id="L690">                mTransaction.addSplit(mSplit);</span>
+<span class="nc" id="L691">                break;</span>
+            case GncXmlHelper.TAG_TRANSACTION:
+<span class="nc" id="L693">                mTransaction.setTemplate(mInTemplates);</span>
+<span class="nc" id="L694">                Split imbSplit = mTransaction.createAutoBalanceSplit();</span>
+<span class="nc bnc" id="L695" title="All 2 branches missed.">                if (imbSplit != null) {</span>
+<span class="nc" id="L696">                    mAutoBalanceSplits.add(imbSplit);</span>
+                }
+<span class="nc bnc" id="L698" title="All 2 branches missed.">                if (mInTemplates){</span>
+<span class="nc bnc" id="L699" title="All 2 branches missed.">                    if (!mIgnoreTemplateTransaction)</span>
+<span class="nc" id="L700">                        mTemplateTransactions.add(mTransaction);</span>
+                } else {
+<span class="nc" id="L702">                    mTransactionList.add(mTransaction);</span>
+                }
+<span class="nc bnc" id="L704" title="All 2 branches missed.">                if (mRecurrencePeriod &gt; 0) { //if we find an old format recurrence period, parse it</span>
+<span class="nc" id="L705">                    mTransaction.setTemplate(true);</span>
+<span class="nc" id="L706">                    ScheduledAction scheduledAction = ScheduledAction.parseScheduledAction(mTransaction, mRecurrencePeriod);</span>
+<span class="nc" id="L707">                    mScheduledActionsList.add(scheduledAction);</span>
+                }
+<span class="nc" id="L709">                mRecurrencePeriod = 0;</span>
+<span class="nc" id="L710">                mIgnoreTemplateTransaction = true;</span>
+<span class="nc" id="L711">                mTransaction = null;</span>
+<span class="nc" id="L712">                break;</span>
+            case GncXmlHelper.TAG_TEMPLATE_TRANSACTIONS:
+<span class="nc" id="L714">                mInTemplates = false;</span>
+<span class="nc" id="L715">                break;</span>
+
+            // ========================= PROCESSING SCHEDULED ACTIONS ==================================
+            case GncXmlHelper.TAG_SX_ID:
+<span class="nc" id="L719">                mScheduledAction.setUID(characterString);</span>
+<span class="nc" id="L720">                break;</span>
+            case GncXmlHelper.TAG_SX_NAME:
+<span class="nc bnc" id="L722" title="All 2 branches missed.">                if (characterString.equals(ScheduledAction.ActionType.BACKUP.name()))</span>
+<span class="nc" id="L723">                    mScheduledAction.setActionType(ScheduledAction.ActionType.BACKUP);</span>
+                else
+<span class="nc" id="L725">                    mScheduledAction.setActionType(ScheduledAction.ActionType.TRANSACTION);</span>
+<span class="nc" id="L726">                break;</span>
+            case GncXmlHelper.TAG_SX_ENABLED:
+<span class="nc" id="L728">                mScheduledAction.setEnabled(characterString.equals(&quot;y&quot;));</span>
+<span class="nc" id="L729">                break;</span>
+            case GncXmlHelper.TAG_SX_AUTO_CREATE:
+<span class="nc" id="L731">                mScheduledAction.setAutoCreate(characterString.equals(&quot;y&quot;));</span>
+<span class="nc" id="L732">                break;</span>
+            //todo: export auto_notify, advance_create, advance_notify
+            case GncXmlHelper.TAG_SX_NUM_OCCUR:
+<span class="nc" id="L735">                mScheduledAction.setTotalPlannedExecutionCount(Integer.parseInt(characterString));</span>
+<span class="nc" id="L736">                break;</span>
+            case GncXmlHelper.TAG_RX_MULT:
+<span class="nc" id="L738">                mRecurrenceMultiplier = Integer.parseInt(characterString);</span>
+<span class="nc" id="L739">                break;</span>
+            case GncXmlHelper.TAG_RX_PERIOD_TYPE:
+                try {
+<span class="nc" id="L742">                    PeriodType periodType = PeriodType.valueOf(characterString.toUpperCase());</span>
+<span class="nc" id="L743">                    mRecurrence.setPeriodType(periodType);</span>
+<span class="nc" id="L744">                    mRecurrence.setMultiplier(mRecurrenceMultiplier);</span>
+<span class="nc" id="L745">                } catch (IllegalArgumentException ex){ //the period type constant is not supported</span>
+<span class="nc" id="L746">                    String msg = &quot;Unsupported period constant: &quot; + characterString;</span>
+<span class="nc" id="L747">                    Log.e(LOG_TAG, msg);</span>
+<span class="nc" id="L748">                    Crashlytics.logException(ex);</span>
+<span class="nc" id="L749">                    mIgnoreScheduledAction = true;</span>
+<span class="nc" id="L750">                }</span>
+<span class="nc" id="L751">                break;</span>
+            case GncXmlHelper.TAG_GDATE:
+                try {
+<span class="nc" id="L754">                    long date = GncXmlHelper.DATE_FORMATTER.parse(characterString).getTime();</span>
+<span class="nc bnc" id="L755" title="All 4 branches missed.">                    if (mIsScheduledStart &amp;&amp; mScheduledAction != null) {</span>
+<span class="nc" id="L756">                        mScheduledAction.setCreatedTimestamp(new Timestamp(date));</span>
+<span class="nc" id="L757">                        mIsScheduledStart = false;</span>
+                    }
+
+<span class="nc bnc" id="L760" title="All 4 branches missed.">                    if (mIsScheduledEnd &amp;&amp; mScheduledAction != null) {</span>
+<span class="nc" id="L761">                        mScheduledAction.setEndTime(date);</span>
+<span class="nc" id="L762">                        mIsScheduledEnd = false;</span>
+                    }
+
+<span class="nc bnc" id="L765" title="All 4 branches missed.">                    if (mIsLastRun &amp;&amp; mScheduledAction != null) {</span>
+<span class="nc" id="L766">                        mScheduledAction.setLastRun(date);</span>
+<span class="nc" id="L767">                        mIsLastRun = false;</span>
+                    }
+
+<span class="nc bnc" id="L770" title="All 4 branches missed.">                    if (mIsRecurrenceStart &amp;&amp; mScheduledAction != null){</span>
+<span class="nc" id="L771">                        mRecurrence.setPeriodStart(new Timestamp(date));</span>
+<span class="nc" id="L772">                        mIsRecurrenceStart = false;</span>
+                    }
+<span class="nc" id="L774">                } catch (ParseException e) {</span>
+<span class="nc" id="L775">                    String msg = &quot;Error parsing scheduled action date &quot; + characterString;</span>
+<span class="nc" id="L776">                    Log.e(LOG_TAG, msg + e.getMessage());</span>
+<span class="nc" id="L777">                    Crashlytics.log(msg);</span>
+<span class="nc" id="L778">                    Crashlytics.logException(e);</span>
+<span class="nc" id="L779">                    throw new SAXException(msg, e);</span>
+<span class="nc" id="L780">                }</span>
+                break;
+            case GncXmlHelper.TAG_SX_TEMPL_ACCOUNT:
+<span class="nc bnc" id="L783" title="All 2 branches missed.">                if (mScheduledAction.getActionType() == ScheduledAction.ActionType.TRANSACTION) {</span>
+<span class="nc" id="L784">                    mScheduledAction.setActionUID(mTemplateAccountToTransactionMap.get(characterString));</span>
+                } else {
+<span class="nc" id="L786">                    mScheduledAction.setActionUID(BaseModel.generateUID());</span>
+                }
+<span class="nc" id="L788">                break;</span>
+            case GncXmlHelper.TAG_GNC_RECURRENCE:
+<span class="nc bnc" id="L790" title="All 2 branches missed.">                if (mScheduledAction != null){</span>
+<span class="nc" id="L791">                    mScheduledAction.setRecurrence(mRecurrence);</span>
+                }
+                break;
+
+            case GncXmlHelper.TAG_SCHEDULED_ACTION:
+<span class="nc bnc" id="L796" title="All 4 branches missed.">                if (mScheduledAction.getActionUID() != null &amp;&amp; !mIgnoreScheduledAction) {</span>
+<span class="nc bnc" id="L797" title="All 2 branches missed.">                    if (mScheduledAction.getRecurrence().getPeriodType() == PeriodType.WEEK) {</span>
+                        // TODO: implement parsing of by days for scheduled actions
+<span class="nc" id="L799">                        setMinimalScheduledActionByDays();</span>
+                    }
+<span class="nc" id="L801">                    mScheduledActionsList.add(mScheduledAction);</span>
+<span class="nc" id="L802">                    int count = generateMissedScheduledTransactions(mScheduledAction);</span>
+<span class="nc" id="L803">                    Log.i(LOG_TAG, String.format(&quot;Generated %d transactions from scheduled action&quot;, count));</span>
+                }
+<span class="nc" id="L805">                mIgnoreScheduledAction = false;</span>
+<span class="nc" id="L806">                break;</span>
+            // price table
+            case GncXmlHelper.TAG_PRICE_ID:
+<span class="nc" id="L809">                mPrice.setUID(characterString);</span>
+<span class="nc" id="L810">                break;</span>
+            case GncXmlHelper.TAG_PRICE_SOURCE:
+<span class="nc bnc" id="L812" title="All 2 branches missed.">                if (mPrice != null) {</span>
+<span class="nc" id="L813">                    mPrice.setSource(characterString);</span>
+                }
+                break;
+            case GncXmlHelper.TAG_PRICE_VALUE:
+<span class="nc bnc" id="L817" title="All 2 branches missed.">                if (mPrice != null) {</span>
+<span class="nc" id="L818">                    String[] parts = characterString.split(&quot;/&quot;);</span>
+<span class="nc bnc" id="L819" title="All 2 branches missed.">                    if (parts.length != 2) {</span>
+<span class="nc" id="L820">                        String message = &quot;Illegal price - &quot; + characterString;</span>
+<span class="nc" id="L821">                        Log.e(LOG_TAG, message);</span>
+<span class="nc" id="L822">                        Crashlytics.log(message);</span>
+<span class="nc" id="L823">                        throw new SAXException(message);</span>
+                    } else {
+<span class="nc" id="L825">                        mPrice.setValueNum(Long.valueOf(parts[0]));</span>
+<span class="nc" id="L826">                        mPrice.setValueDenom(Long.valueOf(parts[1]));</span>
+<span class="nc" id="L827">                        Log.d(getClass().getName(), &quot;price &quot; + characterString +</span>
+<span class="nc" id="L828">                        &quot; .. &quot; + mPrice.getValueNum() + &quot;/&quot; + mPrice.getValueDenom());</span>
+                    }
+<span class="nc" id="L830">                }</span>
+                break;
+            case GncXmlHelper.TAG_PRICE_TYPE:
+<span class="nc bnc" id="L833" title="All 2 branches missed.">                if (mPrice != null) {</span>
+<span class="nc" id="L834">                    mPrice.setType(characterString);</span>
+                }
+                break;
+            case GncXmlHelper.TAG_PRICE:
+<span class="nc bnc" id="L838" title="All 2 branches missed.">                if (mPrice != null) {</span>
+<span class="nc" id="L839">                    mPriceList.add(mPrice);</span>
+<span class="nc" id="L840">                    mPrice = null;</span>
+                }
+                break;
+
+            case GncXmlHelper.TAG_BUDGET:
+<span class="nc bnc" id="L845" title="All 2 branches missed.">                if (mBudget.getBudgetAmounts().size() &gt; 0) //ignore if no budget amounts exist for the budget</span>
+<span class="nc" id="L846">                    mBudgetList.add(mBudget);</span>
+                break;
+
+            case GncXmlHelper.TAG_BUDGET_NAME:
+<span class="nc" id="L850">                mBudget.setName(characterString);</span>
+<span class="nc" id="L851">                break;</span>
+
+            case GncXmlHelper.TAG_BUDGET_DESCRIPTION:
+<span class="nc" id="L854">                mBudget.setDescription(characterString);</span>
+<span class="nc" id="L855">                break;</span>
+
+            case GncXmlHelper.TAG_BUDGET_NUM_PERIODS:
+<span class="nc" id="L858">                mBudget.setNumberOfPeriods(Long.parseLong(characterString));</span>
+<span class="nc" id="L859">                break;</span>
+
+            case GncXmlHelper.TAG_BUDGET_RECURRENCE:
+<span class="nc" id="L862">                mBudget.setRecurrence(mRecurrence);</span>
+                break;
+
+        }
+
+        //reset the accumulated characters
+<span class="nc" id="L868">        mContent.setLength(0);</span>
+<span class="nc" id="L869">    }</span>
+
+    @Override
+    public void characters(char[] chars, int start, int length) throws SAXException {
+<span class="nc" id="L873">        mContent.append(chars, start, length);</span>
+<span class="nc" id="L874">    }</span>
+
+    @Override
+    public void endDocument() throws SAXException {
+<span class="nc" id="L878">        super.endDocument();</span>
+<span class="nc" id="L879">        HashMap&lt;String, String&gt; mapFullName = new HashMap&lt;&gt;(mAccountList.size());</span>
+<span class="nc" id="L880">        HashMap&lt;String, Account&gt; mapImbalanceAccount = new HashMap&lt;&gt;();</span>
+
+        // The XML has no ROOT, create one
+<span class="nc bnc" id="L883" title="All 2 branches missed.">        if (mRootAccount == null) {</span>
+<span class="nc" id="L884">            mRootAccount = new Account(&quot;ROOT&quot;);</span>
+<span class="nc" id="L885">            mRootAccount.setAccountType(AccountType.ROOT);</span>
+<span class="nc" id="L886">            mAccountList.add(mRootAccount);</span>
+<span class="nc" id="L887">            mAccountMap.put(mRootAccount.getUID(), mRootAccount);</span>
+        }
+
+<span class="nc" id="L890">        String imbalancePrefix = AccountsDbAdapter.getImbalanceAccountPrefix();</span>
+
+        // Add all account without a parent to ROOT, and collect top level imbalance accounts
+<span class="nc bnc" id="L893" title="All 2 branches missed.">        for(Account account:mAccountList) {</span>
+<span class="nc" id="L894">            mapFullName.put(account.getUID(), null);</span>
+<span class="nc" id="L895">            boolean topLevel = false;</span>
+<span class="nc bnc" id="L896" title="All 4 branches missed.">            if (account.getParentUID() == null &amp;&amp; account.getAccountType() != AccountType.ROOT) {</span>
+<span class="nc" id="L897">                account.setParentUID(mRootAccount.getUID());</span>
+<span class="nc" id="L898">                topLevel = true;</span>
+            }
+<span class="nc bnc" id="L900" title="All 4 branches missed.">            if (topLevel || (mRootAccount.getUID().equals(account.getParentUID()))) {</span>
+<span class="nc bnc" id="L901" title="All 2 branches missed.">                if (account.getName().startsWith(imbalancePrefix)) {</span>
+<span class="nc" id="L902">                    mapImbalanceAccount.put(account.getName().substring(imbalancePrefix.length()), account);</span>
+                }
+            }
+<span class="nc" id="L905">        }</span>
+
+        // Set the account for created balancing splits to correct imbalance accounts
+<span class="nc bnc" id="L908" title="All 2 branches missed.">        for (Split split: mAutoBalanceSplits) {</span>
+            // XXX: yes, getAccountUID() returns a currency code in this case (see Transaction.createAutoBalanceSplit())
+<span class="nc" id="L910">            String currencyCode = split.getAccountUID();</span>
+<span class="nc" id="L911">            Account imbAccount = mapImbalanceAccount.get(currencyCode);</span>
+<span class="nc bnc" id="L912" title="All 2 branches missed.">            if (imbAccount == null) {</span>
+<span class="nc" id="L913">                imbAccount = new Account(imbalancePrefix + currencyCode, mCommoditiesDbAdapter.getCommodity(currencyCode));</span>
+<span class="nc" id="L914">                imbAccount.setParentUID(mRootAccount.getUID());</span>
+<span class="nc" id="L915">                imbAccount.setAccountType(AccountType.BANK);</span>
+<span class="nc" id="L916">                mapImbalanceAccount.put(currencyCode, imbAccount);</span>
+<span class="nc" id="L917">                mAccountList.add(imbAccount);</span>
+            }
+<span class="nc" id="L919">            split.setAccountUID(imbAccount.getUID());</span>
+<span class="nc" id="L920">        }</span>
+
+<span class="nc" id="L922">        java.util.Stack&lt;Account&gt; stack = new Stack&lt;&gt;();</span>
+<span class="nc bnc" id="L923" title="All 2 branches missed.">        for (Account account:mAccountList){</span>
+<span class="nc bnc" id="L924" title="All 2 branches missed.">            if (mapFullName.get(account.getUID()) != null) {</span>
+<span class="nc" id="L925">                continue;</span>
+            }
+<span class="nc" id="L927">            stack.push(account);</span>
+            String parentAccountFullName;
+<span class="nc bnc" id="L929" title="All 2 branches missed.">            while (!stack.isEmpty()) {</span>
+<span class="nc" id="L930">                Account acc = stack.peek();</span>
+<span class="nc bnc" id="L931" title="All 2 branches missed.">                if (acc.getAccountType() == AccountType.ROOT) {</span>
+                    // ROOT_ACCOUNT_FULL_NAME should ensure ROOT always sorts first
+<span class="nc" id="L933">                    mapFullName.put(acc.getUID(), AccountsDbAdapter.ROOT_ACCOUNT_FULL_NAME);</span>
+<span class="nc" id="L934">                    stack.pop();</span>
+<span class="nc" id="L935">                    continue;</span>
+                }
+<span class="nc" id="L937">                String parentUID = acc.getParentUID();</span>
+<span class="nc" id="L938">                Account parentAccount = mAccountMap.get(parentUID);</span>
+                // ROOT account will be added if not exist, so now anly ROOT
+                // has an empty parent
+<span class="nc bnc" id="L941" title="All 2 branches missed.">                if (parentAccount.getAccountType() == AccountType.ROOT) {</span>
+                    // top level account, full name is the same as its name
+<span class="nc" id="L943">                    mapFullName.put(acc.getUID(), acc.getName());</span>
+<span class="nc" id="L944">                    stack.pop();</span>
+<span class="nc" id="L945">                    continue;</span>
+                }
+<span class="nc" id="L947">                parentAccountFullName = mapFullName.get(parentUID);</span>
+<span class="nc bnc" id="L948" title="All 2 branches missed.">                if (parentAccountFullName == null) {</span>
+                    // non-top-level account, parent full name still unknown
+<span class="nc" id="L950">                    stack.push(parentAccount);</span>
+<span class="nc" id="L951">                    continue;</span>
+                }
+<span class="nc" id="L953">                mapFullName.put(acc.getUID(), parentAccountFullName +</span>
+<span class="nc" id="L954">                        AccountsDbAdapter.ACCOUNT_NAME_SEPARATOR + acc.getName());</span>
+<span class="nc" id="L955">                stack.pop();</span>
+<span class="nc" id="L956">            }</span>
+<span class="nc" id="L957">        }</span>
+<span class="nc bnc" id="L958" title="All 2 branches missed.">        for (Account account:mAccountList){</span>
+<span class="nc" id="L959">            account.setFullName(mapFullName.get(account.getUID()));</span>
+<span class="nc" id="L960">        }</span>
+
+<span class="nc" id="L962">        String mostAppearedCurrency = &quot;&quot;;</span>
+<span class="nc" id="L963">        int mostCurrencyAppearance = 0;</span>
+<span class="nc bnc" id="L964" title="All 2 branches missed.">        for (Map.Entry&lt;String, Integer&gt; entry : mCurrencyCount.entrySet()) {</span>
+<span class="nc bnc" id="L965" title="All 2 branches missed.">            if (entry.getValue() &gt; mostCurrencyAppearance) {</span>
+<span class="nc" id="L966">                mostCurrencyAppearance = entry.getValue();</span>
+<span class="nc" id="L967">                mostAppearedCurrency = entry.getKey();</span>
+            }
+<span class="nc" id="L969">        }</span>
+<span class="nc bnc" id="L970" title="All 2 branches missed.">        if (mostCurrencyAppearance &gt; 0) {</span>
+<span class="nc" id="L971">            GnuCashApplication.setDefaultCurrencyCode(mostAppearedCurrency);</span>
+        }
+
+<span class="nc" id="L974">        saveToDatabase();</span>
+<span class="nc" id="L975">    }</span>
+
+    /**
+     * Saves the imported data to the database
+     * @return GUID of the newly created book, or null if not successful
+     */
+    private void saveToDatabase() {
+<span class="nc" id="L982">        BooksDbAdapter booksDbAdapter = BooksDbAdapter.getInstance();</span>
+<span class="nc" id="L983">        mBook.setRootAccountUID(mRootAccount.getUID());</span>
+<span class="nc" id="L984">        mBook.setDisplayName(booksDbAdapter.generateDefaultBookName());</span>
+        //we on purpose do not set the book active. Only import. Caller should handle activation
+        
+<span class="nc" id="L987">        long startTime = System.nanoTime();</span>
+<span class="nc" id="L988">        mAccountsDbAdapter.beginTransaction();</span>
+<span class="nc" id="L989">        Log.d(getClass().getSimpleName(), &quot;bulk insert starts&quot;);</span>
+        try {
+            // disable foreign key. The database structure should be ensured by the data inserted.
+            // it will make insertion much faster.
+<span class="nc" id="L993">            mAccountsDbAdapter.enableForeignKey(false);</span>
+<span class="nc" id="L994">            Log.d(getClass().getSimpleName(), &quot;before clean up db&quot;);</span>
+<span class="nc" id="L995">            mAccountsDbAdapter.deleteAllRecords();</span>
+<span class="nc" id="L996">            Log.d(getClass().getSimpleName(), String.format(&quot;deb clean up done %d ns&quot;, System.nanoTime()-startTime));</span>
+<span class="nc" id="L997">            long nAccounts = mAccountsDbAdapter.bulkAddRecords(mAccountList, DatabaseAdapter.UpdateMethod.insert);</span>
+<span class="nc" id="L998">            Log.d(&quot;Handler:&quot;, String.format(&quot;%d accounts inserted&quot;, nAccounts));</span>
+            //We need to add scheduled actions first because there is a foreign key constraint on transactions
+            //which are generated from scheduled actions (we do auto-create some transactions during import)
+<span class="nc" id="L1001">            long nSchedActions = mScheduledActionsDbAdapter.bulkAddRecords(mScheduledActionsList, DatabaseAdapter.UpdateMethod.insert);</span>
+<span class="nc" id="L1002">            Log.d(&quot;Handler:&quot;, String.format(&quot;%d scheduled actions inserted&quot;, nSchedActions));</span>
+
+<span class="nc" id="L1004">            long nTempTransactions = mTransactionsDbAdapter.bulkAddRecords(mTemplateTransactions, DatabaseAdapter.UpdateMethod.insert);</span>
+<span class="nc" id="L1005">            Log.d(&quot;Handler:&quot;, String.format(&quot;%d template transactions inserted&quot;, nTempTransactions));</span>
+
+<span class="nc" id="L1007">            long nTransactions = mTransactionsDbAdapter.bulkAddRecords(mTransactionList, DatabaseAdapter.UpdateMethod.insert);</span>
+<span class="nc" id="L1008">            Log.d(&quot;Handler:&quot;, String.format(&quot;%d transactions inserted&quot;, nTransactions));</span>
+
+<span class="nc" id="L1010">            long nPrices = mPricesDbAdapter.bulkAddRecords(mPriceList, DatabaseAdapter.UpdateMethod.insert);</span>
+<span class="nc" id="L1011">            Log.d(getClass().getSimpleName(), String.format(&quot;%d prices inserted&quot;, nPrices));</span>
+
+            //// TODO: 01.06.2016 Re-enable import of Budget stuff when the UI is complete
+//            long nBudgets = mBudgetsDbAdapter.bulkAddRecords(mBudgetList, DatabaseAdapter.UpdateMethod.insert);
+//            Log.d(getClass().getSimpleName(), String.format(&quot;%d budgets inserted&quot;, nBudgets));
+
+<span class="nc" id="L1017">            long endTime = System.nanoTime();</span>
+<span class="nc" id="L1018">            Log.d(getClass().getSimpleName(), String.format(&quot;bulk insert time: %d&quot;, endTime - startTime));</span>
+
+            //if all of the import went smoothly, then add the book to the book db
+<span class="nc" id="L1021">            booksDbAdapter.addRecord(mBook, DatabaseAdapter.UpdateMethod.insert);</span>
+<span class="nc" id="L1022">            mAccountsDbAdapter.setTransactionSuccessful();</span>
+        } finally {
+<span class="nc" id="L1024">            mAccountsDbAdapter.enableForeignKey(true);</span>
+<span class="nc" id="L1025">            mAccountsDbAdapter.endTransaction();</span>
+<span class="nc" id="L1026">            mainDb.close(); //close it after import</span>
+<span class="nc" id="L1027">        }</span>
+<span class="nc" id="L1028">    }</span>
+
+    /**
+     * Returns the unique identifier of the just-imported book
+     * @return GUID of the newly imported book
+     */
+    public @NonNull String getBookUID(){
+<span class="nc" id="L1035">        return mBook.getUID();</span>
+    }
+
+    /**
+     * Returns the currency for an account which has been parsed (but not yet saved to the db)
+     * &lt;p&gt;This is used when parsing splits to assign the right currencies to the splits&lt;/p&gt;
+     * @param accountUID GUID of the account
+     * @return Commodity of the account
+     */
+    private Commodity getCommodityForAccount(String accountUID){
+        try {
+<span class="nc" id="L1046">            return mAccountMap.get(accountUID).getCommodity();</span>
+<span class="nc" id="L1047">        } catch (Exception e) {</span>
+<span class="nc" id="L1048">            Crashlytics.logException(e);</span>
+<span class="nc" id="L1049">            return Commodity.DEFAULT_COMMODITY;</span>
+        }
+    }
+
+
+    /**
+     * Handles the case when we reach the end of the template numeric slot
+     * @param characterString Parsed characters containing split amount
+     */
+    private void handleEndOfTemplateNumericSlot(String characterString, TransactionType splitType) {
+        try {
+            // HACK: Check for bug #562. If a value has already been set, ignore the one just read
+<span class="nc bnc" id="L1061" title="All 2 branches missed.">            if (mSplit.getValue().equals(</span>
+<span class="nc" id="L1062">                    new Money(BigDecimal.ZERO, mSplit.getValue().getCommodity()))) {</span>
+<span class="nc" id="L1063">                BigDecimal amountBigD = GncXmlHelper.parseSplitAmount(characterString);</span>
+<span class="nc" id="L1064">                Money amount = new Money(amountBigD, getCommodityForAccount(mSplit.getAccountUID()));</span>
+
+<span class="nc" id="L1066">                mSplit.setValue(amount.abs());</span>
+<span class="nc" id="L1067">                mSplit.setType(splitType);</span>
+<span class="nc" id="L1068">                mIgnoreTemplateTransaction = false; //we have successfully parsed an amount</span>
+            }
+<span class="nc" id="L1070">        } catch (NumberFormatException | ParseException e) {</span>
+<span class="nc" id="L1071">            String msg = &quot;Error parsing template credit split amount &quot; + characterString;</span>
+<span class="nc" id="L1072">            Log.e(LOG_TAG, msg + &quot;\n&quot; + e.getMessage());</span>
+<span class="nc" id="L1073">            Crashlytics.log(msg);</span>
+<span class="nc" id="L1074">            Crashlytics.logException(e);</span>
+        } finally {
+<span class="nc bnc" id="L1076" title="All 6 branches missed.">            if (splitType == TransactionType.CREDIT)</span>
+<span class="nc" id="L1077">                mInCreditNumericSlot = false;</span>
+            else
+<span class="nc" id="L1079">                mInDebitNumericSlot = false;</span>
+<span class="nc" id="L1080">        }</span>
+<span class="nc" id="L1081">    }</span>
+
+    /**
+     * Generates the runs of the scheduled action which have been missed since the file was last opened.
+     * @param scheduledAction Scheduled action for transaction
+     * @return Number of transaction instances generated
+     */
+    private int generateMissedScheduledTransactions(ScheduledAction scheduledAction){
+        //if this scheduled action should not be run for any reason, return immediately
+<span class="nc bnc" id="L1090" title="All 2 branches missed.">        if (scheduledAction.getActionType() != ScheduledAction.ActionType.TRANSACTION</span>
+<span class="nc bnc" id="L1091" title="All 4 branches missed.">                || !scheduledAction.isEnabled() || !scheduledAction.shouldAutoCreate()</span>
+<span class="nc bnc" id="L1092" title="All 4 branches missed.">                || (scheduledAction.getEndTime() &gt; 0 &amp;&amp; scheduledAction.getEndTime() &gt; System.currentTimeMillis())</span>
+<span class="nc bnc" id="L1093" title="All 4 branches missed.">                || (scheduledAction.getTotalPlannedExecutionCount() &gt; 0 &amp;&amp; scheduledAction.getExecutionCount() &gt;= scheduledAction.getTotalPlannedExecutionCount())){</span>
+<span class="nc" id="L1094">            return 0;</span>
+        }
+
+<span class="nc" id="L1097">        long lastRuntime = scheduledAction.getStartTime();</span>
+<span class="nc bnc" id="L1098" title="All 2 branches missed.">        if (scheduledAction.getLastRunTime() &gt; 0){</span>
+<span class="nc" id="L1099">            lastRuntime = scheduledAction.getLastRunTime();</span>
+        }
+
+<span class="nc" id="L1102">        int generatedTransactionCount = 0;</span>
+<span class="nc" id="L1103">        long period = scheduledAction.getPeriod();</span>
+<span class="nc" id="L1104">        final String actionUID = scheduledAction.getActionUID();</span>
+<span class="nc bnc" id="L1105" title="All 2 branches missed.">        while ((lastRuntime = lastRuntime + period) &lt;= System.currentTimeMillis()){</span>
+<span class="nc bnc" id="L1106" title="All 2 branches missed.">            for (Transaction templateTransaction : mTemplateTransactions) {</span>
+<span class="nc bnc" id="L1107" title="All 2 branches missed.">                if (templateTransaction.getUID().equals(actionUID)){</span>
+<span class="nc" id="L1108">                    Transaction transaction = new Transaction(templateTransaction, true);</span>
+<span class="nc" id="L1109">                    transaction.setTime(lastRuntime);</span>
+<span class="nc" id="L1110">                    transaction.setScheduledActionUID(scheduledAction.getUID());</span>
+<span class="nc" id="L1111">                    mTransactionList.add(transaction);</span>
+                    //autobalance splits are generated with the currency of the transactions as the GUID
+                    //so we add them to the mAutoBalanceSplits which will be updated to real GUIDs before saving
+<span class="nc" id="L1114">                    List&lt;Split&gt; autoBalanceSplits = transaction.getSplits(transaction.getCurrencyCode());</span>
+<span class="nc" id="L1115">                    mAutoBalanceSplits.addAll(autoBalanceSplits);</span>
+<span class="nc" id="L1116">                    scheduledAction.setExecutionCount(scheduledAction.getExecutionCount() + 1);</span>
+<span class="nc" id="L1117">                    ++generatedTransactionCount;</span>
+<span class="nc" id="L1118">                    break;</span>
+                }
+<span class="nc" id="L1120">            }</span>
+        }
+<span class="nc" id="L1122">        scheduledAction.setLastRun(lastRuntime);</span>
+<span class="nc" id="L1123">        return generatedTransactionCount;</span>
+    }
+
+    /**
+     * Sets the by days of the scheduled action to the day of the week of the start time.
+     *
+     * &lt;p&gt;Until we implement parsing of days of the week for scheduled actions,
+     * this ensures they are executed at least once per week.&lt;/p&gt;
+     */
+    private void setMinimalScheduledActionByDays() {
+<span class="nc" id="L1133">        Calendar calendar = Calendar.getInstance();</span>
+<span class="nc" id="L1134">        calendar.setTime(new Date(mScheduledAction.getStartTime()));</span>
+<span class="nc" id="L1135">        mScheduledAction.getRecurrence().setByDays(</span>
+<span class="nc" id="L1136">                Collections.singletonList(calendar.get(Calendar.DAY_OF_WEEK)));</span>
+<span class="nc" id="L1137">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

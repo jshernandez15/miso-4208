@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ExportFormat.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.export</a> &gt; <span class="el_source">ExportFormat.java</span></div><h1>ExportFormat.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2013 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.gnucash.android.export;
+
+/**
+ * Enumeration of the different export formats supported by the application
+* @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+*/
+<span class="nc" id="L22">public enum ExportFormat {</span>
+<span class="nc" id="L23">    QIF(&quot;Quicken Interchange Format&quot;),</span>
+<span class="nc" id="L24">    OFX(&quot;Open Financial eXchange&quot;),</span>
+<span class="nc" id="L25">    XML(&quot;GnuCash XML&quot;);</span>
+
+    /**
+     * Full name of the export format acronym
+     */
+    private String mDescription;
+
+<span class="nc" id="L32">    ExportFormat(String description) {</span>
+<span class="nc" id="L33">        this.mDescription = description;</span>
+<span class="nc" id="L34">    }</span>
+
+    /**
+     * Returns the file extension for this export format including the period e.g. &quot;.qif&quot;
+     * @return String file extension for the export format
+     */
+    public String getExtension(){
+<span class="nc bnc" id="L41" title="All 4 branches missed.">        switch (this) {</span>
+            case QIF:
+<span class="nc" id="L43">                return &quot;.qif&quot;;</span>
+            case OFX:
+<span class="nc" id="L45">                return &quot;.ofx&quot;;</span>
+            case XML:
+<span class="nc" id="L47">                return &quot;.gnca&quot;;</span>
+            default:
+<span class="nc" id="L49">                return &quot;.txt&quot;;</span>
+        }
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L55">        return mDescription;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

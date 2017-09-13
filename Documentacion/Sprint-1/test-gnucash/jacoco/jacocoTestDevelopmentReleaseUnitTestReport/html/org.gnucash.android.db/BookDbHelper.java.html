@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BookDbHelper.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.db</a> &gt; <span class="el_source">BookDbHelper.java</span></div><h1>BookDbHelper.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2015 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.db;
+
+import android.content.ContentValues;
+import android.content.Context;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
+import android.database.sqlite.SQLiteStatement;
+import android.util.Log;
+
+import com.crashlytics.android.Crashlytics;
+
+import org.gnucash.android.app.GnuCashApplication;
+import org.gnucash.android.db.DatabaseSchema.BookEntry;
+import org.gnucash.android.db.adapter.AccountsDbAdapter;
+import org.gnucash.android.db.adapter.BooksDbAdapter;
+import org.gnucash.android.db.adapter.SplitsDbAdapter;
+import org.gnucash.android.db.adapter.TransactionsDbAdapter;
+import org.gnucash.android.export.Exporter;
+import org.gnucash.android.model.Book;
+import org.gnucash.android.util.RecursiveMoveFiles;
+
+import java.io.File;
+import java.io.IOException;
+
+/**
+ * Database helper for managing database which stores information about the books in the application
+ * This is a different database from the one which contains the accounts and transaction data because
+ * there are multiple accounts/transactions databases in the system and this one will be used to
+ * switch between them.
+ */
+public class BookDbHelper extends SQLiteOpenHelper {
+
+    public static final String LOG_TAG = &quot;BookDbHelper&quot;;
+
+    private Context mContext;
+
+    /**
+     * Create the books table
+     */
+<span class="nc" id="L56">    private static final String BOOKS_TABLE_CREATE = &quot;CREATE TABLE &quot; + BookEntry.TABLE_NAME + &quot; (&quot;</span>
+            + BookEntry._ID 		         + &quot; integer primary key autoincrement, &quot;
+            + BookEntry.COLUMN_UID 		     + &quot; varchar(255) not null UNIQUE, &quot;
+            + BookEntry.COLUMN_DISPLAY_NAME  + &quot; varchar(255) not null, &quot;
+            + BookEntry.COLUMN_ROOT_GUID     + &quot; varchar(255) not null, &quot;
+            + BookEntry.COLUMN_TEMPLATE_GUID + &quot; varchar(255), &quot;
+            + BookEntry.COLUMN_ACTIVE        + &quot; tinyint default 0, &quot;
+            + BookEntry.COLUMN_SOURCE_URI    + &quot; varchar(255), &quot;
+            + BookEntry.COLUMN_LAST_SYNC     + &quot; TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, &quot;
+            + BookEntry.COLUMN_CREATED_AT    + &quot; TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, &quot;
+            + BookEntry.COLUMN_MODIFIED_AT   + &quot; TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP &quot;
+<span class="nc" id="L67">            + &quot;);&quot; + DatabaseHelper.createUpdatedAtTrigger(BookEntry.TABLE_NAME);</span>
+
+    public BookDbHelper(Context context) {
+<span class="nc" id="L70">        super(context, DatabaseSchema.BOOK_DATABASE_NAME, null, DatabaseSchema.BOOK_DATABASE_VERSION);</span>
+<span class="nc" id="L71">        mContext = context;</span>
+<span class="nc" id="L72">    }</span>
+
+    @Override
+    public void onCreate(SQLiteDatabase db) {
+<span class="nc" id="L76">        db.execSQL(BOOKS_TABLE_CREATE);</span>
+
+<span class="nc bnc" id="L78" title="All 2 branches missed.">        if (mContext.getDatabasePath(DatabaseSchema.LEGACY_DATABASE_NAME).exists()){</span>
+<span class="nc" id="L79">            Log.d(LOG_TAG, &quot;Legacy database found. Migrating to multibook format&quot;);</span>
+<span class="nc" id="L80">            DatabaseHelper helper = new DatabaseHelper(GnuCashApplication.getAppContext(),</span>
+                    DatabaseSchema.LEGACY_DATABASE_NAME);
+<span class="nc" id="L82">            SQLiteDatabase mainDb = helper.getWritableDatabase();</span>
+<span class="nc" id="L83">            AccountsDbAdapter accountsDbAdapter = new AccountsDbAdapter(mainDb,</span>
+                    new TransactionsDbAdapter(mainDb, new SplitsDbAdapter(mainDb)));
+
+<span class="nc" id="L86">            String rootAccountUID = accountsDbAdapter.getOrCreateGnuCashRootAccountUID();</span>
+
+<span class="nc" id="L88">            Book book = new Book(rootAccountUID);</span>
+<span class="nc" id="L89">            book.setActive(true);</span>
+<span class="nc" id="L90">            insertBook(db, book);</span>
+
+<span class="nc" id="L92">            String mainDbPath = mainDb.getPath();</span>
+<span class="nc" id="L93">            helper.close();</span>
+
+<span class="nc" id="L95">            File src = new File(mainDbPath);</span>
+<span class="nc" id="L96">            File dst = new File(src.getParent(), book.getUID());</span>
+            try {
+<span class="nc" id="L98">                MigrationHelper.moveFile(src, dst);</span>
+<span class="nc" id="L99">            } catch (IOException e) {</span>
+<span class="nc" id="L100">                String err_msg = &quot;Error renaming database file&quot;;</span>
+<span class="nc" id="L101">                Crashlytics.log(err_msg);</span>
+<span class="nc" id="L102">                Log.e(LOG_TAG, err_msg, e);</span>
+<span class="nc" id="L103">            }</span>
+
+<span class="nc" id="L105">            migrateBackupFiles(book.getUID());</span>
+        }
+
+<span class="nc" id="L108">        String sql = &quot;SELECT COUNT(*) FROM &quot; + BookEntry.TABLE_NAME;</span>
+<span class="nc" id="L109">        SQLiteStatement statement = db.compileStatement(sql);</span>
+<span class="nc" id="L110">        long count = statement.simpleQueryForLong();</span>
+<span class="nc bnc" id="L111" title="All 2 branches missed.">        if (count == 0) { //no book in the database, create a default one</span>
+<span class="nc" id="L112">            Log.i(LOG_TAG, &quot;No books found in database, creating default book&quot;);</span>
+<span class="nc" id="L113">            Book book = new Book();</span>
+<span class="nc" id="L114">            DatabaseHelper helper = new DatabaseHelper(GnuCashApplication.getAppContext(), book.getUID());</span>
+<span class="nc" id="L115">            SQLiteDatabase mainDb = helper.getWritableDatabase(); //actually create the db</span>
+<span class="nc" id="L116">            AccountsDbAdapter accountsDbAdapter = new AccountsDbAdapter(mainDb,</span>
+                    new TransactionsDbAdapter(mainDb, new SplitsDbAdapter(mainDb)));
+
+<span class="nc" id="L119">            String rootAccountUID = accountsDbAdapter.getOrCreateGnuCashRootAccountUID();</span>
+<span class="nc" id="L120">            book.setRootAccountUID(rootAccountUID);</span>
+<span class="nc" id="L121">            book.setActive(true);</span>
+<span class="nc" id="L122">            insertBook(db, book);</span>
+        }
+
+<span class="nc" id="L125">    }</span>
+
+    /**
+     * Returns the database for the book
+     * @param bookUID GUID of the book
+     * @return SQLiteDatabase of the book
+     */
+    public static SQLiteDatabase getDatabase(String bookUID){
+<span class="nc" id="L133">        DatabaseHelper dbHelper = new DatabaseHelper(GnuCashApplication.getAppContext(), bookUID);</span>
+<span class="nc" id="L134">        return dbHelper.getWritableDatabase();</span>
+    }
+
+    /**
+     * Inserts the book into the database
+     * @param db Book database
+     * @param book Book to insert
+     */
+    private void insertBook(SQLiteDatabase db, Book book) {
+<span class="nc" id="L143">        ContentValues contentValues = new ContentValues();</span>
+<span class="nc" id="L144">        contentValues.put(BookEntry.COLUMN_UID, book.getUID());</span>
+<span class="nc" id="L145">        contentValues.put(BookEntry.COLUMN_ROOT_GUID, book.getRootAccountUID());</span>
+<span class="nc" id="L146">        contentValues.put(BookEntry.COLUMN_TEMPLATE_GUID, Book.generateUID());</span>
+<span class="nc" id="L147">        contentValues.put(BookEntry.COLUMN_DISPLAY_NAME, new BooksDbAdapter(db).generateDefaultBookName());</span>
+<span class="nc bnc" id="L148" title="All 2 branches missed.">        contentValues.put(BookEntry.COLUMN_ACTIVE, book.isActive() ? 1 : 0);</span>
+
+<span class="nc" id="L150">        db.insert(BookEntry.TABLE_NAME, null, contentValues);</span>
+<span class="nc" id="L151">    }</span>
+
+    /**
+     * Move the backup and export files from the old location (single-book) to the new multi-book
+     * backup folder structure. Each book has its own directory as well as backups and exports.
+     * &lt;p&gt;This method should be called only once during the initial migration to multi-book support&lt;/p&gt;
+     * @param activeBookUID GUID of the book for which to migrate the files
+     */
+    private void migrateBackupFiles(String activeBookUID){
+
+<span class="nc" id="L161">        Log.d(LOG_TAG, &quot;Moving export and backup files to book-specific folders&quot;);</span>
+<span class="nc" id="L162">        File newBasePath = new File(Exporter.LEGACY_BASE_FOLDER_PATH + &quot;/&quot; + activeBookUID);</span>
+<span class="nc" id="L163">        newBasePath.mkdirs();</span>
+
+<span class="nc" id="L165">        File src = new File(Exporter.LEGACY_BASE_FOLDER_PATH + &quot;/backups/&quot;);</span>
+<span class="nc" id="L166">        File dst = new File(Exporter.LEGACY_BASE_FOLDER_PATH + &quot;/&quot; + activeBookUID + &quot;/backups/&quot;);</span>
+<span class="nc" id="L167">        new Thread(new RecursiveMoveFiles(src, dst)).start();</span>
+
+<span class="nc" id="L169">        src = new File(Exporter.LEGACY_BASE_FOLDER_PATH + &quot;/exports/&quot;);</span>
+<span class="nc" id="L170">        dst = new File(Exporter.LEGACY_BASE_FOLDER_PATH + &quot;/&quot; + activeBookUID + &quot;/exports/&quot;);</span>
+<span class="nc" id="L171">        new Thread(new RecursiveMoveFiles(src, dst)).start();</span>
+
+<span class="nc" id="L173">        File nameFile = new File(newBasePath, &quot;Book 1&quot;);</span>
+        try {
+<span class="nc" id="L175">            nameFile.createNewFile();</span>
+<span class="nc" id="L176">        } catch (IOException e) {</span>
+<span class="nc" id="L177">            Log.e(LOG_TAG, &quot;Error creating name file for the database: &quot; + nameFile.getName());</span>
+<span class="nc" id="L178">            e.printStackTrace();</span>
+<span class="nc" id="L179">        }</span>
+<span class="nc" id="L180">    }</span>
+
+    @Override
+    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        //nothing to see here yet, move along
+<span class="nc" id="L185">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

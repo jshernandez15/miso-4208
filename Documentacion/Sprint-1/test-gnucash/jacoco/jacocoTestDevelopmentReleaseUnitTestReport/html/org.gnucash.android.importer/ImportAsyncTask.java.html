@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ImportAsyncTask.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.importer</a> &gt; <span class="el_source">ImportAsyncTask.java</span></div><h1>ImportAsyncTask.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2014 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.gnucash.android.importer;
+
+import android.annotation.TargetApi;
+import android.app.Activity;
+import android.app.ProgressDialog;
+import android.content.ContentValues;
+import android.content.Context;
+import android.database.Cursor;
+import android.net.Uri;
+import android.os.AsyncTask;
+import android.os.Build;
+import android.provider.OpenableColumns;
+import android.util.Log;
+import android.widget.Toast;
+
+import com.crashlytics.android.Crashlytics;
+
+import org.gnucash.android.R;
+import org.gnucash.android.db.DatabaseSchema;
+import org.gnucash.android.db.adapter.BooksDbAdapter;
+import org.gnucash.android.ui.util.TaskDelegate;
+import org.gnucash.android.util.BookUtils;
+
+import java.io.InputStream;
+
+/**
+ * Imports a GnuCash (desktop) account file and displays a progress dialog.
+ * The AccountsActivity is opened when importing is done.
+ */
+public class ImportAsyncTask extends AsyncTask&lt;Uri, Void, Boolean&gt; {
+    private final Activity mContext;
+    private TaskDelegate mDelegate;
+    private ProgressDialog mProgressDialog;
+
+    private String mImportedBookUID;
+
+<span class="nc" id="L52">    public ImportAsyncTask(Activity context){</span>
+<span class="nc" id="L53">        this.mContext = context;</span>
+<span class="nc" id="L54">    }</span>
+
+<span class="nc" id="L56">    public ImportAsyncTask(Activity context, TaskDelegate delegate){</span>
+<span class="nc" id="L57">        this.mContext = context;</span>
+<span class="nc" id="L58">        this.mDelegate = delegate;</span>
+<span class="nc" id="L59">    }</span>
+
+    @Override
+    protected void onPreExecute() {
+<span class="nc" id="L63">        super.onPreExecute();</span>
+<span class="nc" id="L64">        mProgressDialog = new ProgressDialog(mContext);</span>
+<span class="nc" id="L65">        mProgressDialog.setTitle(R.string.title_progress_importing_accounts);</span>
+<span class="nc" id="L66">        mProgressDialog.setIndeterminate(true);</span>
+<span class="nc" id="L67">        mProgressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);</span>
+<span class="nc" id="L68">        mProgressDialog.show();</span>
+
+        //these methods must be called after progressDialog.show()
+<span class="nc" id="L71">        mProgressDialog.setProgressNumberFormat(null);</span>
+<span class="nc" id="L72">        mProgressDialog.setProgressPercentFormat(null);</span>
+
+
+<span class="nc" id="L75">    }</span>
+
+    @Override
+    protected Boolean doInBackground(Uri... uris) {
+        try {
+<span class="nc" id="L80">            InputStream accountInputStream = mContext.getContentResolver().openInputStream(uris[0]);</span>
+<span class="nc" id="L81">            mImportedBookUID = GncXmlImporter.parse(accountInputStream);</span>
+
+<span class="nc" id="L83">        } catch (Exception exception){</span>
+<span class="nc" id="L84">            Log.e(ImportAsyncTask.class.getName(), &quot;&quot; + exception.getMessage());</span>
+<span class="nc" id="L85">            Crashlytics.log(&quot;Could not open: &quot; + uris[0].toString());</span>
+<span class="nc" id="L86">            Crashlytics.logException(exception);</span>
+<span class="nc" id="L87">            exception.printStackTrace();</span>
+
+<span class="nc" id="L89">            final String err_msg = exception.getLocalizedMessage();</span>
+<span class="nc" id="L90">            Crashlytics.log(err_msg);</span>
+<span class="nc" id="L91">            mContext.runOnUiThread(new Runnable() {</span>
+                @Override
+                public void run() {
+<span class="nc" id="L94">                    Toast.makeText(mContext,</span>
+<span class="nc" id="L95">                            mContext.getString(R.string.toast_error_importing_accounts) + &quot;\n&quot; + err_msg,</span>
+<span class="nc" id="L96">                            Toast.LENGTH_LONG).show();</span>
+<span class="nc" id="L97">                }</span>
+            });
+
+<span class="nc" id="L100">            return false;</span>
+<span class="nc" id="L101">        }</span>
+
+<span class="nc" id="L103">        Cursor cursor = mContext.getContentResolver().query(uris[0], null, null, null, null);</span>
+<span class="nc bnc" id="L104" title="All 4 branches missed.">        if (cursor != null &amp;&amp; cursor.moveToFirst()) {</span>
+<span class="nc" id="L105">            int nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);</span>
+<span class="nc" id="L106">            String displayName = cursor.getString(nameIndex);</span>
+<span class="nc" id="L107">            ContentValues contentValues = new ContentValues();</span>
+<span class="nc" id="L108">            contentValues.put(DatabaseSchema.BookEntry.COLUMN_DISPLAY_NAME, displayName);</span>
+<span class="nc" id="L109">            contentValues.put(DatabaseSchema.BookEntry.COLUMN_SOURCE_URI, uris[0].toString());</span>
+<span class="nc" id="L110">            BooksDbAdapter.getInstance().updateRecord(mImportedBookUID, contentValues);</span>
+
+<span class="nc" id="L112">            cursor.close();</span>
+        }
+
+        //set the preferences to their default values
+<span class="nc" id="L116">        mContext.getSharedPreferences(mImportedBookUID, Context.MODE_PRIVATE)</span>
+<span class="nc" id="L117">                .edit()</span>
+<span class="nc" id="L118">                .putBoolean(mContext.getString(R.string.key_use_double_entry), true)</span>
+<span class="nc" id="L119">                .apply();</span>
+
+<span class="nc" id="L121">        return true;</span>
+    }
+
+    @Override
+    protected void onPostExecute(Boolean importSuccess) {
+        try {
+<span class="nc bnc" id="L127" title="All 4 branches missed.">            if (mProgressDialog != null &amp;&amp; mProgressDialog.isShowing())</span>
+<span class="nc" id="L128">                mProgressDialog.dismiss();</span>
+<span class="nc" id="L129">        } catch (IllegalArgumentException ex){</span>
+            //TODO: This is a hack to catch &quot;View not attached to window&quot; exceptions
+            //FIXME by moving the creation and display of the progress dialog to the Fragment
+        } finally {
+<span class="nc" id="L133">            mProgressDialog = null;</span>
+<span class="nc" id="L134">        }</span>
+
+<span class="nc bnc" id="L136" title="All 2 branches missed.">        int message = importSuccess ? R.string.toast_success_importing_accounts : R.string.toast_error_importing_accounts;</span>
+<span class="nc" id="L137">        Toast.makeText(mContext, message, Toast.LENGTH_SHORT).show();</span>
+
+<span class="nc bnc" id="L139" title="All 2 branches missed.">        if (mImportedBookUID != null)</span>
+<span class="nc" id="L140">            BookUtils.loadBook(mImportedBookUID);</span>
+
+<span class="nc bnc" id="L142" title="All 2 branches missed.">        if (mDelegate != null)</span>
+<span class="nc" id="L143">            mDelegate.onTaskComplete();</span>
+<span class="nc" id="L144">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

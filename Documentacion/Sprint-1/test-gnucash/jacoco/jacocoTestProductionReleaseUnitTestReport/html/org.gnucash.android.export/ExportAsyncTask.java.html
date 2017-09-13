@@ -1,0 +1,632 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ExportAsyncTask.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.export</a> &gt; <span class="el_source">ExportAsyncTask.java</span></div><h1>ExportAsyncTask.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2013 - 2015 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ * Copyright (c) 2014 Yongxin Wang &lt;fefe.wyx@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.export;
+
+import android.app.Activity;
+import android.app.ProgressDialog;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.pm.ResolveInfo;
+import android.database.sqlite.SQLiteDatabase;
+import android.net.Uri;
+import android.os.AsyncTask;
+import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
+import android.support.v4.content.FileProvider;
+import android.util.Log;
+import android.widget.Toast;
+
+import com.crashlytics.android.Crashlytics;
+import com.dropbox.core.v2.DbxClientV2;
+import com.dropbox.core.v2.files.FileMetadata;
+import com.dropbox.core.v2.files.Metadata;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.drive.Drive;
+import com.google.android.gms.drive.DriveApi;
+import com.google.android.gms.drive.DriveContents;
+import com.google.android.gms.drive.DriveFolder;
+import com.google.android.gms.drive.DriveId;
+import com.google.android.gms.drive.MetadataChangeSet;
+import com.owncloud.android.lib.common.OwnCloudClient;
+import com.owncloud.android.lib.common.OwnCloudClientFactory;
+import com.owncloud.android.lib.common.OwnCloudCredentialsFactory;
+import com.owncloud.android.lib.common.operations.RemoteOperationResult;
+import com.owncloud.android.lib.resources.files.CreateRemoteFolderOperation;
+import com.owncloud.android.lib.resources.files.FileUtils;
+import com.owncloud.android.lib.resources.files.UploadRemoteFileOperation;
+
+import org.gnucash.android.R;
+import org.gnucash.android.app.GnuCashApplication;
+import org.gnucash.android.db.adapter.AccountsDbAdapter;
+import org.gnucash.android.db.adapter.DatabaseAdapter;
+import org.gnucash.android.db.adapter.SplitsDbAdapter;
+import org.gnucash.android.db.adapter.TransactionsDbAdapter;
+import org.gnucash.android.export.ofx.OfxExporter;
+import org.gnucash.android.export.qif.QifExporter;
+import org.gnucash.android.export.xml.GncXmlExporter;
+import org.gnucash.android.model.Transaction;
+import org.gnucash.android.ui.account.AccountsActivity;
+import org.gnucash.android.ui.account.AccountsListFragment;
+import org.gnucash.android.ui.settings.BackupPreferenceFragment;
+import org.gnucash.android.ui.transaction.TransactionsActivity;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.channels.FileChannel;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+
+/**
+ * Asynchronous task for exporting transactions.
+ *
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ */
+public class ExportAsyncTask extends AsyncTask&lt;ExportParams, Void, Boolean&gt; {
+
+    /**
+     * App context
+     */
+    private final Context mContext;
+
+    private ProgressDialog mProgressDialog;
+
+    private SQLiteDatabase mDb;
+
+    /**
+     * Log tag
+     */
+    public static final String TAG = &quot;ExportAsyncTask&quot;;
+
+    /**
+     * Export parameters
+     */
+    private ExportParams mExportParams;
+
+    // File paths generated by the exporter
+    private List&lt;String&gt; mExportedFiles;
+
+    private Exporter mExporter;
+
+<span class="nc" id="L114">    public ExportAsyncTask(Context context, SQLiteDatabase db){</span>
+<span class="nc" id="L115">        this.mContext = context;</span>
+<span class="nc" id="L116">        this.mDb = db;</span>
+<span class="nc" id="L117">    }</span>
+
+    @Override
+    protected void onPreExecute() {
+<span class="nc" id="L121">        super.onPreExecute();</span>
+<span class="nc bnc" id="L122" title="All 2 branches missed.">        if (mContext instanceof Activity) {</span>
+<span class="nc" id="L123">            mProgressDialog = new ProgressDialog(mContext);</span>
+<span class="nc" id="L124">            mProgressDialog.setTitle(R.string.title_progress_exporting_transactions);</span>
+<span class="nc" id="L125">            mProgressDialog.setIndeterminate(true);</span>
+<span class="nc" id="L126">            mProgressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);</span>
+<span class="nc" id="L127">            mProgressDialog.setProgressNumberFormat(null);</span>
+<span class="nc" id="L128">            mProgressDialog.setProgressPercentFormat(null);</span>
+
+<span class="nc" id="L130">            mProgressDialog.show();</span>
+        }
+<span class="nc" id="L132">    }</span>
+
+    /**
+     * Generates the appropriate exported transactions file for the given parameters
+     * @param params Export parameters
+     * @return &lt;code&gt;true&lt;/code&gt; if export was successful, &lt;code&gt;false&lt;/code&gt; otherwise
+     */
+    @Override
+    protected Boolean doInBackground(ExportParams... params) {
+<span class="nc" id="L141">        mExportParams = params[0];</span>
+<span class="nc" id="L142">        mExporter = getExporter();</span>
+
+        try {
+<span class="nc" id="L145">            mExportedFiles = mExporter.generateExport();</span>
+<span class="nc" id="L146">        } catch (final Exception e) {</span>
+<span class="nc" id="L147">            Log.e(TAG, &quot;Error exporting: &quot; + e.getMessage());</span>
+<span class="nc" id="L148">            Crashlytics.logException(e);</span>
+<span class="nc" id="L149">            e.printStackTrace();</span>
+<span class="nc bnc" id="L150" title="All 2 branches missed.">            if (mContext instanceof Activity) {</span>
+<span class="nc" id="L151">                ((Activity)mContext).runOnUiThread(new Runnable() {</span>
+                    @Override
+                    public void run() {
+<span class="nc" id="L154">                        Toast.makeText(mContext,</span>
+<span class="nc" id="L155">                                mContext.getString(R.string.toast_export_error, mExportParams.getExportFormat().name())</span>
+<span class="nc" id="L156">                                + &quot;\n&quot; + e.getMessage(),</span>
+<span class="nc" id="L157">                                Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L158">                    }</span>
+                });
+            }
+<span class="nc" id="L161">            return false;</span>
+<span class="nc" id="L162">        }</span>
+
+<span class="nc bnc" id="L164" title="All 2 branches missed.">        if (mExportedFiles.isEmpty())</span>
+<span class="nc" id="L165">            return false;</span>
+
+        try {
+<span class="nc" id="L168">            moveToTarget();</span>
+<span class="nc" id="L169">        } catch (Exporter.ExporterException e) {</span>
+<span class="nc" id="L170">            Crashlytics.log(Log.ERROR, TAG, &quot;Error sending exported files to target: &quot; + e.getMessage());</span>
+<span class="nc" id="L171">            return false;</span>
+<span class="nc" id="L172">        }</span>
+
+<span class="nc" id="L174">        return true;</span>
+    }
+
+    /**
+     * Transmits the exported transactions to the designated location, either SD card or third-party application
+     * Finishes the activity if the export was starting  in the context of an activity
+     * @param exportSuccessful Result of background export execution
+     */
+    @Override
+    protected void onPostExecute(Boolean exportSuccessful) {
+<span class="nc bnc" id="L184" title="All 2 branches missed.">        if (exportSuccessful) {</span>
+<span class="nc bnc" id="L185" title="All 2 branches missed.">            if (mContext instanceof Activity)</span>
+<span class="nc" id="L186">                reportSuccess();</span>
+
+<span class="nc bnc" id="L188" title="All 2 branches missed.">            if (mExportParams.shouldDeleteTransactionsAfterExport()) {</span>
+<span class="nc" id="L189">                backupAndDeleteTransactions();</span>
+<span class="nc" id="L190">                refreshViews();</span>
+            }
+        } else {
+<span class="nc bnc" id="L193" title="All 2 branches missed.">            if (mContext instanceof Activity) {</span>
+<span class="nc" id="L194">                dismissProgressDialog();</span>
+<span class="nc bnc" id="L195" title="All 2 branches missed.">                if (mExportedFiles.isEmpty()) {</span>
+<span class="nc" id="L196">                    Toast.makeText(mContext,</span>
+                            R.string.toast_no_transactions_to_export,
+<span class="nc" id="L198">                            Toast.LENGTH_LONG).show();</span>
+                } else {
+<span class="nc" id="L200">                    Toast.makeText(mContext,</span>
+<span class="nc" id="L201">                            mContext.getString(R.string.toast_export_error, mExportParams.getExportFormat().name()),</span>
+<span class="nc" id="L202">                            Toast.LENGTH_LONG).show();</span>
+                }
+            }
+        }
+
+<span class="nc" id="L207">        dismissProgressDialog();</span>
+<span class="nc" id="L208">    }</span>
+
+    private void dismissProgressDialog() {
+<span class="nc bnc" id="L211" title="All 2 branches missed.">        if (mContext instanceof Activity) {</span>
+<span class="nc bnc" id="L212" title="All 4 branches missed.">            if (mProgressDialog != null &amp;&amp; mProgressDialog.isShowing())</span>
+<span class="nc" id="L213">                mProgressDialog.dismiss();</span>
+<span class="nc" id="L214">            ((Activity) mContext).finish();</span>
+        }
+<span class="nc" id="L216">    }</span>
+
+    /**
+     * Returns an exporter corresponding to the user settings.
+     * @return Object of one of {@link QifExporter}, {@link OfxExporter} or {@link GncXmlExporter}
+     */
+    private Exporter getExporter() {
+<span class="nc bnc" id="L223" title="All 3 branches missed.">        switch (mExportParams.getExportFormat()) {</span>
+            case QIF:
+<span class="nc" id="L225">                return new QifExporter(mExportParams, mDb);</span>
+
+            case OFX:
+<span class="nc" id="L228">                return new OfxExporter(mExportParams, mDb);</span>
+
+            case XML:
+            default:
+<span class="nc" id="L232">                return new GncXmlExporter(mExportParams, mDb);</span>
+        }
+    }
+
+    /**
+     * Moves the generated export files to the target specified by the user
+     * @throws Exporter.ExporterException if the move fails
+     */
+    private void moveToTarget() throws Exporter.ExporterException {
+<span class="nc bnc" id="L241" title="All 7 branches missed.">        switch (mExportParams.getExportTarget()) {</span>
+            case SHARING:
+<span class="nc" id="L243">                shareFiles(mExportedFiles);</span>
+<span class="nc" id="L244">                break;</span>
+
+            case DROPBOX:
+<span class="nc" id="L247">                moveExportToDropbox();</span>
+<span class="nc" id="L248">                break;</span>
+
+            case GOOGLE_DRIVE:
+<span class="nc" id="L251">                moveExportToGoogleDrive();</span>
+<span class="nc" id="L252">                break;</span>
+
+            case OWNCLOUD:
+<span class="nc" id="L255">                moveExportToOwnCloud();</span>
+<span class="nc" id="L256">                break;</span>
+
+            case SD_CARD:
+<span class="nc" id="L259">                moveExportToSDCard();</span>
+<span class="nc" id="L260">                break;</span>
+
+            case URI:
+<span class="nc" id="L263">                moveExportToUri();</span>
+<span class="nc" id="L264">                break;</span>
+
+            default:
+<span class="nc" id="L267">                throw new Exporter.ExporterException(mExportParams, &quot;Invalid target&quot;);</span>
+        }
+<span class="nc" id="L269">    }</span>
+
+    /**
+     * Move the exported files to a specified URI.
+     * This URI could be a Storage Access Framework file
+     * @throws Exporter.ExporterException
+     */
+    private void moveExportToUri() throws Exporter.ExporterException {
+<span class="nc" id="L277">        Uri exportUri = Uri.parse(mExportParams.getExportLocation());</span>
+<span class="nc bnc" id="L278" title="All 2 branches missed.">        if (exportUri == null){</span>
+<span class="nc" id="L279">            Log.w(TAG, &quot;No URI found for export destination&quot;);</span>
+<span class="nc" id="L280">            return;</span>
+        }
+
+<span class="nc bnc" id="L283" title="All 2 branches missed.">        if (mExportedFiles.size() &gt; 0){</span>
+            try {
+<span class="nc" id="L285">                OutputStream outputStream = mContext.getContentResolver().openOutputStream(exportUri);</span>
+<span class="nc" id="L286">                ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream);</span>
+<span class="nc" id="L287">                byte[] buffer = new byte[1024];</span>
+<span class="nc bnc" id="L288" title="All 2 branches missed.">                for (String exportedFile : mExportedFiles) {</span>
+<span class="nc" id="L289">                    File file = new File(exportedFile);</span>
+<span class="nc" id="L290">                    FileInputStream fileInputStream = new FileInputStream(file);</span>
+<span class="nc" id="L291">                    zipOutputStream.putNextEntry(new ZipEntry(file.getName()));</span>
+
+                    int length;
+<span class="nc bnc" id="L294" title="All 2 branches missed.">                    while ((length = fileInputStream.read(buffer)) &gt; 0) {</span>
+<span class="nc" id="L295">                        zipOutputStream.write(buffer, 0, length);</span>
+                    }
+<span class="nc" id="L297">                    zipOutputStream.closeEntry();</span>
+<span class="nc" id="L298">                    fileInputStream.close();</span>
+<span class="nc" id="L299">                }</span>
+<span class="nc" id="L300">                zipOutputStream.close();</span>
+<span class="nc" id="L301">            } catch (IOException ex) {</span>
+<span class="nc" id="L302">                Log.e(TAG, &quot;Error when zipping QIF files for export&quot;);</span>
+<span class="nc" id="L303">                ex.printStackTrace();</span>
+<span class="nc" id="L304">                Crashlytics.logException(ex);</span>
+<span class="nc" id="L305">            }</span>
+        }
+<span class="nc" id="L307">    }</span>
+
+    /**
+     * Move the exported files to a GnuCash folder on Google Drive
+     * @throws Exporter.ExporterException
+     * @deprecated Explicit Google Drive integration is deprecated, use Storage Access Framework. See {@link #moveExportToUri()}
+     */
+    @Deprecated
+    private void moveExportToGoogleDrive() throws Exporter.ExporterException {
+<span class="nc" id="L316">        Log.i(TAG, &quot;Moving exported file to Google Drive&quot;);</span>
+<span class="nc" id="L317">        final GoogleApiClient googleApiClient = BackupPreferenceFragment.getGoogleApiClient(GnuCashApplication.getAppContext());</span>
+<span class="nc" id="L318">        googleApiClient.blockingConnect();</span>
+
+<span class="nc" id="L320">        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(mContext);</span>
+<span class="nc" id="L321">        String folderId = sharedPreferences.getString(mContext.getString(R.string.key_google_drive_app_folder_id), &quot;&quot;);</span>
+<span class="nc" id="L322">        DriveFolder folder = DriveId.decodeFromString(folderId).asDriveFolder();</span>
+        try {
+<span class="nc bnc" id="L324" title="All 2 branches missed.">            for (String exportedFilePath : mExportedFiles) {</span>
+<span class="nc" id="L325">                DriveApi.DriveContentsResult driveContentsResult =</span>
+<span class="nc" id="L326">                        Drive.DriveApi.newDriveContents(googleApiClient).await(1, TimeUnit.MINUTES);</span>
+<span class="nc bnc" id="L327" title="All 2 branches missed.">                if (!driveContentsResult.getStatus().isSuccess()) {</span>
+<span class="nc" id="L328">                    throw new Exporter.ExporterException(mExportParams,</span>
+                                                &quot;Error while trying to create new file contents&quot;);
+                }
+<span class="nc" id="L331">                final DriveContents driveContents = driveContentsResult.getDriveContents();</span>
+<span class="nc" id="L332">                OutputStream outputStream = driveContents.getOutputStream();</span>
+<span class="nc" id="L333">                File exportedFile = new File(exportedFilePath);</span>
+<span class="nc" id="L334">                FileInputStream fileInputStream = new FileInputStream(exportedFile);</span>
+<span class="nc" id="L335">                byte[] buffer = new byte[1024];</span>
+                int count;
+
+<span class="nc bnc" id="L338" title="All 2 branches missed.">                while ((count = fileInputStream.read(buffer)) &gt;= 0) {</span>
+<span class="nc" id="L339">                    outputStream.write(buffer, 0, count);</span>
+                }
+<span class="nc" id="L341">                fileInputStream.close();</span>
+<span class="nc" id="L342">                outputStream.flush();</span>
+<span class="nc" id="L343">                exportedFile.delete();</span>
+
+<span class="nc" id="L345">                MetadataChangeSet changeSet = new MetadataChangeSet.Builder()</span>
+<span class="nc" id="L346">                        .setTitle(exportedFile.getName())</span>
+<span class="nc" id="L347">                        .setMimeType(mExporter.getExportMimeType())</span>
+<span class="nc" id="L348">                        .build();</span>
+                // create a file on root folder
+<span class="nc" id="L350">                DriveFolder.DriveFileResult driveFileResult =</span>
+<span class="nc" id="L351">                        folder.createFile(googleApiClient, changeSet, driveContents)</span>
+<span class="nc" id="L352">                                                .await(1, TimeUnit.MINUTES);</span>
+<span class="nc bnc" id="L353" title="All 2 branches missed.">                if (!driveFileResult.getStatus().isSuccess())</span>
+<span class="nc" id="L354">                    throw new Exporter.ExporterException(mExportParams, &quot;Error creating file in Google Drive&quot;);</span>
+
+<span class="nc" id="L356">                Log.i(TAG, &quot;Created file with id: &quot; + driveFileResult.getDriveFile().getDriveId());</span>
+<span class="nc" id="L357">            }</span>
+<span class="nc" id="L358">        } catch (IOException e) {</span>
+<span class="nc" id="L359">            throw new Exporter.ExporterException(mExportParams, e);</span>
+<span class="nc" id="L360">        }</span>
+<span class="nc" id="L361">    }</span>
+
+    /**
+     * Move the exported files (in the cache directory) to Dropbox
+     */
+    private void moveExportToDropbox() {
+<span class="nc" id="L367">        Log.i(TAG, &quot;Uploading exported files to DropBox&quot;);</span>
+
+<span class="nc" id="L369">        DbxClientV2 dbxClient = DropboxHelper.getClient();</span>
+
+<span class="nc bnc" id="L371" title="All 2 branches missed.">        for (String exportedFilePath : mExportedFiles) {</span>
+<span class="nc" id="L372">            File exportedFile = new File(exportedFilePath);</span>
+<span class="nc" id="L373">            FileInputStream inputStream = null;</span>
+            try {
+<span class="nc" id="L375">                inputStream = new FileInputStream(exportedFile);</span>
+<span class="nc" id="L376">                List&lt;Metadata&gt; entries = dbxClient.files().listFolder(&quot;&quot;).getEntries();</span>
+
+<span class="nc" id="L378">                FileMetadata metadata = dbxClient.files()</span>
+<span class="nc" id="L379">                        .uploadBuilder(&quot;/&quot; + exportedFile.getName())</span>
+<span class="nc" id="L380">                        .uploadAndFinish(inputStream);</span>
+<span class="nc" id="L381">                Log.i(TAG, &quot;Successfully uploaded file &quot; + metadata.getName() + &quot; to DropBox&quot;);</span>
+<span class="nc" id="L382">                inputStream.close();</span>
+<span class="nc" id="L383">                exportedFile.delete(); //delete file to prevent cache accumulation</span>
+<span class="nc" id="L384">            } catch (IOException e) {</span>
+<span class="nc" id="L385">                Crashlytics.logException(e);</span>
+<span class="nc" id="L386">                Log.e(TAG, e.getMessage());</span>
+<span class="nc" id="L387">            } catch (com.dropbox.core.DbxException e) {</span>
+<span class="nc" id="L388">                e.printStackTrace();</span>
+<span class="nc" id="L389">            }</span>
+<span class="nc" id="L390">        }</span>
+<span class="nc" id="L391">    }</span>
+
+    private void moveExportToOwnCloud() throws Exporter.ExporterException {
+<span class="nc" id="L394">        Log.i(TAG, &quot;Copying exported file to ownCloud&quot;);</span>
+
+<span class="nc" id="L396">        SharedPreferences mPrefs = mContext.getSharedPreferences(mContext.getString(R.string.owncloud_pref), Context.MODE_PRIVATE);</span>
+
+<span class="nc" id="L398">        Boolean mOC_sync = mPrefs.getBoolean(mContext.getString(R.string.owncloud_sync), false);</span>
+
+<span class="nc bnc" id="L400" title="All 2 branches missed.">        if (!mOC_sync) {</span>
+<span class="nc" id="L401">            throw new Exporter.ExporterException(mExportParams, &quot;ownCloud not enabled.&quot;);</span>
+        }
+
+<span class="nc" id="L404">        String mOC_server = mPrefs.getString(mContext.getString(R.string.key_owncloud_server), null);</span>
+<span class="nc" id="L405">        String mOC_username = mPrefs.getString(mContext.getString(R.string.key_owncloud_username), null);</span>
+<span class="nc" id="L406">        String mOC_password = mPrefs.getString(mContext.getString(R.string.key_owncloud_password), null);</span>
+<span class="nc" id="L407">        String mOC_dir = mPrefs.getString(mContext.getString(R.string.key_owncloud_dir), null);</span>
+
+<span class="nc" id="L409">        Uri serverUri = Uri.parse(mOC_server);</span>
+<span class="nc" id="L410">        OwnCloudClient mClient = OwnCloudClientFactory.createOwnCloudClient(serverUri, this.mContext, true);</span>
+<span class="nc" id="L411">        mClient.setCredentials(</span>
+<span class="nc" id="L412">                OwnCloudCredentialsFactory.newBasicCredentials(mOC_username, mOC_password)</span>
+        );
+
+<span class="nc bnc" id="L415" title="All 2 branches missed.">        if (mOC_dir.length() != 0) {</span>
+<span class="nc" id="L416">            RemoteOperationResult dirResult = new CreateRemoteFolderOperation(</span>
+<span class="nc" id="L417">                    mOC_dir, true).execute(mClient);</span>
+<span class="nc bnc" id="L418" title="All 2 branches missed.">            if (!dirResult.isSuccess()) {</span>
+<span class="nc" id="L419">                Log.w(TAG, &quot;Error creating folder (it may happen if it already exists): &quot;</span>
+<span class="nc" id="L420">                           + dirResult.getLogMessage());</span>
+            }
+        }
+<span class="nc bnc" id="L423" title="All 2 branches missed.">        for (String exportedFilePath : mExportedFiles) {</span>
+<span class="nc" id="L424">            String remotePath = mOC_dir + FileUtils.PATH_SEPARATOR + stripPathPart(exportedFilePath);</span>
+<span class="nc" id="L425">            String mimeType = mExporter.getExportMimeType();</span>
+
+<span class="nc" id="L427">            RemoteOperationResult result = new UploadRemoteFileOperation(</span>
+<span class="nc" id="L428">                    exportedFilePath, remotePath, mimeType).execute(mClient);</span>
+
+<span class="nc bnc" id="L430" title="All 2 branches missed.">            if (!result.isSuccess())</span>
+<span class="nc" id="L431">                throw new Exporter.ExporterException(mExportParams, result.getLogMessage());</span>
+
+<span class="nc" id="L433">            new File(exportedFilePath).delete();</span>
+<span class="nc" id="L434">        }</span>
+<span class="nc" id="L435">    }</span>
+
+    /**
+     * Moves the exported files from the internal storage where they are generated to
+     * external storage, which is accessible to the user.
+     * @return The list of files moved to the SD card.
+     * @deprecated Use the Storage Access Framework to save to SD card. See {@link #moveExportToUri()}
+     */
+    @Deprecated
+    private List&lt;String&gt; moveExportToSDCard() throws Exporter.ExporterException {
+<span class="nc" id="L445">        Log.i(TAG, &quot;Moving exported file to external storage&quot;);</span>
+<span class="nc" id="L446">        new File(Exporter.getExportFolderPath(mExporter.mBookUID));</span>
+<span class="nc" id="L447">        List&lt;String&gt; dstFiles = new ArrayList&lt;&gt;();</span>
+
+<span class="nc bnc" id="L449" title="All 2 branches missed.">        for (String src: mExportedFiles) {</span>
+<span class="nc" id="L450">            String dst = Exporter.getExportFolderPath(mExporter.mBookUID) + stripPathPart(src);</span>
+            try {
+<span class="nc" id="L452">                moveFile(src, dst);</span>
+<span class="nc" id="L453">                dstFiles.add(dst);</span>
+<span class="nc" id="L454">            } catch (IOException e) {</span>
+<span class="nc" id="L455">                throw new Exporter.ExporterException(mExportParams, e);</span>
+<span class="nc" id="L456">            }</span>
+<span class="nc" id="L457">        }</span>
+
+<span class="nc" id="L459">        return dstFiles;</span>
+    }
+
+    // &quot;/some/path/filename.ext&quot; -&gt; &quot;filename.ext&quot;
+    private String stripPathPart(String fullPathName) {
+<span class="nc" id="L464">        return (new File(fullPathName)).getName();</span>
+    }
+
+    /**
+     * Backups of the database, saves opening balances (if necessary)
+     * and deletes all non-template transactions in the database.
+     */
+    private void backupAndDeleteTransactions(){
+<span class="nc" id="L472">        Log.i(TAG, &quot;Backup and deleting transactions after export&quot;);</span>
+<span class="nc" id="L473">        GncXmlExporter.createBackup(); //create backup before deleting everything</span>
+<span class="nc" id="L474">        List&lt;Transaction&gt; openingBalances = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L475">        boolean preserveOpeningBalances = GnuCashApplication.shouldSaveOpeningBalances(false);</span>
+
+<span class="nc" id="L477">        TransactionsDbAdapter transactionsDbAdapter = new TransactionsDbAdapter(mDb, new SplitsDbAdapter(mDb));</span>
+<span class="nc bnc" id="L478" title="All 2 branches missed.">        if (preserveOpeningBalances) {</span>
+<span class="nc" id="L479">            openingBalances = new AccountsDbAdapter(mDb, transactionsDbAdapter).getAllOpeningBalanceTransactions();</span>
+        }
+<span class="nc" id="L481">        transactionsDbAdapter.deleteAllNonTemplateTransactions();</span>
+
+<span class="nc bnc" id="L483" title="All 2 branches missed.">        if (preserveOpeningBalances) {</span>
+<span class="nc" id="L484">            transactionsDbAdapter.bulkAddRecords(openingBalances, DatabaseAdapter.UpdateMethod.insert);</span>
+        }
+<span class="nc" id="L486">    }</span>
+
+    /**
+     * Starts an intent chooser to allow the user to select an activity to receive
+     * the exported files.
+     * @param paths list of full paths of the files to send to the activity.
+     */
+    private void shareFiles(List&lt;String&gt; paths) {
+<span class="nc" id="L494">        Intent shareIntent = new Intent(Intent.ACTION_SEND_MULTIPLE);</span>
+<span class="nc" id="L495">        shareIntent.setType(&quot;text/xml&quot;);</span>
+
+<span class="nc" id="L497">        ArrayList&lt;Uri&gt; exportFiles = convertFilePathsToUris(paths);</span>
+<span class="nc" id="L498">        shareIntent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, exportFiles);</span>
+<span class="nc" id="L499">        shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);</span>
+
+<span class="nc" id="L501">        shareIntent.putExtra(Intent.EXTRA_SUBJECT, mContext.getString(R.string.title_export_email,</span>
+<span class="nc" id="L502">                mExportParams.getExportFormat().name()));</span>
+
+<span class="nc" id="L504">        String defaultEmail = PreferenceManager.getDefaultSharedPreferences(mContext)</span>
+<span class="nc" id="L505">                .getString(mContext.getString(R.string.key_default_export_email), null);</span>
+<span class="nc bnc" id="L506" title="All 4 branches missed.">        if (defaultEmail != null &amp;&amp; defaultEmail.trim().length() &gt; 0)</span>
+<span class="nc" id="L507">            shareIntent.putExtra(Intent.EXTRA_EMAIL, new String[]{defaultEmail});</span>
+
+<span class="nc" id="L509">        SimpleDateFormat formatter = (SimpleDateFormat) SimpleDateFormat.getDateTimeInstance();</span>
+<span class="nc" id="L510">        String extraText = mContext.getString(R.string.description_export_email)</span>
+<span class="nc" id="L511">                           + &quot; &quot; + formatter.format(new Date(System.currentTimeMillis()));</span>
+<span class="nc" id="L512">        shareIntent.putExtra(Intent.EXTRA_TEXT, extraText);</span>
+
+<span class="nc bnc" id="L514" title="All 2 branches missed.">        if (mContext instanceof Activity) {</span>
+<span class="nc" id="L515">            List&lt;ResolveInfo&gt; activities = mContext.getPackageManager().queryIntentActivities(shareIntent, 0);</span>
+<span class="nc bnc" id="L516" title="All 4 branches missed.">            if (activities != null &amp;&amp; !activities.isEmpty()) {</span>
+<span class="nc" id="L517">                mContext.startActivity(Intent.createChooser(shareIntent,</span>
+<span class="nc" id="L518">                        mContext.getString(R.string.title_select_export_destination)));</span>
+            } else {
+<span class="nc" id="L520">                Toast.makeText(mContext, R.string.toast_no_compatible_apps_to_receive_export,</span>
+<span class="nc" id="L521">                        Toast.LENGTH_LONG).show();</span>
+            }
+        }
+<span class="nc" id="L524">    }</span>
+
+    /**
+     * Convert file paths to URIs by adding the file// prefix
+     * &lt;p&gt;e.g. /some/path/file.ext --&gt; file:///some/path/file.ext&lt;/p&gt;
+     * @param paths List of file paths to convert
+     * @return List of file URIs
+     */
+    @NonNull
+    private ArrayList&lt;Uri&gt; convertFilePathsToUris(List&lt;String&gt; paths) {
+<span class="nc" id="L534">        ArrayList&lt;Uri&gt; exportFiles = new ArrayList&lt;&gt;();</span>
+
+<span class="nc bnc" id="L536" title="All 2 branches missed.">        for (String path : paths) {</span>
+<span class="nc" id="L537">            File file = new File(path);</span>
+<span class="nc" id="L538">            Uri contentUri = FileProvider.getUriForFile(GnuCashApplication.getAppContext(), GnuCashApplication.FILE_PROVIDER_AUTHORITY, file);</span>
+<span class="nc" id="L539">            exportFiles.add(contentUri);</span>
+<span class="nc" id="L540">        }</span>
+<span class="nc" id="L541">        return exportFiles;</span>
+    }
+
+    /**
+     * Moves a file from &lt;code&gt;src&lt;/code&gt; to &lt;code&gt;dst&lt;/code&gt;
+     * @param src Absolute path to the source file
+     * @param dst Absolute path to the destination file
+     * @throws IOException if the file could not be moved.
+     */
+    public void moveFile(String src, String dst) throws IOException {
+<span class="nc" id="L551">        File srcFile = new File(src);</span>
+<span class="nc" id="L552">        File dstFile = new File(dst);</span>
+<span class="nc" id="L553">        FileChannel inChannel = new FileInputStream(srcFile).getChannel();</span>
+<span class="nc" id="L554">        FileChannel outChannel = new FileOutputStream(dstFile).getChannel();</span>
+        try {
+<span class="nc" id="L556">            inChannel.transferTo(0, inChannel.size(), outChannel);</span>
+        } finally {
+<span class="nc bnc" id="L558" title="All 4 branches missed.">            if (inChannel != null)</span>
+<span class="nc" id="L559">                inChannel.close();</span>
+<span class="nc" id="L560">            outChannel.close();</span>
+<span class="nc" id="L561">        }</span>
+<span class="nc" id="L562">        srcFile.delete();</span>
+<span class="nc" id="L563">    }</span>
+
+    /**
+     * Move file from a location on disk to an outputstream.
+     * The outputstream could be for a URI in the Storage Access Framework
+     * @param src Input file (usually newly exported file)
+     * @param outputStream Output stream to write to
+     * @throws IOException if error occurred while moving the file
+     */
+    public void moveFile(@NonNull String src, @NonNull OutputStream outputStream) throws IOException {
+<span class="nc" id="L573">        byte[] buffer = new byte[1024];</span>
+        int read;
+<span class="nc" id="L575">        try (FileInputStream inputStream = new FileInputStream(src)) {</span>
+<span class="nc bnc" id="L576" title="All 2 branches missed.">            while ((read = inputStream.read(buffer)) != -1) {</span>
+<span class="nc" id="L577">                outputStream.write(buffer, 0, read);</span>
+            }
+<span class="nc bnc" id="L579" title="All 8 branches missed.">        } finally {</span>
+<span class="nc" id="L580">            outputStream.flush();</span>
+<span class="nc" id="L581">            outputStream.close();</span>
+<span class="nc" id="L582">        }</span>
+<span class="nc" id="L583">        Log.i(TAG, &quot;Deleting temp export file: &quot; + src);</span>
+<span class="nc" id="L584">        new File(src).delete();</span>
+<span class="nc" id="L585">    }</span>
+
+    private void reportSuccess() {
+        String targetLocation;
+<span class="nc bnc" id="L589" title="All 5 branches missed.">        switch (mExportParams.getExportTarget()){</span>
+            case SD_CARD:
+<span class="nc" id="L591">                targetLocation = &quot;SD card&quot;;</span>
+<span class="nc" id="L592">                break;</span>
+            case DROPBOX:
+<span class="nc" id="L594">                targetLocation = &quot;DropBox -&gt; Apps -&gt; GnuCash&quot;;</span>
+<span class="nc" id="L595">                break;</span>
+            case GOOGLE_DRIVE:
+<span class="nc" id="L597">                targetLocation = &quot;Google Drive -&gt; &quot; + mContext.getString(R.string.app_name);</span>
+<span class="nc" id="L598">                break;</span>
+            case OWNCLOUD:
+<span class="nc" id="L600">                targetLocation = mContext.getSharedPreferences(</span>
+<span class="nc" id="L601">                        mContext.getString(R.string.owncloud_pref),</span>
+<span class="nc bnc" id="L602" title="All 2 branches missed.">                        Context.MODE_PRIVATE).getBoolean(</span>
+<span class="nc" id="L603">                        mContext.getString(R.string.owncloud_sync), false) ?</span>
+
+                        &quot;ownCloud -&gt; &quot; +
+<span class="nc" id="L606">                                mContext.getSharedPreferences(</span>
+<span class="nc" id="L607">                                        mContext.getString(R.string.owncloud_pref),</span>
+<span class="nc" id="L608">                                        Context.MODE_PRIVATE).getString(</span>
+<span class="nc" id="L609">                                        mContext.getString(R.string.key_owncloud_dir), null) :</span>
+                        &quot;ownCloud sync not enabled&quot;;
+<span class="nc" id="L611">                break;</span>
+            default:
+<span class="nc" id="L613">                targetLocation = mContext.getString(R.string.label_export_target_external_service);</span>
+        }
+<span class="nc" id="L615">        Toast.makeText(mContext,</span>
+<span class="nc" id="L616">                String.format(mContext.getString(R.string.toast_exported_to), targetLocation),</span>
+<span class="nc" id="L617">                Toast.LENGTH_LONG).show();</span>
+<span class="nc" id="L618">    }</span>
+
+    private void refreshViews() {
+<span class="nc bnc" id="L621" title="All 2 branches missed.">        if (mContext instanceof AccountsActivity){</span>
+<span class="nc" id="L622">            AccountsListFragment fragment =</span>
+<span class="nc" id="L623">                    ((AccountsActivity) mContext).getCurrentAccountListFragment();</span>
+<span class="nc bnc" id="L624" title="All 2 branches missed.">            if (fragment != null)</span>
+<span class="nc" id="L625">                fragment.refresh();</span>
+        }
+<span class="nc bnc" id="L627" title="All 2 branches missed.">        if (mContext instanceof TransactionsActivity){</span>
+<span class="nc" id="L628">            ((TransactionsActivity) mContext).refresh();</span>
+        }
+<span class="nc" id="L630">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

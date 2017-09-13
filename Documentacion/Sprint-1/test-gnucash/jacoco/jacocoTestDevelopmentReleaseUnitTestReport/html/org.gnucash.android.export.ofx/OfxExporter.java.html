@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OfxExporter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.export.ofx</a> &gt; <span class="el_source">OfxExporter.java</span></div><h1>OfxExporter.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2012 - 2014 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ * Copyright (c) 2014 Yongxin Wang &lt;fefe.wyx@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.export.ofx;
+
+import android.database.sqlite.SQLiteDatabase;
+import android.preference.PreferenceManager;
+import android.util.Log;
+
+import com.crashlytics.android.Crashlytics;
+
+import org.gnucash.android.R;
+import org.gnucash.android.app.GnuCashApplication;
+import org.gnucash.android.db.adapter.AccountsDbAdapter;
+import org.gnucash.android.export.ExportParams;
+import org.gnucash.android.export.Exporter;
+import org.gnucash.android.model.Account;
+import org.gnucash.android.model.Transaction;
+import org.gnucash.android.util.PreferencesHelper;
+import org.gnucash.android.util.TimestampHelper;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.ProcessingInstruction;
+
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
+/**
+ * Exports the data in the database in OFX format
+ * @author Ngewi Fet &lt;ngewi.fet@gmail.com&gt;
+ * @author Yongxin Wang &lt;fefe.wyx@gmail.com&gt;
+ */
+public class OfxExporter extends Exporter{
+
+    /**
+	 * List of accounts in the expense report
+	 */
+	private List&lt;Account&gt; mAccountsList;
+
+    /**
+	 * Builds an XML representation of the {@link Account}s and {@link Transaction}s in the database
+	 */
+	public OfxExporter(ExportParams params) {
+<span class="nc" id="L76">        super(params, null);</span>
+<span class="nc" id="L77">        LOG_TAG = &quot;OfxExporter&quot;;</span>
+<span class="nc" id="L78">	}</span>
+
+    /**
+     * Overloaded constructor. Initializes the export parameters and the database to export
+     * @param params Export options
+     * @param db SQLiteDatabase to export
+     */
+    public OfxExporter(ExportParams params, SQLiteDatabase db){
+<span class="nc" id="L86">        super(params, db);</span>
+<span class="nc" id="L87">        LOG_TAG = &quot;OfxExporter&quot;;</span>
+<span class="nc" id="L88">    }</span>
+
+    /**
+	 * Converts all expenses into OFX XML format and adds them to the XML document
+	 * @param doc DOM document of the OFX expenses.
+	 * @param parent Parent node for all expenses in report
+	 */
+	private void generateOfx(Document doc, Element parent){
+<span class="nc" id="L96">		Element transactionUid = doc.createElement(OfxHelper.TAG_TRANSACTION_UID);</span>
+		//unsolicited because the data exported is not as a result of a request
+<span class="nc" id="L98">		transactionUid.appendChild(doc.createTextNode(OfxHelper.UNSOLICITED_TRANSACTION_ID));</span>
+
+<span class="nc" id="L100">		Element statementTransactionResponse = doc.createElement(OfxHelper.TAG_STATEMENT_TRANSACTION_RESPONSE);</span>
+<span class="nc" id="L101">		statementTransactionResponse.appendChild(transactionUid);</span>
+		
+<span class="nc" id="L103">		Element bankmsgs = doc.createElement(OfxHelper.TAG_BANK_MESSAGES_V1);</span>
+<span class="nc" id="L104">		bankmsgs.appendChild(statementTransactionResponse);</span>
+		
+<span class="nc" id="L106">		parent.appendChild(bankmsgs);		</span>
+		
+<span class="nc" id="L108">		AccountsDbAdapter accountsDbAdapter = mAccountsDbAdapter;</span>
+<span class="nc bnc" id="L109" title="All 2 branches missed.">		for (Account account : mAccountsList) {		</span>
+<span class="nc bnc" id="L110" title="All 2 branches missed.">			if (account.getTransactionCount() == 0)</span>
+<span class="nc" id="L111">				continue; </span>
+
+            //do not export imbalance accounts for OFX transactions and double-entry disabled
+<span class="nc bnc" id="L114" title="All 4 branches missed.">            if (!GnuCashApplication.isDoubleEntryEnabled() &amp;&amp; account.getName().contains(mContext.getString(R.string.imbalance_account_name)))</span>
+<span class="nc" id="L115">                continue;</span>
+
+
+			//add account details (transactions) to the XML document			
+<span class="nc" id="L119">			account.toOfx(doc, statementTransactionResponse, mExportParams.getExportStartTime());</span>
+			
+			//mark as exported
+<span class="nc" id="L122">			accountsDbAdapter.markAsExported(account.getUID());</span>
+			
+<span class="nc" id="L124">		}</span>
+<span class="nc" id="L125">	}</span>
+
+    /**
+     * Generate OFX export file from the transactions in the database
+     * @return String containing OFX export
+     * @throws ExporterException
+     */
+    private String generateOfxExport() throws ExporterException {
+        DocumentBuilderFactory docFactory = DocumentBuilderFactory
+<span class="nc" id="L134">                .newInstance();</span>
+        DocumentBuilder docBuilder;
+        try {
+<span class="nc" id="L137">            docBuilder = docFactory.newDocumentBuilder();</span>
+<span class="nc" id="L138">        } catch (ParserConfigurationException e) {</span>
+<span class="nc" id="L139">            throw new ExporterException(mExportParams, e);</span>
+<span class="nc" id="L140">        }</span>
+
+<span class="nc" id="L142">        Document document = docBuilder.newDocument();</span>
+<span class="nc" id="L143">        Element root = document.createElement(&quot;OFX&quot;);</span>
+
+<span class="nc" id="L145">        ProcessingInstruction pi = document.createProcessingInstruction(&quot;OFX&quot;, OfxHelper.OFX_HEADER);</span>
+<span class="nc" id="L146">        document.appendChild(pi);</span>
+<span class="nc" id="L147">        document.appendChild(root);</span>
+
+<span class="nc" id="L149">        generateOfx(document, root);</span>
+
+<span class="nc" id="L151">        boolean useXmlHeader = PreferenceManager.getDefaultSharedPreferences(mContext)</span>
+<span class="nc" id="L152">                .getBoolean(mContext.getString(R.string.key_xml_ofx_header), false);</span>
+
+<span class="nc" id="L154">        PreferencesHelper.setLastExportTime(TimestampHelper.getTimestampFromNow());</span>
+
+<span class="nc" id="L156">        StringWriter stringWriter = new StringWriter();</span>
+        //if we want SGML OFX headers, write first to string and then prepend header
+<span class="nc bnc" id="L158" title="All 2 branches missed.">        if (useXmlHeader){</span>
+<span class="nc" id="L159">            write(document, stringWriter, false);</span>
+<span class="nc" id="L160">            return stringWriter.toString();</span>
+        } else {
+<span class="nc" id="L162">            Node ofxNode = document.getElementsByTagName(&quot;OFX&quot;).item(0);</span>
+<span class="nc" id="L163">            write(ofxNode, stringWriter, true);</span>
+<span class="nc" id="L164">            return OfxHelper.OFX_SGML_HEADER + '\n' + stringWriter.toString();</span>
+        }
+    }
+
+    @Override
+    public List&lt;String&gt; generateExport() throws ExporterException {
+<span class="nc" id="L170">        mAccountsList = mAccountsDbAdapter.getExportableAccounts(mExportParams.getExportStartTime());</span>
+<span class="nc bnc" id="L171" title="All 2 branches missed.">        if (mAccountsList.isEmpty())</span>
+<span class="nc" id="L172">            return new ArrayList&lt;&gt;(); // Nothing to export, so no files generated</span>
+
+<span class="nc" id="L174">        BufferedWriter writer = null;</span>
+
+        try {
+<span class="nc" id="L177">            File file = new File(getExportCacheFilePath());</span>
+<span class="nc" id="L178">            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), &quot;UTF-8&quot;));</span>
+<span class="nc" id="L179">            writer.write(generateOfxExport());</span>
+<span class="nc" id="L180">        } catch (IOException e) {</span>
+<span class="nc" id="L181">            throw new ExporterException(mExportParams, e);</span>
+        } finally {
+<span class="nc bnc" id="L183" title="All 4 branches missed.">            if (writer != null) {</span>
+                try {
+<span class="nc" id="L185">                    writer.close();</span>
+<span class="nc" id="L186">                } catch (IOException e) {</span>
+<span class="nc" id="L187">                    throw new ExporterException(mExportParams, e);</span>
+<span class="nc" id="L188">                }</span>
+            }
+        }
+
+<span class="nc" id="L192">        List&lt;String&gt; exportedFiles = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L193">        exportedFiles.add(getExportCacheFilePath());</span>
+
+<span class="nc" id="L195">        return exportedFiles;</span>
+    }
+
+    /**
+     * Writes out the document held in &lt;code&gt;node&lt;/code&gt; to &lt;code&gt;outputWriter&lt;/code&gt;
+     * @param node {@link Node} containing the OFX document structure. Usually the parent node
+     * @param outputWriter {@link java.io.Writer} to use in writing the file to stream
+     * @param omitXmlDeclaration Flag which causes the XML declaration to be omitted
+     */
+    private void write(Node node, Writer outputWriter, boolean omitXmlDeclaration){
+        try {
+            TransformerFactory transformerFactory = TransformerFactory
+<span class="nc" id="L207">                    .newInstance();</span>
+<span class="nc" id="L208">            Transformer transformer = transformerFactory.newTransformer();</span>
+<span class="nc" id="L209">            DOMSource source = new DOMSource(node);</span>
+<span class="nc" id="L210">            StreamResult result = new StreamResult(outputWriter);</span>
+
+<span class="nc" id="L212">            transformer.setOutputProperty(&quot;{http://xml.apache.org/xslt}indent-amount&quot;, &quot;2&quot;);</span>
+<span class="nc" id="L213">            transformer.setOutputProperty(OutputKeys.INDENT, &quot;yes&quot;);</span>
+<span class="nc bnc" id="L214" title="All 2 branches missed.">            if (omitXmlDeclaration) {</span>
+<span class="nc" id="L215">                transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, &quot;yes&quot;);</span>
+            }
+
+<span class="nc" id="L218">            transformer.transform(source, result);</span>
+<span class="nc" id="L219">        } catch (TransformerException tfException) {</span>
+<span class="nc" id="L220">            Log.e(LOG_TAG, tfException.getMessage());</span>
+<span class="nc" id="L221">            Crashlytics.logException(tfException);</span>
+<span class="nc" id="L222">        }</span>
+<span class="nc" id="L223">    }</span>
+
+    /**
+     * Returns the MIME type for this exporter.
+     * @return MIME type as string
+     */
+    public String getExportMimeType(){
+<span class="nc" id="L230">        return &quot;text/xml&quot;;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

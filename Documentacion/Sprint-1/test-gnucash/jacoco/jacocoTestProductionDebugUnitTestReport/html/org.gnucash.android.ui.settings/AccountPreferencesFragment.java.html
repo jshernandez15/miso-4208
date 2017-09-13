@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AccountPreferencesFragment.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.ui.settings</a> &gt; <span class="el_source">AccountPreferencesFragment.java</span></div><h1>AccountPreferencesFragment.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2013 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.ui.settings;
+
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.database.Cursor;
+import android.os.Bundle;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.preference.ListPreference;
+import android.support.v7.preference.Preference;
+import android.support.v7.preference.PreferenceFragmentCompat;
+
+import org.gnucash.android.R;
+import org.gnucash.android.app.GnuCashApplication;
+import org.gnucash.android.db.DatabaseSchema;
+import org.gnucash.android.db.adapter.CommoditiesDbAdapter;
+import org.gnucash.android.model.Money;
+import org.gnucash.android.ui.account.AccountsActivity;
+import org.gnucash.android.ui.settings.dialog.DeleteAllAccountsConfirmationDialog;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Account settings fragment inside the Settings activity
+ *
+ * @author Ngewi Fet &lt;ngewi.fet@gmail.com&gt;
+ * @author Oleksandr Tyshkovets &lt;olexandr.tyshkovets@gmail.com&gt;
+ */
+<span class="nc" id="L48">public class AccountPreferencesFragment extends PreferenceFragmentCompat implements</span>
+        Preference.OnPreferenceChangeListener, Preference.OnPreferenceClickListener{
+
+<span class="nc" id="L51">    List&lt;CharSequence&gt; mCurrencyEntries = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L52">    List&lt;CharSequence&gt; mCurrencyEntryValues = new ArrayList&lt;&gt;();</span>
+
+    @Override
+    public void onCreatePreferences(Bundle bundle, String s) {
+<span class="nc" id="L56">        addPreferencesFromResource(R.xml.fragment_account_preferences);</span>
+<span class="nc" id="L57">    }</span>
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+<span class="nc" id="L61">        super.onCreate(savedInstanceState);</span>
+
+<span class="nc" id="L63">        ActionBar actionBar = ((AppCompatActivity) getActivity()).getSupportActionBar();</span>
+<span class="nc" id="L64">        actionBar.setTitle(R.string.title_account_preferences);</span>
+
+<span class="nc" id="L66">        Cursor cursor = CommoditiesDbAdapter.getInstance().fetchAllRecords(DatabaseSchema.CommodityEntry.COLUMN_MNEMONIC + &quot; ASC&quot;);</span>
+<span class="nc bnc" id="L67" title="All 2 branches missed.">        while(cursor.moveToNext()){</span>
+<span class="nc" id="L68">            String code = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseSchema.CommodityEntry.COLUMN_MNEMONIC));</span>
+<span class="nc" id="L69">            String name = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseSchema.CommodityEntry.COLUMN_FULLNAME));</span>
+<span class="nc" id="L70">            mCurrencyEntries.add(code + &quot; - &quot; + name);</span>
+<span class="nc" id="L71">            mCurrencyEntryValues.add(code);</span>
+<span class="nc" id="L72">        }</span>
+<span class="nc" id="L73">        cursor.close();</span>
+<span class="nc" id="L74">    }</span>
+
+    @Override
+    public void onResume() {
+<span class="nc" id="L78">        super.onResume();</span>
+
+<span class="nc" id="L80">        String defaultCurrency = GnuCashApplication.getDefaultCurrencyCode();</span>
+<span class="nc" id="L81">        Preference pref = findPreference(getString(R.string.key_default_currency));</span>
+<span class="nc" id="L82">        String currencyName = CommoditiesDbAdapter.getInstance().getCommodity(defaultCurrency).getFullname();</span>
+<span class="nc" id="L83">        pref.setSummary(currencyName);</span>
+<span class="nc" id="L84">        pref.setOnPreferenceChangeListener(this);</span>
+
+<span class="nc" id="L86">        CharSequence[] entries = new CharSequence[mCurrencyEntries.size()];</span>
+<span class="nc" id="L87">        CharSequence[] entryValues = new CharSequence[mCurrencyEntryValues.size()];</span>
+<span class="nc" id="L88">        ((ListPreference) pref).setEntries(mCurrencyEntries.toArray(entries));</span>
+<span class="nc" id="L89">        ((ListPreference) pref).setEntryValues(mCurrencyEntryValues.toArray(entryValues));</span>
+
+<span class="nc" id="L91">        Preference preference = findPreference(getString(R.string.key_import_accounts));</span>
+<span class="nc" id="L92">        preference.setOnPreferenceClickListener(this);</span>
+
+<span class="nc" id="L94">        preference = findPreference(getString(R.string.key_delete_all_accounts));</span>
+<span class="nc" id="L95">        preference.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {</span>
+            @Override
+            public boolean onPreferenceClick(Preference preference) {
+<span class="nc" id="L98">                showDeleteAccountsDialog();</span>
+<span class="nc" id="L99">                return true;</span>
+            }
+        });
+
+<span class="nc" id="L103">        preference = findPreference(getString(R.string.key_create_default_accounts));</span>
+<span class="nc" id="L104">        preference.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {</span>
+            @Override
+            public boolean onPreferenceClick(Preference preference) {
+<span class="nc" id="L107">                new AlertDialog.Builder(getActivity())</span>
+<span class="nc" id="L108">                        .setTitle(R.string.title_create_default_accounts)</span>
+<span class="nc" id="L109">                        .setMessage(R.string.msg_confirm_create_default_accounts_setting)</span>
+<span class="nc" id="L110">                        .setIcon(R.drawable.ic_warning_black_24dp)</span>
+<span class="nc" id="L111">                        .setPositiveButton(R.string.btn_create_accounts, new DialogInterface.OnClickListener() {</span>
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+<span class="nc" id="L114">                                AccountsActivity.createDefaultAccounts(Money.DEFAULT_CURRENCY_CODE, getActivity());</span>
+<span class="nc" id="L115">                            }</span>
+                        })
+<span class="nc" id="L117">                        .setNegativeButton(R.string.btn_cancel, new DialogInterface.OnClickListener() {</span>
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+<span class="nc" id="L120">                                dialogInterface.dismiss();</span>
+<span class="nc" id="L121">                            }</span>
+                        })
+<span class="nc" id="L123">                        .create()</span>
+<span class="nc" id="L124">                        .show();</span>
+
+<span class="nc" id="L126">                return true;</span>
+            }
+        });
+<span class="nc" id="L129">    }</span>
+
+    @Override
+    public boolean onPreferenceClick(Preference preference) {
+<span class="nc" id="L133">        String key = preference.getKey();</span>
+
+<span class="nc bnc" id="L135" title="All 2 branches missed.">        if (key.equals(getString(R.string.key_import_accounts))){</span>
+<span class="nc" id="L136">            AccountsActivity.startXmlFileChooser(this);</span>
+<span class="nc" id="L137">            return true;</span>
+        }
+
+<span class="nc" id="L140">        return false;</span>
+    }
+
+    @Override
+    public boolean onPreferenceChange(Preference preference, Object newValue) {
+<span class="nc bnc" id="L145" title="All 2 branches missed.">        if (preference.getKey().equals(getString(R.string.key_default_currency))){</span>
+<span class="nc" id="L146">            GnuCashApplication.setDefaultCurrencyCode(newValue.toString());</span>
+<span class="nc" id="L147">            String fullname = CommoditiesDbAdapter.getInstance().getCommodity(newValue.toString()).getFullname();</span>
+<span class="nc" id="L148">            preference.setSummary(fullname);</span>
+<span class="nc" id="L149">            return true;</span>
+        }
+<span class="nc" id="L151">        return false;</span>
+    }
+
+    /**
+     * Show the dialog for deleting accounts
+     */
+    public void showDeleteAccountsDialog(){
+<span class="nc" id="L158">        DeleteAllAccountsConfirmationDialog deleteConfirmationDialog = DeleteAllAccountsConfirmationDialog.newInstance();</span>
+<span class="nc" id="L159">        deleteConfirmationDialog.show(getActivity().getSupportFragmentManager(), &quot;account_settings&quot;);</span>
+<span class="nc" id="L160">    }</span>
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+<span class="nc bnc" id="L164" title="All 2 branches missed.">        switch (requestCode){</span>
+            case AccountsActivity.REQUEST_PICK_ACCOUNTS_FILE:
+<span class="nc bnc" id="L166" title="All 4 branches missed.">                if (resultCode == Activity.RESULT_OK &amp;&amp; data != null) {</span>
+<span class="nc" id="L167">                    AccountsActivity.importXmlFileFromIntent(getActivity(), data, null);</span>
+                }
+                break;
+        }
+<span class="nc" id="L171">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DeleteAccountDialogFragment.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.ui.account</a> &gt; <span class="el_source">DeleteAccountDialogFragment.java</span></div><h1>DeleteAccountDialogFragment.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2015 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.gnucash.android.ui.account;
+
+import android.database.Cursor;
+import android.os.Bundle;
+import android.support.annotation.Nullable;
+import android.support.v4.app.DialogFragment;
+import android.support.v4.widget.SimpleCursorAdapter;
+import android.text.TextUtils;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.CompoundButton;
+import android.widget.RadioButton;
+import android.widget.Spinner;
+import android.widget.TextView;
+
+import org.gnucash.android.R;
+import org.gnucash.android.app.GnuCashApplication;
+import org.gnucash.android.db.DatabaseSchema;
+import org.gnucash.android.db.adapter.AccountsDbAdapter;
+import org.gnucash.android.db.adapter.SplitsDbAdapter;
+import org.gnucash.android.db.adapter.TransactionsDbAdapter;
+import org.gnucash.android.model.AccountType;
+import org.gnucash.android.ui.common.Refreshable;
+import org.gnucash.android.ui.homescreen.WidgetConfigurationActivity;
+import org.gnucash.android.util.QualifiedAccountNameCursorAdapter;
+
+import java.util.List;
+
+/**
+ * Delete confirmation dialog for accounts.
+ * It is displayed when deleting an account which has transactions or sub-accounts, and the user
+ * has the option to either move the transactions/sub-accounts, or delete them.
+ * If an account has no transactions, it is deleted immediately with no confirmation required
+ *
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ */
+<span class="nc" id="L54">public class DeleteAccountDialogFragment extends DialogFragment {</span>
+
+    /**
+     * Spinner for selecting the account to move the transactions to
+     */
+    private Spinner mTransactionsDestinationAccountSpinner;
+
+    private Spinner mAccountsDestinationAccountSpinner;
+
+    /**
+     * Dialog positive button. Ok to moving the transactions
+     */
+    private Button mOkButton;
+
+    /**
+     * Cancel button
+     */
+    private Button mCancelButton;
+
+    /**
+     * GUID of account from which to move the transactions
+     */
+<span class="nc" id="L76">    private String mOriginAccountUID = null;</span>
+
+    private RadioButton mMoveAccountsRadioButton;
+    private RadioButton mMoveTransactionsRadioButton;
+    private RadioButton mDeleteAccountsRadioButton;
+    private RadioButton mDeleteTransactionsRadioButton;
+
+    private int mTransactionCount;
+    private int mSubAccountCount;
+
+    /**
+     * Creates new instance of the delete confirmation dialog and provides parameters for it
+     * @param accountUID GUID of the account to be deleted
+     * @return New instance of the delete confirmation dialog
+     */
+    public static DeleteAccountDialogFragment newInstance(String accountUID) {
+<span class="nc" id="L92">        DeleteAccountDialogFragment fragment = new DeleteAccountDialogFragment();</span>
+<span class="nc" id="L93">        fragment.mOriginAccountUID = accountUID;</span>
+<span class="nc" id="L94">        fragment.mSubAccountCount = AccountsDbAdapter.getInstance().getSubAccountCount(accountUID);</span>
+<span class="nc" id="L95">        fragment.mTransactionCount = TransactionsDbAdapter.getInstance().getTransactionsCount(accountUID);</span>
+<span class="nc" id="L96">        return fragment;</span>
+    }
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+<span class="nc" id="L101">        super.onCreate(savedInstanceState);</span>
+<span class="nc" id="L102">        setStyle(DialogFragment.STYLE_NORMAL, R.style.CustomDialog);</span>
+<span class="nc" id="L103">    }</span>
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+<span class="nc" id="L107">        View view = inflater.inflate(R.layout.dialog_account_delete, container, false);</span>
+<span class="nc" id="L108">        View transactionOptionsView = view.findViewById(R.id.transactions_options);</span>
+<span class="nc" id="L109">        ((TextView) transactionOptionsView.findViewById(R.id.title_content)).setText(R.string.section_header_transactions);</span>
+<span class="nc" id="L110">        ((TextView) transactionOptionsView.findViewById(R.id.description)).setText(R.string.label_delete_account_transactions_description);</span>
+<span class="nc" id="L111">        mDeleteTransactionsRadioButton = (RadioButton) transactionOptionsView.findViewById(R.id.radio_delete);</span>
+<span class="nc" id="L112">        mDeleteTransactionsRadioButton.setText(R.string.label_delete_transactions);</span>
+<span class="nc" id="L113">        mMoveTransactionsRadioButton = (RadioButton) transactionOptionsView.findViewById(R.id.radio_move);</span>
+<span class="nc" id="L114">        mTransactionsDestinationAccountSpinner = (Spinner) transactionOptionsView.findViewById(R.id.target_accounts_spinner);</span>
+
+<span class="nc" id="L116">        View accountOptionsView = view.findViewById(R.id.accounts_options);</span>
+<span class="nc" id="L117">        ((TextView) accountOptionsView.findViewById(R.id.title_content)).setText(R.string.section_header_subaccounts);</span>
+<span class="nc" id="L118">        ((TextView) accountOptionsView.findViewById(R.id.description)).setText(R.string.label_delete_account_subaccounts_description);</span>
+<span class="nc" id="L119">        mDeleteAccountsRadioButton = (RadioButton) accountOptionsView.findViewById(R.id.radio_delete);</span>
+<span class="nc" id="L120">        mDeleteAccountsRadioButton.setText(R.string.label_delete_sub_accounts);</span>
+<span class="nc" id="L121">        mMoveAccountsRadioButton = (RadioButton) accountOptionsView.findViewById(R.id.radio_move);</span>
+<span class="nc" id="L122">        mAccountsDestinationAccountSpinner = (Spinner) accountOptionsView.findViewById(R.id.target_accounts_spinner);</span>
+
+<span class="nc bnc" id="L124" title="All 2 branches missed.">        transactionOptionsView.setVisibility(mTransactionCount &gt; 0 ? View.VISIBLE : View.GONE);</span>
+<span class="nc bnc" id="L125" title="All 2 branches missed.">        accountOptionsView.setVisibility(mSubAccountCount &gt; 0 ? View.VISIBLE : View.GONE);</span>
+
+<span class="nc" id="L127">        mCancelButton = (Button) view.findViewById(R.id.btn_cancel);</span>
+<span class="nc" id="L128">        mOkButton = (Button) view.findViewById(R.id.btn_save);</span>
+<span class="nc" id="L129">        mOkButton.setText(R.string.alert_dialog_ok_delete);</span>
+<span class="nc" id="L130">        return view;</span>
+    }
+
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+<span class="nc" id="L135">        super.onActivityCreated(savedInstanceState);</span>
+<span class="nc" id="L136">        String accountName = AccountsDbAdapter.getInstance().getAccountName(mOriginAccountUID);</span>
+<span class="nc" id="L137">        getDialog().setTitle(getString(R.string.alert_dialog_ok_delete) + &quot;: &quot; + accountName);</span>
+<span class="nc" id="L138">        AccountsDbAdapter accountsDbAdapter = AccountsDbAdapter.getInstance();</span>
+<span class="nc" id="L139">        List&lt;String&gt; descendantAccountUIDs = accountsDbAdapter.getDescendantAccountUIDs(mOriginAccountUID, null, null);</span>
+
+<span class="nc" id="L141">        String currencyCode = accountsDbAdapter.getCurrencyCode(mOriginAccountUID);</span>
+<span class="nc" id="L142">        AccountType accountType = accountsDbAdapter.getAccountType(mOriginAccountUID);</span>
+
+<span class="nc" id="L144">        String transactionDeleteConditions = &quot;(&quot; + DatabaseSchema.AccountEntry.COLUMN_UID + &quot; != ? AND &quot;</span>
+                + DatabaseSchema.AccountEntry.COLUMN_CURRENCY               + &quot; = ? AND &quot;
+                + DatabaseSchema.AccountEntry.COLUMN_TYPE         + &quot; = ? AND &quot;
+                + DatabaseSchema.AccountEntry.COLUMN_PLACEHOLDER + &quot; = 0 AND &quot;
+<span class="nc" id="L148">                + DatabaseSchema.AccountEntry.COLUMN_UID + &quot; NOT IN ('&quot; + TextUtils.join(&quot;','&quot;, descendantAccountUIDs) + &quot;')&quot;</span>
+                + &quot;)&quot;;
+<span class="nc" id="L150">        Cursor cursor = accountsDbAdapter.fetchAccountsOrderedByFullName(transactionDeleteConditions,</span>
+<span class="nc" id="L151">                new String[]{mOriginAccountUID, currencyCode, accountType.name()});</span>
+
+<span class="nc" id="L153">        SimpleCursorAdapter mCursorAdapter = new QualifiedAccountNameCursorAdapter(getActivity(), cursor);</span>
+<span class="nc" id="L154">        mTransactionsDestinationAccountSpinner.setAdapter(mCursorAdapter);</span>
+
+        //target accounts for transactions and accounts have different conditions
+<span class="nc" id="L157">        String accountMoveConditions = &quot;(&quot; + DatabaseSchema.AccountEntry.COLUMN_UID + &quot; != ? AND &quot;</span>
+                + DatabaseSchema.AccountEntry.COLUMN_CURRENCY               + &quot; = ? AND &quot;
+                + DatabaseSchema.AccountEntry.COLUMN_TYPE         + &quot; = ? AND &quot;
+<span class="nc" id="L160">                + DatabaseSchema.AccountEntry.COLUMN_UID + &quot; NOT IN ('&quot; + TextUtils.join(&quot;','&quot;, descendantAccountUIDs) + &quot;')&quot;</span>
+                + &quot;)&quot;;
+<span class="nc" id="L162">        cursor = accountsDbAdapter.fetchAccountsOrderedByFullName(accountMoveConditions,</span>
+<span class="nc" id="L163">                new String[]{mOriginAccountUID, currencyCode, accountType.name()});</span>
+<span class="nc" id="L164">        mCursorAdapter = new QualifiedAccountNameCursorAdapter(getActivity(), cursor);</span>
+<span class="nc" id="L165">        mAccountsDestinationAccountSpinner.setAdapter(mCursorAdapter);</span>
+
+<span class="nc" id="L167">        setListeners();</span>
+
+        //this comes after the listeners because of some useful bindings done there
+<span class="nc bnc" id="L170" title="All 2 branches missed.">        if (cursor.getCount() == 0){</span>
+<span class="nc" id="L171">            mMoveAccountsRadioButton.setEnabled(false);</span>
+<span class="nc" id="L172">            mMoveAccountsRadioButton.setChecked(false);</span>
+<span class="nc" id="L173">            mDeleteAccountsRadioButton.setChecked(true);</span>
+<span class="nc" id="L174">            mMoveTransactionsRadioButton.setEnabled(false);</span>
+<span class="nc" id="L175">            mMoveTransactionsRadioButton.setChecked(false);</span>
+<span class="nc" id="L176">            mDeleteTransactionsRadioButton.setChecked(true);</span>
+<span class="nc" id="L177">            mAccountsDestinationAccountSpinner.setVisibility(View.GONE);</span>
+<span class="nc" id="L178">            mTransactionsDestinationAccountSpinner.setVisibility(View.GONE);</span>
+        }
+<span class="nc" id="L180">    }</span>
+
+    /**
+     * Binds click listeners for the dialog buttons
+     */
+    protected void setListeners(){
+<span class="nc" id="L186">        mMoveAccountsRadioButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {</span>
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+<span class="nc" id="L189">                mAccountsDestinationAccountSpinner.setEnabled(isChecked);</span>
+<span class="nc" id="L190">            }</span>
+        });
+
+<span class="nc" id="L193">        mMoveTransactionsRadioButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {</span>
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+<span class="nc" id="L196">                mTransactionsDestinationAccountSpinner.setEnabled(isChecked);</span>
+<span class="nc" id="L197">            }</span>
+        });
+
+<span class="nc" id="L200">        mCancelButton.setOnClickListener(new View.OnClickListener() {</span>
+
+            @Override
+            public void onClick(View v) {
+<span class="nc" id="L204">                dismiss();</span>
+<span class="nc" id="L205">            }</span>
+        });
+
+<span class="nc" id="L208">        mOkButton.setOnClickListener(new View.OnClickListener() {</span>
+
+            @Override
+            public void onClick(View v) {
+
+<span class="nc" id="L213">                AccountsDbAdapter accountsDbAdapter = AccountsDbAdapter.getInstance();</span>
+
+<span class="nc bnc" id="L215" title="All 4 branches missed.">                if ((mTransactionCount &gt; 0) &amp;&amp; mMoveTransactionsRadioButton.isChecked()){</span>
+<span class="nc" id="L216">                    long targetAccountId = mTransactionsDestinationAccountSpinner.getSelectedItemId();</span>
+                    //move all the splits
+<span class="nc" id="L218">                    SplitsDbAdapter.getInstance().updateRecords(DatabaseSchema.SplitEntry.COLUMN_ACCOUNT_UID + &quot; = ?&quot;,</span>
+<span class="nc" id="L219">                            new String[]{mOriginAccountUID}, DatabaseSchema.SplitEntry.COLUMN_ACCOUNT_UID, accountsDbAdapter.getUID(targetAccountId));</span>
+                }
+
+<span class="nc bnc" id="L222" title="All 4 branches missed.">                if ((mSubAccountCount &gt; 0) &amp;&amp; mMoveAccountsRadioButton.isChecked()){</span>
+<span class="nc" id="L223">                    long targetAccountId = mAccountsDestinationAccountSpinner.getSelectedItemId();</span>
+<span class="nc" id="L224">                    AccountsDbAdapter.getInstance().reassignDescendantAccounts(mOriginAccountUID, accountsDbAdapter.getUID(targetAccountId));</span>
+                }
+
+<span class="nc bnc" id="L227" title="All 2 branches missed.">                if (GnuCashApplication.isDoubleEntryEnabled()){ //reassign splits to imbalance</span>
+<span class="nc" id="L228">                    TransactionsDbAdapter.getInstance().deleteTransactionsForAccount(mOriginAccountUID);</span>
+                }
+
+                //now kill them all!!
+<span class="nc" id="L232">                accountsDbAdapter.recursiveDeleteAccount(accountsDbAdapter.getID(mOriginAccountUID));</span>
+
+<span class="nc" id="L234">                WidgetConfigurationActivity.updateAllWidgets(getActivity());</span>
+<span class="nc" id="L235">                ((Refreshable)getTargetFragment()).refresh();</span>
+<span class="nc" id="L236">                dismiss();</span>
+<span class="nc" id="L237">            }</span>
+        });
+<span class="nc" id="L239">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

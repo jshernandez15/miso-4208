@@ -1,0 +1,295 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>QifExporter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.export.qif</a> &gt; <span class="el_source">QifExporter.java</span></div><h1>QifExporter.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2013 - 2014 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ * Copyright (c) 2014 Yongxin Wang &lt;fefe.wyx@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.gnucash.android.export.qif;
+
+import android.content.ContentValues;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+
+import org.gnucash.android.db.adapter.AccountsDbAdapter;
+import org.gnucash.android.db.adapter.TransactionsDbAdapter;
+import org.gnucash.android.export.ExportParams;
+import org.gnucash.android.export.Exporter;
+import org.gnucash.android.model.Commodity;
+import org.gnucash.android.util.PreferencesHelper;
+import org.gnucash.android.util.TimestampHelper;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+
+import static org.gnucash.android.db.DatabaseSchema.AccountEntry;
+import static org.gnucash.android.db.DatabaseSchema.SplitEntry;
+import static org.gnucash.android.db.DatabaseSchema.TransactionEntry;
+
+/**
+ * Exports the accounts and transactions in the database to the QIF format
+ *
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ * @author Yongxin Wang &lt;fefe.wyx@gmail.com&gt;
+ */
+public class QifExporter extends Exporter{
+    /**
+     * Initialize the exporter
+     * @param params Export options
+     */
+    public QifExporter(ExportParams params){
+<span class="nc" id="L60">        super(params, null);</span>
+<span class="nc" id="L61">        LOG_TAG = &quot;OfxExporter&quot;;</span>
+<span class="nc" id="L62">    }</span>
+
+    /**
+     * Initialize the exporter
+     * @param params Options for export
+     * @param db SQLiteDatabase to export
+     */
+    public QifExporter(ExportParams params, SQLiteDatabase db){
+<span class="nc" id="L70">        super(params, db);</span>
+<span class="nc" id="L71">        LOG_TAG = &quot;OfxExporter&quot;;</span>
+<span class="nc" id="L72">    }</span>
+
+    @Override
+    public List&lt;String&gt; generateExport() throws ExporterException {
+<span class="nc" id="L76">        final String newLine = &quot;\n&quot;;</span>
+<span class="nc" id="L77">        TransactionsDbAdapter transactionsDbAdapter = mTransactionsDbAdapter;</span>
+        try {
+<span class="nc" id="L79">            String lastExportTimeStamp = TimestampHelper.getUtcStringFromTimestamp(mExportParams.getExportStartTime());</span>
+<span class="nc" id="L80">            Cursor cursor = transactionsDbAdapter.fetchTransactionsWithSplitsWithTransactionAccount(</span>
+                    new String[]{
+                            TransactionEntry.TABLE_NAME + &quot;_&quot; + TransactionEntry.COLUMN_UID + &quot; AS trans_uid&quot;,
+                            TransactionEntry.TABLE_NAME + &quot;_&quot; + TransactionEntry.COLUMN_TIMESTAMP + &quot; AS trans_time&quot;,
+                            TransactionEntry.TABLE_NAME + &quot;_&quot; + TransactionEntry.COLUMN_DESCRIPTION + &quot; AS trans_desc&quot;,
+                            TransactionEntry.TABLE_NAME + &quot;_&quot; + TransactionEntry.COLUMN_NOTES + &quot; AS trans_notes&quot;,
+                            SplitEntry.TABLE_NAME + &quot;_&quot; + SplitEntry.COLUMN_QUANTITY_NUM + &quot; AS split_quantity_num&quot;,
+                            SplitEntry.TABLE_NAME + &quot;_&quot; + SplitEntry.COLUMN_QUANTITY_DENOM + &quot; AS split_quantity_denom&quot;,
+                            SplitEntry.TABLE_NAME + &quot;_&quot; + SplitEntry.COLUMN_TYPE + &quot; AS split_type&quot;,
+                            SplitEntry.TABLE_NAME + &quot;_&quot; + SplitEntry.COLUMN_MEMO + &quot; AS split_memo&quot;,
+                            &quot;trans_extra_info.trans_acct_balance AS trans_acct_balance&quot;,
+                            &quot;trans_extra_info.trans_split_count AS trans_split_count&quot;,
+                            &quot;account1.&quot; + AccountEntry.COLUMN_UID + &quot; AS acct1_uid&quot;,
+                            &quot;account1.&quot; + AccountEntry.COLUMN_FULL_NAME + &quot; AS acct1_full_name&quot;,
+                            &quot;account1.&quot; + AccountEntry.COLUMN_CURRENCY + &quot; AS acct1_currency&quot;,
+                            &quot;account1.&quot; + AccountEntry.COLUMN_TYPE + &quot; AS acct1_type&quot;,
+                            AccountEntry.TABLE_NAME + &quot;_&quot; + AccountEntry.COLUMN_FULL_NAME + &quot; AS acct2_full_name&quot;
+                    },
+                    // no recurrence transactions
+                    TransactionEntry.TABLE_NAME + &quot;_&quot; + TransactionEntry.COLUMN_TEMPLATE + &quot; == 0 AND &quot; +
+                            // in qif, split from the one account entry is not recorded (will be auto balanced)
+                            &quot;( &quot; + AccountEntry.TABLE_NAME + &quot;_&quot; + AccountEntry.COLUMN_UID + &quot; != account1.&quot; + AccountEntry.COLUMN_UID + &quot; OR &quot; +
+                            // or if the transaction has only one split (the whole transaction would be lost if it is not selected)
+                            &quot;trans_split_count == 1 )&quot; +
+                            (
+                                    &quot; AND &quot; + TransactionEntry.TABLE_NAME + &quot;_&quot; + TransactionEntry.COLUMN_MODIFIED_AT + &quot; &gt; \&quot;&quot; + lastExportTimeStamp + &quot;\&quot;&quot;
+                            ),
+                    null,
+                    // trans_time ASC : put transactions in time order
+                    // trans_uid ASC  : put splits from the same transaction together
+                   &quot;acct1_currency ASC, trans_time ASC, trans_uid ASC&quot;
+                    );
+
+<span class="nc" id="L113">            File file = new File(getExportCacheFilePath());</span>
+<span class="nc" id="L114">            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), &quot;UTF-8&quot;));</span>
+
+            try {
+<span class="nc" id="L117">                String currentCurrencyCode = &quot;&quot;;</span>
+<span class="nc" id="L118">                String currentAccountUID = &quot;&quot;;</span>
+<span class="nc" id="L119">                String currentTransactionUID = &quot;&quot;;</span>
+<span class="nc bnc" id="L120" title="All 2 branches missed.">                while (cursor.moveToNext()) {</span>
+<span class="nc" id="L121">                    String currencyCode = cursor.getString(cursor.getColumnIndexOrThrow(&quot;acct1_currency&quot;));</span>
+<span class="nc" id="L122">                    String accountUID = cursor.getString(cursor.getColumnIndexOrThrow(&quot;acct1_uid&quot;));</span>
+<span class="nc" id="L123">                    String transactionUID = cursor.getString(cursor.getColumnIndexOrThrow(&quot;trans_uid&quot;));</span>
+<span class="nc bnc" id="L124" title="All 2 branches missed.">                    if (!transactionUID.equals(currentTransactionUID)) {</span>
+<span class="nc bnc" id="L125" title="All 2 branches missed.">                        if (!currentTransactionUID.equals(&quot;&quot;)) {</span>
+<span class="nc" id="L126">                            writer.append(QifHelper.ENTRY_TERMINATOR).append(newLine);</span>
+                            // end last transaction
+                        }
+<span class="nc bnc" id="L129" title="All 2 branches missed.">                        if (!accountUID.equals(currentAccountUID)) {</span>
+                            // no need to end account
+                            //if (!currentAccountUID.equals(&quot;&quot;)) {
+                            //    // end last account
+                            //}
+<span class="nc bnc" id="L134" title="All 2 branches missed.">                            if (!currencyCode.equals(currentCurrencyCode)) {</span>
+<span class="nc" id="L135">                                currentCurrencyCode = currencyCode;</span>
+<span class="nc" id="L136">                                writer.append(QifHelper.INTERNAL_CURRENCY_PREFIX)</span>
+<span class="nc" id="L137">                                        .append(currencyCode)</span>
+<span class="nc" id="L138">                                        .append(newLine);</span>
+                            }
+                            // start new account
+<span class="nc" id="L141">                            currentAccountUID = accountUID;</span>
+<span class="nc" id="L142">                            writer.append(QifHelper.ACCOUNT_HEADER).append(newLine);</span>
+<span class="nc" id="L143">                            writer.append(QifHelper.ACCOUNT_NAME_PREFIX)</span>
+<span class="nc" id="L144">                                    .append(cursor.getString(cursor.getColumnIndexOrThrow(&quot;acct1_full_name&quot;)))</span>
+<span class="nc" id="L145">                                    .append(newLine);</span>
+<span class="nc" id="L146">                            writer.append(QifHelper.ENTRY_TERMINATOR).append(newLine);</span>
+<span class="nc" id="L147">                            writer.append(QifHelper.getQifHeader(cursor.getString(cursor.getColumnIndexOrThrow(&quot;acct1_type&quot;))))</span>
+<span class="nc" id="L148">                                    .append(newLine);</span>
+                        }
+                        // start new transaction
+<span class="nc" id="L151">                        currentTransactionUID = transactionUID;</span>
+<span class="nc" id="L152">                        writer.append(QifHelper.DATE_PREFIX)</span>
+<span class="nc" id="L153">                                .append(QifHelper.formatDate(cursor.getLong(cursor.getColumnIndexOrThrow(&quot;trans_time&quot;))))</span>
+<span class="nc" id="L154">                                .append(newLine);</span>
+                        // Payee / description
+<span class="nc" id="L156">                        writer.append(QifHelper.PAYEE_PREFIX)</span>
+<span class="nc" id="L157">                                .append(cursor.getString(cursor.getColumnIndexOrThrow(&quot;trans_desc&quot;)))</span>
+<span class="nc" id="L158">                                .append(newLine);</span>
+                        // Notes, memo
+<span class="nc" id="L160">                        writer.append(QifHelper.MEMO_PREFIX)</span>
+<span class="nc" id="L161">                                .append(cursor.getString(cursor.getColumnIndexOrThrow(&quot;trans_notes&quot;)))</span>
+<span class="nc" id="L162">                                .append(newLine);</span>
+                        // deal with imbalance first
+<span class="nc" id="L164">                        double imbalance = cursor.getDouble(cursor.getColumnIndexOrThrow(&quot;trans_acct_balance&quot;));</span>
+<span class="nc" id="L165">                        BigDecimal decimalImbalance = BigDecimal.valueOf(imbalance).setScale(2, BigDecimal.ROUND_HALF_UP);</span>
+<span class="nc bnc" id="L166" title="All 2 branches missed.">                        if (decimalImbalance.compareTo(BigDecimal.ZERO) != 0) {</span>
+<span class="nc" id="L167">                            writer.append(QifHelper.SPLIT_CATEGORY_PREFIX)</span>
+<span class="nc" id="L168">                                    .append(AccountsDbAdapter.getImbalanceAccountName(</span>
+<span class="nc" id="L169">                                            Commodity.getInstance(cursor.getString(cursor.getColumnIndexOrThrow(&quot;acct1_currency&quot;)))</span>
+                                    ))
+<span class="nc" id="L171">                                    .append(newLine);</span>
+<span class="nc" id="L172">                            writer.append(QifHelper.SPLIT_AMOUNT_PREFIX)</span>
+<span class="nc" id="L173">                                    .append(decimalImbalance.toPlainString())</span>
+<span class="nc" id="L174">                                    .append(newLine);</span>
+                        }
+                    }
+<span class="nc bnc" id="L177" title="All 2 branches missed.">                    if (cursor.getInt(cursor.getColumnIndexOrThrow(&quot;trans_split_count&quot;)) == 1) {</span>
+                        // No other splits should be recorded if this is the only split.
+<span class="nc" id="L179">                        continue;</span>
+                    }
+                    // all splits
+                    // amount associated with the header account will not be exported.
+                    // It can be auto balanced when importing to GnuCash
+<span class="nc" id="L184">                    writer.append(QifHelper.SPLIT_CATEGORY_PREFIX)</span>
+<span class="nc" id="L185">                            .append(cursor.getString(cursor.getColumnIndexOrThrow(&quot;acct2_full_name&quot;)))</span>
+<span class="nc" id="L186">                            .append(newLine);</span>
+<span class="nc" id="L187">                    String splitMemo = cursor.getString(cursor.getColumnIndexOrThrow(&quot;split_memo&quot;));</span>
+<span class="nc bnc" id="L188" title="All 4 branches missed.">                    if (splitMemo != null &amp;&amp; splitMemo.length() &gt; 0) {</span>
+<span class="nc" id="L189">                        writer.append(QifHelper.SPLIT_MEMO_PREFIX)</span>
+<span class="nc" id="L190">                                .append(splitMemo)</span>
+<span class="nc" id="L191">                                .append(newLine);</span>
+                    }
+<span class="nc" id="L193">                    String splitType = cursor.getString(cursor.getColumnIndexOrThrow(&quot;split_type&quot;));</span>
+<span class="nc" id="L194">                    Double quantity_num = cursor.getDouble(cursor.getColumnIndexOrThrow(&quot;split_quantity_num&quot;));</span>
+<span class="nc" id="L195">                    int quantity_denom = cursor.getInt(cursor.getColumnIndexOrThrow(&quot;split_quantity_denom&quot;));</span>
+<span class="nc" id="L196">                    int precision = 0;</span>
+<span class="nc bnc" id="L197" title="All 6 branches missed.">                    switch (quantity_denom) {</span>
+                        case 0: // will sometimes happen for zero values
+<span class="nc" id="L199">                            break;</span>
+                        case 1:
+<span class="nc" id="L201">                            precision = 0;</span>
+<span class="nc" id="L202">                            break;</span>
+                        case 10:
+<span class="nc" id="L204">                            precision = 1;</span>
+<span class="nc" id="L205">                            break;</span>
+                        case 100:
+<span class="nc" id="L207">                            precision = 2;</span>
+<span class="nc" id="L208">                            break;</span>
+                        case 1000:
+<span class="nc" id="L210">                            precision = 3;</span>
+<span class="nc" id="L211">                            break;</span>
+                        default:
+<span class="nc" id="L213">                            throw new ExporterException(mExportParams, &quot;split quantity has illegal denominator: &quot;+ quantity_denom);</span>
+                    }
+<span class="nc" id="L215">                    Double quantity = 0.0;</span>
+<span class="nc bnc" id="L216" title="All 2 branches missed.">                    if (quantity_denom != 0) {</span>
+<span class="nc" id="L217">                        quantity = quantity_num / quantity_denom;</span>
+                    }
+<span class="nc" id="L219">                    final Locale noLocale = null;</span>
+<span class="nc" id="L220">                    writer.append(QifHelper.SPLIT_AMOUNT_PREFIX)</span>
+<span class="nc bnc" id="L221" title="All 2 branches missed.">                            .append(splitType.equals(&quot;DEBIT&quot;) ? &quot;-&quot; : &quot;&quot;)</span>
+<span class="nc" id="L222">                            .append(String.format(noLocale, &quot;%.&quot; + precision + &quot;f&quot;, quantity))</span>
+<span class="nc" id="L223">                            .append(newLine);</span>
+<span class="nc" id="L224">                }</span>
+<span class="nc bnc" id="L225" title="All 2 branches missed.">                if (!currentTransactionUID.equals(&quot;&quot;)) {</span>
+                    // end last transaction
+<span class="nc" id="L227">                    writer.append(QifHelper.ENTRY_TERMINATOR).append(newLine);</span>
+                }
+<span class="nc" id="L229">                writer.flush();</span>
+            } finally {
+<span class="nc" id="L231">                cursor.close();</span>
+<span class="nc" id="L232">                writer.close();</span>
+<span class="nc" id="L233">            }</span>
+
+<span class="nc" id="L235">            ContentValues contentValues = new ContentValues();</span>
+<span class="nc" id="L236">            contentValues.put(TransactionEntry.COLUMN_EXPORTED, 1);</span>
+<span class="nc" id="L237">            transactionsDbAdapter.updateTransaction(contentValues, null, null);</span>
+
+            /// export successful
+<span class="nc" id="L240">            PreferencesHelper.setLastExportTime(TimestampHelper.getTimestampFromNow());</span>
+<span class="nc" id="L241">            return splitQIF(file);</span>
+<span class="nc" id="L242">        } catch (IOException e) {</span>
+<span class="nc" id="L243">            throw new ExporterException(mExportParams, e);</span>
+        }
+    }
+
+    /**
+     * Splits a Qif file into several ones for each currency.
+     *
+     * @param file File object of the Qif file to split.
+     * @return a list of paths of the newly created Qif files.
+     * @throws IOException if something went wrong while splitting the file.
+     */
+    public List&lt;String&gt; splitQIF(File file) throws IOException {
+        // split only at the last dot
+<span class="nc" id="L256">        String[] pathParts = file.getPath().split(&quot;(?=\\.[^\\.]+$)&quot;);</span>
+<span class="nc" id="L257">        ArrayList&lt;String&gt; splitFiles = new ArrayList&lt;&gt;();</span>
+        String line;
+<span class="nc" id="L259">        BufferedReader in = new BufferedReader(new FileReader(file));</span>
+<span class="nc" id="L260">        BufferedWriter out = null;</span>
+        try {
+<span class="nc bnc" id="L262" title="All 2 branches missed.">            while ((line = in.readLine()) != null) {</span>
+<span class="nc bnc" id="L263" title="All 2 branches missed.">                if (line.startsWith(QifHelper.INTERNAL_CURRENCY_PREFIX)) {</span>
+<span class="nc" id="L264">                    String currencyCode = line.substring(1);</span>
+<span class="nc bnc" id="L265" title="All 2 branches missed.">                    if (out != null) {</span>
+<span class="nc" id="L266">                        out.close();</span>
+                    }
+<span class="nc" id="L268">                    String newFileName = pathParts[0] + &quot;_&quot; + currencyCode + pathParts[1];</span>
+<span class="nc" id="L269">                    splitFiles.add(newFileName);</span>
+<span class="nc" id="L270">                    out = new BufferedWriter(new FileWriter(newFileName));</span>
+<span class="nc" id="L271">                } else {</span>
+<span class="nc bnc" id="L272" title="All 2 branches missed.">                    if (out == null) {</span>
+<span class="nc" id="L273">                        throw new IllegalArgumentException(file.getPath() + &quot; format is not correct&quot;);</span>
+                    }
+<span class="nc" id="L275">                    out.append(line).append('\n');</span>
+                }
+            }
+        } finally {
+<span class="nc" id="L279">            in.close();</span>
+<span class="nc bnc" id="L280" title="All 4 branches missed.">            if (out != null) {</span>
+<span class="nc" id="L281">                out.close();</span>
+            }
+        }
+<span class="nc" id="L284">        return splitFiles;</span>
+    }
+
+    /**
+     * Returns the mime type for this Exporter.
+     * @return MIME type as string
+     */
+    public String getExportMimeType(){
+<span class="nc" id="L292">        return &quot;text/plain&quot;;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

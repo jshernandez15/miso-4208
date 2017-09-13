@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TransferFundsDialogFragment.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.ui.transaction.dialog</a> &gt; <span class="el_source">TransferFundsDialogFragment.java</span></div><h1>TransferFundsDialogFragment.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2015 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.ui.transaction.dialog;
+
+import android.app.Dialog;
+import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.support.design.widget.TextInputLayout;
+import android.support.v4.app.DialogFragment;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.util.Pair;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.CompoundButton;
+import android.widget.EditText;
+import android.widget.RadioButton;
+import android.widget.TextView;
+
+import org.gnucash.android.R;
+import org.gnucash.android.db.adapter.CommoditiesDbAdapter;
+import org.gnucash.android.db.adapter.PricesDbAdapter;
+import org.gnucash.android.model.Commodity;
+import org.gnucash.android.model.Money;
+import org.gnucash.android.model.Price;
+import org.gnucash.android.ui.transaction.OnTransferFundsListener;
+import org.gnucash.android.ui.transaction.TransactionsActivity;
+import org.gnucash.android.util.AmountParser;
+
+import java.math.BigDecimal;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.text.ParseException;
+
+import butterknife.BindView;
+import butterknife.ButterKnife;
+
+/**
+ * Dialog fragment for handling currency conversions when inputting transactions.
+ * &lt;p&gt;This is used whenever a multi-currency transaction is being created.&lt;/p&gt;
+ */
+<span class="nc" id="L59">public class TransferFundsDialogFragment extends DialogFragment {</span>
+
+    @BindView(R.id.from_currency)           TextView mFromCurrencyLabel;
+    @BindView(R.id.to_currency)             TextView mToCurrencyLabel;
+    @BindView(R.id.target_currency)         TextView mConvertedAmountCurrencyLabel;
+    @BindView(R.id.amount_to_convert)       TextView mStartAmountLabel;
+    @BindView(R.id.input_exchange_rate)     EditText mExchangeRateInput;
+    @BindView(R.id.input_converted_amount)  EditText mConvertedAmountInput;
+    @BindView(R.id.btn_fetch_exchange_rate) Button mFetchExchangeRateButton;
+    @BindView(R.id.radio_exchange_rate)     RadioButton mExchangeRateRadioButton;
+    @BindView(R.id.radio_converted_amount)  RadioButton mConvertedAmountRadioButton;
+    @BindView(R.id.label_exchange_rate_example)
+    TextView mSampleExchangeRate;
+    @BindView(R.id.exchange_rate_text_input_layout)
+    TextInputLayout mExchangeRateInputLayout;
+    @BindView(R.id.converted_amount_text_input_layout)
+    TextInputLayout mConvertedAmountInputLayout;
+
+    @BindView(R.id.btn_save) Button mSaveButton;
+    @BindView(R.id.btn_cancel) Button mCancelButton;
+    Money mOriginAmount;
+    private Commodity mTargetCommodity;
+
+    Money mConvertedAmount;
+    OnTransferFundsListener mOnTransferFundsListener;
+
+    public static TransferFundsDialogFragment getInstance(Money transactionAmount, String targetCurrencyCode,
+                                                          OnTransferFundsListener transferFundsListener){
+<span class="nc" id="L87">        TransferFundsDialogFragment fragment = new TransferFundsDialogFragment();</span>
+<span class="nc" id="L88">        fragment.mOriginAmount = transactionAmount;</span>
+<span class="nc" id="L89">        fragment.mTargetCommodity = CommoditiesDbAdapter.getInstance().getCommodity(targetCurrencyCode);</span>
+<span class="nc" id="L90">        fragment.mOnTransferFundsListener = transferFundsListener;</span>
+<span class="nc" id="L91">        return fragment;</span>
+    }
+
+    @Nullable
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+<span class="nc" id="L97">        View view = inflater.inflate(R.layout.dialog_transfer_funds, container, false);</span>
+<span class="nc" id="L98">        ButterKnife.bind(this, view);</span>
+
+<span class="nc" id="L100">        TransactionsActivity.displayBalance(mStartAmountLabel, mOriginAmount);</span>
+<span class="nc" id="L101">        String fromCurrencyCode = mOriginAmount.getCommodity().getCurrencyCode();</span>
+<span class="nc" id="L102">        mFromCurrencyLabel.setText(fromCurrencyCode);</span>
+<span class="nc" id="L103">        mToCurrencyLabel.setText(mTargetCommodity.getCurrencyCode());</span>
+<span class="nc" id="L104">        mConvertedAmountCurrencyLabel.setText(mTargetCommodity.getCurrencyCode());</span>
+
+<span class="nc" id="L106">        mSampleExchangeRate.setText(String.format(getString(R.string.sample_exchange_rate),</span>
+                                                  fromCurrencyCode,
+<span class="nc" id="L108">                                                  mTargetCommodity.getCurrencyCode()));</span>
+<span class="nc" id="L109">        final InputLayoutErrorClearer textChangeListener = new InputLayoutErrorClearer();</span>
+
+<span class="nc" id="L111">        CommoditiesDbAdapter commoditiesDbAdapter = CommoditiesDbAdapter.getInstance();</span>
+<span class="nc" id="L112">        String commodityUID = commoditiesDbAdapter.getCommodityUID(fromCurrencyCode);</span>
+<span class="nc" id="L113">        String currencyUID = mTargetCommodity.getUID();</span>
+<span class="nc" id="L114">        PricesDbAdapter pricesDbAdapter = PricesDbAdapter.getInstance();</span>
+<span class="nc" id="L115">        Pair&lt;Long, Long&gt; pricePair = pricesDbAdapter.getPrice(commodityUID, currencyUID);</span>
+
+<span class="nc bnc" id="L117" title="All 4 branches missed.">        if (pricePair.first &gt; 0 &amp;&amp; pricePair.second &gt; 0) {</span>
+            // a valid price exists
+<span class="nc" id="L119">            Price price = new Price(commodityUID, currencyUID);</span>
+<span class="nc" id="L120">            price.setValueNum(pricePair.first);</span>
+<span class="nc" id="L121">            price.setValueDenom(pricePair.second);</span>
+<span class="nc" id="L122">            mExchangeRateInput.setText(price.toString());</span>
+
+<span class="nc" id="L124">            BigDecimal numerator = new BigDecimal(pricePair.first);</span>
+<span class="nc" id="L125">            BigDecimal denominator = new BigDecimal(pricePair.second);</span>
+            // convertedAmount = mOriginAmount * numerator / denominator
+<span class="nc" id="L127">            BigDecimal convertedAmount = mOriginAmount.asBigDecimal().multiply(numerator)</span>
+<span class="nc" id="L128">                .divide(denominator, mTargetCommodity.getSmallestFractionDigits(), BigDecimal.ROUND_HALF_EVEN);</span>
+<span class="nc" id="L129">            DecimalFormat formatter = (DecimalFormat) NumberFormat.getNumberInstance();</span>
+<span class="nc" id="L130">            mConvertedAmountInput.setText(formatter.format(convertedAmount));</span>
+        }
+
+<span class="nc" id="L133">        mExchangeRateInput.addTextChangedListener(textChangeListener);</span>
+<span class="nc" id="L134">        mConvertedAmountInput.addTextChangedListener(textChangeListener);</span>
+
+<span class="nc" id="L136">        mConvertedAmountRadioButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {</span>
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+<span class="nc" id="L139">                mConvertedAmountInput.setEnabled(isChecked);</span>
+<span class="nc" id="L140">                mConvertedAmountInputLayout.setErrorEnabled(isChecked);</span>
+<span class="nc bnc" id="L141" title="All 2 branches missed.">                mExchangeRateRadioButton.setChecked(!isChecked);</span>
+<span class="nc bnc" id="L142" title="All 2 branches missed.">                if (isChecked) {</span>
+<span class="nc" id="L143">                    mConvertedAmountInput.requestFocus();</span>
+                }
+<span class="nc" id="L145">            }</span>
+        });
+
+<span class="nc" id="L148">        mExchangeRateRadioButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {</span>
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+<span class="nc" id="L151">                mExchangeRateInput.setEnabled(isChecked);</span>
+<span class="nc" id="L152">                mExchangeRateInputLayout.setErrorEnabled(isChecked);</span>
+<span class="nc" id="L153">                mFetchExchangeRateButton.setEnabled(isChecked);</span>
+<span class="nc bnc" id="L154" title="All 2 branches missed.">                mConvertedAmountRadioButton.setChecked(!isChecked);</span>
+<span class="nc bnc" id="L155" title="All 2 branches missed.">                if (isChecked) {</span>
+<span class="nc" id="L156">                    mExchangeRateInput.requestFocus();</span>
+                }
+<span class="nc" id="L158">            }</span>
+        });
+
+<span class="nc" id="L161">        mFetchExchangeRateButton.setOnClickListener(new View.OnClickListener() {</span>
+            @Override
+            public void onClick(View v) {
+                //TODO: Pull the exchange rate for the currency here
+<span class="nc" id="L165">            }</span>
+        });
+
+<span class="nc" id="L168">        mCancelButton.setOnClickListener(new View.OnClickListener() {</span>
+            @Override
+            public void onClick(View v) {
+<span class="nc" id="L171">                dismiss();</span>
+<span class="nc" id="L172">            }</span>
+        });
+
+<span class="nc" id="L175">        mSaveButton.setOnClickListener(new View.OnClickListener() {</span>
+            @Override
+            public void onClick(View v) {
+<span class="nc" id="L178">                transferFunds();</span>
+<span class="nc" id="L179">            }</span>
+        });
+<span class="nc" id="L181">        return view;</span>
+    }
+
+    @NonNull
+    @Override
+    public Dialog onCreateDialog(Bundle savedInstanceState) {
+<span class="nc" id="L187">        Dialog dialog = super.onCreateDialog(savedInstanceState);</span>
+<span class="nc" id="L188">        dialog.setTitle(R.string.title_transfer_funds);</span>
+<span class="nc" id="L189">        return dialog;</span>
+    }
+
+    /**
+     * Converts the currency amount with the given exchange rate and saves the price to the db
+     */
+    private void transferFunds() {
+<span class="nc" id="L196">        Price price = null;</span>
+
+<span class="nc" id="L198">        String originCommodityUID = mOriginAmount.getCommodity().getUID();</span>
+<span class="nc" id="L199">        String targetCommodityUID = mTargetCommodity.getUID();</span>
+
+<span class="nc bnc" id="L201" title="All 2 branches missed.">        if (mExchangeRateRadioButton.isChecked()) {</span>
+            BigDecimal rate;
+            try {
+<span class="nc" id="L204">                rate = AmountParser.parse(mExchangeRateInput.getText().toString());</span>
+<span class="nc" id="L205">            } catch (ParseException e) {</span>
+<span class="nc" id="L206">                mExchangeRateInputLayout.setError(getString(R.string.error_invalid_exchange_rate));</span>
+<span class="nc" id="L207">                return;</span>
+<span class="nc" id="L208">            }</span>
+<span class="nc" id="L209">            price = new Price(originCommodityUID, targetCommodityUID, rate);</span>
+
+<span class="nc" id="L211">            mConvertedAmount = mOriginAmount.multiply(rate).withCurrency(mTargetCommodity);</span>
+        }
+
+<span class="nc bnc" id="L214" title="All 2 branches missed.">        if (mConvertedAmountRadioButton.isChecked()) {</span>
+            BigDecimal amount;
+            try {
+<span class="nc" id="L217">                amount = AmountParser.parse(mConvertedAmountInput.getText().toString());</span>
+<span class="nc" id="L218">            } catch (ParseException e) {</span>
+<span class="nc" id="L219">                mConvertedAmountInputLayout.setError(getString(R.string.error_invalid_amount));</span>
+<span class="nc" id="L220">                return;</span>
+<span class="nc" id="L221">            }</span>
+<span class="nc" id="L222">            mConvertedAmount = new Money(amount, mTargetCommodity);</span>
+
+<span class="nc" id="L224">            price = new Price(originCommodityUID, targetCommodityUID);</span>
+            // fractions cannot be exactly represented by BigDecimal.
+<span class="nc" id="L226">            price.setValueNum(mConvertedAmount.getNumerator() * mOriginAmount.getDenominator());</span>
+<span class="nc" id="L227">            price.setValueDenom(mOriginAmount.getNumerator() * mConvertedAmount.getDenominator());</span>
+        }
+
+<span class="nc" id="L230">        price.setSource(Price.SOURCE_USER);</span>
+<span class="nc" id="L231">        PricesDbAdapter.getInstance().addRecord(price);</span>
+
+<span class="nc bnc" id="L233" title="All 2 branches missed.">        if (mOnTransferFundsListener != null)</span>
+<span class="nc" id="L234">            mOnTransferFundsListener.transferComplete(mConvertedAmount);</span>
+
+<span class="nc" id="L236">        dismiss();</span>
+<span class="nc" id="L237">    }</span>
+
+    /**
+     * Hides the error message from mConvertedAmountInputLayout and mExchangeRateInputLayout
+     * when the user edits their content.
+     */
+<span class="nc" id="L243">    private class InputLayoutErrorClearer implements TextWatcher {</span>
+        @Override
+<span class="nc" id="L245">        public void beforeTextChanged(CharSequence s, int start, int count, int after) { }</span>
+
+        @Override
+<span class="nc" id="L248">        public void onTextChanged(CharSequence s, int start, int before, int count) { }</span>
+
+        @Override
+        public void afterTextChanged(Editable s) {
+<span class="nc" id="L252">            mConvertedAmountInputLayout.setErrorEnabled(false);</span>
+<span class="nc" id="L253">            mExchangeRateInputLayout.setErrorEnabled(false);</span>
+<span class="nc" id="L254">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

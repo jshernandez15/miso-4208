@@ -1,0 +1,337 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CalculatorEditText.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.ui.util.widget</a> &gt; <span class="el_source">CalculatorEditText.java</span></div><h1>CalculatorEditText.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2015 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.gnucash.android.ui.util.widget;
+
+import android.content.Context;
+import android.content.res.TypedArray;
+import android.inputmethodservice.KeyboardView;
+import android.os.Build;
+import android.support.annotation.Nullable;
+import android.support.annotation.XmlRes;
+import android.support.v7.widget.AppCompatEditText;
+import android.text.Editable;
+import android.text.InputType;
+import android.text.TextWatcher;
+import android.util.AttributeSet;
+import android.util.Log;
+import android.view.MotionEvent;
+import android.view.View;
+
+import com.crashlytics.android.Crashlytics;
+
+import net.objecthunter.exp4j.Expression;
+import net.objecthunter.exp4j.ExpressionBuilder;
+
+import org.gnucash.android.R;
+import org.gnucash.android.model.Commodity;
+import org.gnucash.android.ui.common.FormActivity;
+import org.gnucash.android.util.AmountParser;
+
+import java.math.BigDecimal;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.text.ParseException;
+import java.util.Locale;
+
+/**
+ * A custom EditText which supports computations and uses a custom calculator keyboard.
+ * &lt;p&gt;After the view is inflated, make sure to call {@link #bindListeners(KeyboardView)}
+ * with the view from your layout where the calculator keyboard should be displayed.&lt;/p&gt;
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ */
+public class CalculatorEditText extends AppCompatEditText {
+    private CalculatorKeyboard mCalculatorKeyboard;
+
+<span class="nc" id="L58">    private Commodity mCommodity = Commodity.DEFAULT_COMMODITY;</span>
+    private Context mContext;
+
+    /**
+     * Flag which is set if the contents of this view have been modified
+     */
+<span class="nc" id="L64">    private boolean isContentModified = false;</span>
+
+    private int mCalculatorKeysLayout;
+    private KeyboardView mCalculatorKeyboardView;
+
+    public CalculatorEditText(Context context) {
+<span class="nc" id="L70">        super(context);</span>
+<span class="nc" id="L71">        this.mContext = context;</span>
+<span class="nc" id="L72">    }</span>
+
+    public CalculatorEditText(Context context, AttributeSet attrs) {
+<span class="nc" id="L75">        super(context, attrs);</span>
+<span class="nc" id="L76">        init(context, attrs);</span>
+<span class="nc" id="L77">    }</span>
+
+    public CalculatorEditText(Context context, AttributeSet attrs, int defStyleAttr) {
+<span class="nc" id="L80">        super(context, attrs, defStyleAttr);</span>
+<span class="nc" id="L81">        init(context, attrs);</span>
+<span class="nc" id="L82">    }</span>
+
+    /**
+     * Overloaded constructor
+     * Reads any attributes which are specified in XML and applies them
+     * @param context Activity context
+     * @param attrs View attributes
+     */
+    private void init(Context context, AttributeSet attrs){
+<span class="nc" id="L91">        this.mContext = context;</span>
+<span class="nc" id="L92">        TypedArray a = context.getTheme().obtainStyledAttributes(</span>
+                attrs,
+                R.styleable.CalculatorEditText,
+                0, 0);
+
+        try {
+<span class="nc" id="L98">            mCalculatorKeysLayout = a.getResourceId(R.styleable.CalculatorEditText_keyboardKeysLayout, R.xml.calculator_keyboard);</span>
+        } finally {
+<span class="nc" id="L100">            a.recycle();</span>
+<span class="nc" id="L101">        }</span>
+
+<span class="nc" id="L103">        addTextChangedListener(new TextWatcher() {</span>
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+<span class="nc" id="L107">            }</span>
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+<span class="nc" id="L112">            }</span>
+
+            @Override
+            public void afterTextChanged(Editable s) {
+<span class="nc" id="L116">                isContentModified = true;</span>
+<span class="nc" id="L117">            }</span>
+        });
+<span class="nc" id="L119">    }</span>
+
+    public void bindListeners(CalculatorKeyboard calculatorKeyboard){
+<span class="nc" id="L122">        mCalculatorKeyboard = calculatorKeyboard;</span>
+<span class="nc" id="L123">        mContext = calculatorKeyboard.getContext();</span>
+<span class="nc" id="L124">        setOnFocusChangeListener(new OnFocusChangeListener() {</span>
+            @Override
+            public void onFocusChange(View v, boolean hasFocus) {
+<span class="nc bnc" id="L127" title="All 2 branches missed.">                if (hasFocus) {</span>
+<span class="nc" id="L128">                    setSelection(getText().length());</span>
+<span class="nc" id="L129">                    mCalculatorKeyboard.showCustomKeyboard(v);</span>
+                } else {
+<span class="nc" id="L131">                    mCalculatorKeyboard.hideCustomKeyboard();</span>
+<span class="nc" id="L132">                    evaluate();</span>
+                }
+<span class="nc" id="L134">            }</span>
+        });
+
+<span class="nc" id="L137">        setOnClickListener(new OnClickListener() {</span>
+            // NOTE By setting the on click listener we can show the custom keyboard again,
+            // by tapping on an edit box that already had focus (but that had the keyboard hidden).
+            @Override
+            public void onClick(View v) {
+<span class="nc" id="L142">                mCalculatorKeyboard.showCustomKeyboard(v);</span>
+<span class="nc" id="L143">            }</span>
+        });
+
+        // Disable spell check (hex strings look like words to Android)
+<span class="nc" id="L147">        setInputType(getInputType() | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);</span>
+
+        // Disable system keyboard appearing on long-press, but for some reason, this prevents the text selection from working.
+<span class="nc bnc" id="L150" title="All 2 branches missed.">        if (Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.LOLLIPOP) {</span>
+<span class="nc" id="L151">            setShowSoftInputOnFocus(false);</span>
+        } else {
+<span class="nc" id="L153">            setRawInputType(InputType.TYPE_CLASS_NUMBER);</span>
+        }
+
+        // Although this handler doesn't make sense, if removed, the standard keyboard
+        // shows up in addition to the calculator one when the EditText gets a touch event.
+<span class="nc" id="L158">        setOnTouchListener(new OnTouchListener() {</span>
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                // XXX: Use dispatchTouchEvent()?
+<span class="nc" id="L162">                onTouchEvent(event);</span>
+<span class="nc" id="L163">                return false;</span>
+            }
+        });
+
+<span class="nc" id="L167">        ((FormActivity)mContext).setOnBackListener(mCalculatorKeyboard);</span>
+<span class="nc" id="L168">    }</span>
+
+    /**
+     * Initializes listeners on the EditText
+     */
+    public void bindListeners(KeyboardView keyboardView){
+<span class="nc" id="L174">        bindListeners(new CalculatorKeyboard(mContext, keyboardView, mCalculatorKeysLayout));</span>
+<span class="nc" id="L175">    }</span>
+
+    /**
+     * Returns the calculator keyboard instantiated by this EditText
+     * @return CalculatorKeyboard
+     */
+    public CalculatorKeyboard getCalculatorKeyboard(){
+<span class="nc" id="L182">        return mCalculatorKeyboard;</span>
+    }
+
+    /**
+     * Returns the view Id of the keyboard view
+     * @return Keyboard view
+     */
+    public KeyboardView getCalculatorKeyboardView() {
+<span class="nc" id="L190">        return mCalculatorKeyboardView;</span>
+    }
+
+    /**
+     * Set the keyboard view used for displaying the keyboard
+     * @param calculatorKeyboardView Calculator keyboard view
+     */
+    public void setCalculatorKeyboardView(KeyboardView calculatorKeyboardView) {
+<span class="nc" id="L198">        this.mCalculatorKeyboardView = calculatorKeyboardView;</span>
+<span class="nc" id="L199">        bindListeners(calculatorKeyboardView);</span>
+<span class="nc" id="L200">    }</span>
+
+    /**
+     * Returns the XML resource ID describing the calculator keys layout
+     * @return XML resource ID
+     */
+    public @XmlRes int getCalculatorKeysLayout() {
+<span class="nc" id="L207">        return mCalculatorKeysLayout;</span>
+    }
+
+    /**
+     * Sets the XML resource describing the layout of the calculator keys
+     * @param calculatorKeysLayout XML resource ID
+     */
+    public void setCalculatorKeysLayout(@XmlRes int calculatorKeysLayout) {
+<span class="nc" id="L215">        this.mCalculatorKeysLayout = calculatorKeysLayout;</span>
+<span class="nc" id="L216">        bindListeners(mCalculatorKeyboardView);</span>
+<span class="nc" id="L217">    }</span>
+
+    /**
+     * Sets the calculator keyboard to use for this EditText
+     * @param keyboard Properly intialized calculator keyobard
+     */
+    public void setCalculatorKeyboard(CalculatorKeyboard keyboard){
+<span class="nc" id="L224">        this.mCalculatorKeyboard = keyboard;</span>
+<span class="nc" id="L225">    }</span>
+
+    /**
+     * Returns the currency used for computations
+     * @return ISO 4217 currency
+     */
+    public Commodity getCommodity() {
+<span class="nc" id="L232">        return mCommodity;</span>
+    }
+
+    /**
+     * Sets the commodity to use for calculations
+     * The commodity determines the number of decimal places used
+     * @param commodity ISO 4217 currency
+     */
+    public void setCommodity(Commodity commodity) {
+<span class="nc" id="L241">        this.mCommodity = commodity;</span>
+<span class="nc" id="L242">    }</span>
+
+    /**
+     * Evaluates the arithmetic expression in the EditText and sets the text property
+     * @return Result of arithmetic evaluation which is same as text displayed in EditText
+     */
+    public String evaluate(){
+<span class="nc" id="L249">        String amountString = getCleanString();</span>
+<span class="nc bnc" id="L250" title="All 2 branches missed.">        if (amountString.isEmpty())</span>
+<span class="nc" id="L251">            return amountString;</span>
+
+<span class="nc" id="L253">        ExpressionBuilder expressionBuilder = new ExpressionBuilder(amountString);</span>
+        Expression expression;
+
+        try {
+<span class="nc" id="L257">            expression = expressionBuilder.build();</span>
+<span class="nc" id="L258">        } catch (RuntimeException e) {</span>
+<span class="nc" id="L259">            setError(getContext().getString(R.string.label_error_invalid_expression));</span>
+<span class="nc" id="L260">            String msg = &quot;Invalid expression: &quot; + amountString;</span>
+<span class="nc" id="L261">            Log.e(this.getClass().getSimpleName(), msg);</span>
+<span class="nc" id="L262">            Crashlytics.log(msg);</span>
+<span class="nc" id="L263">            return &quot;&quot;;</span>
+<span class="nc" id="L264">        }</span>
+
+<span class="nc bnc" id="L266" title="All 4 branches missed.">        if (expression != null &amp;&amp; expression.validate().isValid()) {</span>
+<span class="nc" id="L267">            BigDecimal result = new BigDecimal(expression.evaluate());</span>
+<span class="nc" id="L268">            setValue(result);</span>
+<span class="nc" id="L269">        } else {</span>
+<span class="nc" id="L270">            setError(getContext().getString(R.string.label_error_invalid_expression));</span>
+<span class="nc" id="L271">            Log.w(VIEW_LOG_TAG, &quot;Expression is null or invalid: &quot; + expression);</span>
+        }
+<span class="nc" id="L273">        return getText().toString();</span>
+    }
+
+    /**
+     * Evaluates the expression in the text and returns true if the result is valid
+     * @return @{code true} if the input is valid, {@code false} otherwise
+     */
+    public boolean isInputValid(){
+<span class="nc" id="L281">        String text = evaluate();</span>
+<span class="nc bnc" id="L282" title="All 4 branches missed.">        return !text.isEmpty() &amp;&amp; getError() == null;</span>
+    }
+
+    /**
+     * Returns the amount string formatted as a decimal in Locale.US and trimmed.
+     * This also converts decimal operators from other locales into a period (.)
+     * @return String with the amount in the EditText or empty string if there is no input
+     */
+    public String getCleanString(){
+<span class="nc" id="L291">        return getText().toString().replaceAll(&quot;,&quot;, &quot;.&quot;).trim();</span>
+    }
+
+    /**
+     * Returns true if the content of this view has been modified
+     * @return {@code true} if content has changed, {@code false} otherwise
+     */
+    public boolean isInputModified(){
+<span class="nc" id="L299">        return this.isContentModified;</span>
+    }
+
+    /**
+     * Returns the value of the amount in the edit text or null if the field is empty.
+     * Performs an evaluation of the expression first
+     * @return BigDecimal value
+     */
+    public @Nullable BigDecimal getValue(){
+<span class="nc" id="L308">        evaluate();</span>
+        try { //catch any exceptions in the conversion e.g. if a string with only &quot;-&quot; is entered
+<span class="nc" id="L310">            return AmountParser.parse(getText().toString());</span>
+<span class="nc" id="L311">        } catch (ParseException e){</span>
+<span class="nc" id="L312">            String msg = &quot;Error parsing amount string &quot; + getText() + &quot; from CalculatorEditText&quot;;</span>
+<span class="nc" id="L313">            Log.i(getClass().getSimpleName(), msg, e);</span>
+<span class="nc" id="L314">            return null;</span>
+        }
+    }
+
+    /**
+     * Set the text to the value of {@code amount} formatted according to the locale.
+     * &lt;p&gt;The number of decimal places are determined by the currency set to the view, and the
+     * decimal separator is determined by the device locale. There are no thousandths separators.&lt;/p&gt;
+     * @param amount BigDecimal amount
+     */
+    public void setValue(BigDecimal amount){
+<span class="nc" id="L325">        BigDecimal newAmount = amount.setScale(mCommodity.getSmallestFractionDigits(), BigDecimal.ROUND_HALF_EVEN);</span>
+
+<span class="nc" id="L327">        DecimalFormat formatter = (DecimalFormat) NumberFormat.getInstance(Locale.getDefault());</span>
+<span class="nc" id="L328">        formatter.setMinimumFractionDigits(0);</span>
+<span class="nc" id="L329">        formatter.setMaximumFractionDigits(mCommodity.getSmallestFractionDigits());</span>
+<span class="nc" id="L330">        formatter.setGroupingUsed(false);</span>
+<span class="nc" id="L331">        String resultString = formatter.format(newAmount.doubleValue());</span>
+
+<span class="nc" id="L333">        super.setText(resultString);</span>
+<span class="nc" id="L334">        setSelection(resultString.length());</span>
+<span class="nc" id="L335">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

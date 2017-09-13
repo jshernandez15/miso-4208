@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DropboxHelper.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.export</a> &gt; <span class="el_source">DropboxHelper.java</span></div><h1>DropboxHelper.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2016 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.export;
+
+import android.app.Activity;
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.support.v7.preference.PreferenceManager;
+
+import com.dropbox.core.DbxRequestConfig;
+import com.dropbox.core.android.Auth;
+import com.dropbox.core.v2.DbxClientV2;
+
+import org.gnucash.android.BuildConfig;
+import org.gnucash.android.R;
+import org.gnucash.android.app.GnuCashApplication;
+
+/**
+ * Helper class for commonly used DropBox methods
+ */
+<span class="nc" id="L35">public class DropboxHelper {</span>
+
+    /**
+     * DropBox API v2 client for making requests to DropBox
+     */
+    private static DbxClientV2 sDbxClient;
+    /**
+     * Retrieves the access token after DropBox OAuth authentication and saves it to preferences file
+     * &lt;p&gt;This method should typically by called in the {@link Activity#onResume()} method of the 
+     * Activity or Fragment which called {@link Auth#startOAuth2Authentication(Context, String)}
+     * &lt;/p&gt;
+     * @return Retrieved access token. Could be null if authentication failed or was canceled.
+     */
+    public static String retrieveAndSaveToken(){
+<span class="nc" id="L49">        Context context = GnuCashApplication.getAppContext();</span>
+<span class="nc" id="L50">        SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(context);</span>
+<span class="nc" id="L51">        String keyAccessToken = context.getString(R.string.key_dropbox_access_token);</span>
+<span class="nc" id="L52">        String accessToken = sharedPrefs.getString(keyAccessToken, null);</span>
+<span class="nc bnc" id="L53" title="All 2 branches missed.">        if (accessToken != null)</span>
+<span class="nc" id="L54">            return accessToken;</span>
+
+<span class="nc" id="L56">        accessToken = Auth.getOAuth2Token();</span>
+<span class="nc" id="L57">        sharedPrefs.edit()</span>
+<span class="nc" id="L58">                .putString(keyAccessToken, accessToken)</span>
+<span class="nc" id="L59">                .apply();</span>
+<span class="nc" id="L60">        return accessToken;</span>
+    }
+
+    /**
+     * Return a DropBox client for making requests
+     * @return DropBox client for API v2
+     */
+    public static DbxClientV2 getClient(){
+<span class="nc bnc" id="L68" title="All 2 branches missed.">        if (sDbxClient != null)</span>
+<span class="nc" id="L69">            return sDbxClient;</span>
+
+<span class="nc" id="L71">        Context context = GnuCashApplication.getAppContext();</span>
+<span class="nc" id="L72">        String accessToken = PreferenceManager.getDefaultSharedPreferences(context)</span>
+<span class="nc" id="L73">                .getString(context.getString(R.string.key_dropbox_access_token), null);</span>
+<span class="nc bnc" id="L74" title="All 2 branches missed.">        if (accessToken == null)</span>
+<span class="nc" id="L75">            accessToken = Auth.getOAuth2Token();</span>
+
+<span class="nc" id="L77">        DbxRequestConfig config = new DbxRequestConfig(BuildConfig.APPLICATION_ID);</span>
+<span class="nc" id="L78">        sDbxClient = new DbxClientV2(config, accessToken);</span>
+
+<span class="nc" id="L80">        return sDbxClient;</span>
+    }
+
+    /**
+     * Checks if the app holds an access token for dropbox
+     * @return {@code true} if token exists, {@code false} otherwise
+     */
+    public static boolean hasToken(){
+<span class="nc" id="L88">        Context context = GnuCashApplication.getAppContext();</span>
+<span class="nc" id="L89">        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);</span>
+<span class="nc" id="L90">        String accessToken = prefs.getString(context.getString(R.string.key_dropbox_access_token), null);</span>
+<span class="nc bnc" id="L91" title="All 2 branches missed.">        return accessToken != null;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

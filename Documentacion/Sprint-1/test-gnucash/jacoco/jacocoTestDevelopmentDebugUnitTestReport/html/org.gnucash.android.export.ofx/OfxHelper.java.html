@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OfxHelper.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.export.ofx</a> &gt; <span class="el_source">OfxHelper.java</span></div><h1>OfxHelper.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2014 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.gnucash.android.export.ofx;
+
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Locale;
+import java.util.TimeZone;
+
+/**
+ * Helper class with collection of useful method and constants for the OFX export
+ *
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ */
+<span class="nc" id="L29">public class OfxHelper {</span>
+    /**
+     * A date formatter used when creating file names for the exported data
+     */
+<span class="nc" id="L33">    public final static SimpleDateFormat OFX_DATE_FORMATTER = new SimpleDateFormat(&quot;yyyyMMddHHmmss&quot;, Locale.US);</span>
+
+    /**
+     * The Transaction ID is usually the client ID sent in a request.
+     * Since the data exported is not as a result of a request, we use 0
+     */
+    public static final String UNSOLICITED_TRANSACTION_ID = &quot;0&quot;;
+
+    /**
+     * Header for OFX documents
+     */
+    public static final String OFX_HEADER = &quot;OFXHEADER=\&quot;200\&quot; VERSION=\&quot;211\&quot; SECURITY=\&quot;NONE\&quot; OLDFILEUID=\&quot;NONE\&quot; NEWFILEUID=\&quot;NONE\&quot;&quot;;
+
+    /**
+     * SGML header for OFX. Used for compatibility with desktop GnuCash
+     */
+    public static final String OFX_SGML_HEADER = &quot;ENCODING:UTF-8\nOFXHEADER:100\nDATA:OFXSGML\nVERSION:211\nSECURITY:NONE\nCHARSET:UTF-8\nCOMPRESSION:NONE\nOLDFILEUID:NONE\nNEWFILEUID:NONE&quot;;
+
+    /*
+    * XML tag name constants for the OFX file
+     */
+    public static final String TAG_TRANSACTION_UID      = &quot;TRNUID&quot;;
+    public static final String TAG_BANK_MESSAGES_V1     = &quot;BANKMSGSRSV1&quot;;
+    public static final String TAG_CURRENCY_DEF         = &quot;CURDEF&quot;;
+    public static final String TAG_BANK_ID              = &quot;BANKID&quot;;
+    public static final String TAG_ACCOUNT_ID           = &quot;ACCTID&quot;;
+    public static final String TAG_ACCOUNT_TYPE         = &quot;ACCTTYPE&quot;;
+    public static final String TAG_BANK_ACCOUNT_FROM    = &quot;BANKACCTFROM&quot;;
+    public static final String TAG_BALANCE_AMOUNT       = &quot;BALAMT&quot;;
+    public static final String TAG_DATE_AS_OF           = &quot;DTASOF&quot;;
+    public static final String TAG_LEDGER_BALANCE       = &quot;LEDGERBAL&quot;;
+    public static final String TAG_DATE_START           = &quot;DTSTART&quot;;
+    public static final String TAG_DATE_END             = &quot;DTEND&quot;;
+    public static final String TAG_TRANSACTION_TYPE     = &quot;TRNTYPE&quot;;
+    public static final String TAG_DATE_POSTED          = &quot;DTPOSTED&quot;;
+    public static final String TAG_DATE_USER            = &quot;DTUSER&quot;;
+    public static final String TAG_TRANSACTION_AMOUNT   = &quot;TRNAMT&quot;;
+    public static final String TAG_TRANSACTION_FITID    = &quot;FITID&quot;;
+    public static final String TAG_NAME                 = &quot;NAME&quot;;
+    public static final String TAG_MEMO                 = &quot;MEMO&quot;;
+    public static final String TAG_BANK_ACCOUNT_TO      = &quot;BANKACCTTO&quot;;
+    public static final String TAG_BANK_TRANSACTION_LIST    = &quot;BANKTRANLIST&quot;;
+    public static final String TAG_STATEMENT_TRANSACTIONS   = &quot;STMTRS&quot;;
+    public static final String TAG_STATEMENT_TRANSACTION    = &quot;STMTTRN&quot;;
+    public static final String TAG_STATEMENT_TRANSACTION_RESPONSE = &quot;STMTTRNRS&quot;;
+
+
+    /**
+     * ID which will be used as the bank ID for OFX from this app
+     */
+<span class="nc" id="L83">    public static String APP_ID = &quot;org.gnucash.android&quot;;</span>
+
+    /**
+     * Returns the current time formatted using the pattern in {@link #OFX_DATE_FORMATTER}
+     * @return Current time as a formatted string
+     * @see #getOfxFormattedTime(long)
+     */
+    public static String getFormattedCurrentTime(){
+<span class="nc" id="L91">        return getOfxFormattedTime(System.currentTimeMillis());</span>
+    }
+
+    /**
+     * Returns a formatted string representation of time in &lt;code&gt;milliseconds&lt;/code&gt;
+     * @param milliseconds Long value representing the time to be formatted
+     * @return Formatted string representation of time in &lt;code&gt;milliseconds&lt;/code&gt;
+     */
+    public static String getOfxFormattedTime(long milliseconds){
+<span class="nc" id="L100">        Date date = new Date(milliseconds);</span>
+<span class="nc" id="L101">        String dateString = OFX_DATE_FORMATTER.format(date);</span>
+<span class="nc" id="L102">        TimeZone tz = Calendar.getInstance().getTimeZone();</span>
+<span class="nc" id="L103">        int offset = tz.getRawOffset();</span>
+<span class="nc" id="L104">        int hours   = (int) (( offset / (1000*60*60)) % 24);</span>
+<span class="nc bnc" id="L105" title="All 2 branches missed.">        String sign = offset &gt; 0 ?  &quot;+&quot; : &quot;&quot;;</span>
+<span class="nc" id="L106">        return dateString + &quot;[&quot; + sign + hours + &quot;:&quot; + tz.getDisplayName(false, TimeZone.SHORT, Locale.getDefault()) + &quot;]&quot;;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

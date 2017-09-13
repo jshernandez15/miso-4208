@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TransactionsPreferenceFragment.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.ui.settings</a> &gt; <span class="el_source">TransactionsPreferenceFragment.java</span></div><h1>TransactionsPreferenceFragment.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2012 - 2015 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.ui.settings;
+
+import android.content.SharedPreferences;
+import android.os.Bundle;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.preference.Preference;
+import android.support.v7.preference.PreferenceFragmentCompat;
+import android.support.v7.preference.SwitchPreferenceCompat;
+
+import org.gnucash.android.R;
+import org.gnucash.android.db.DatabaseSchema;
+import org.gnucash.android.db.adapter.AccountsDbAdapter;
+import org.gnucash.android.db.adapter.BooksDbAdapter;
+import org.gnucash.android.db.adapter.CommoditiesDbAdapter;
+import org.gnucash.android.model.Commodity;
+import org.gnucash.android.ui.settings.dialog.DeleteAllTransactionsConfirmationDialog;
+
+import java.util.Currency;
+import java.util.List;
+
+/**
+ * Fragment for displaying transaction preferences
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ */
+<span class="nc" id="L43">public class TransactionsPreferenceFragment extends PreferenceFragmentCompat implements Preference.OnPreferenceChangeListener {</span>
+
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
+<span class="nc" id="L47">		super.onCreate(savedInstanceState);</span>
+
+<span class="nc" id="L49">		getPreferenceManager().setSharedPreferencesName(BooksDbAdapter.getInstance().getActiveBookUID());</span>
+
+<span class="nc" id="L51">		ActionBar actionBar = ((AppCompatActivity) getActivity()).getSupportActionBar();</span>
+<span class="nc" id="L52">		actionBar.setHomeButtonEnabled(true);</span>
+<span class="nc" id="L53">		actionBar.setDisplayHomeAsUpEnabled(true);</span>
+<span class="nc" id="L54">		actionBar.setTitle(R.string.title_transaction_preferences);		</span>
+<span class="nc" id="L55">	}</span>
+
+	@Override
+	public void onCreatePreferences(Bundle bundle, String s) {
+<span class="nc" id="L59">		addPreferencesFromResource(R.xml.fragment_transaction_preferences);</span>
+<span class="nc" id="L60">	}</span>
+
+	@Override
+	public void onResume() {
+<span class="nc" id="L64">		super.onResume();</span>
+		
+<span class="nc" id="L66">		SharedPreferences sharedPreferences = getPreferenceManager().getSharedPreferences();</span>
+<span class="nc" id="L67">		String defaultTransactionType = sharedPreferences.getString(</span>
+<span class="nc" id="L68">				getString(R.string.key_default_transaction_type),</span>
+<span class="nc" id="L69">				getString(R.string.label_debit));</span>
+<span class="nc" id="L70">		Preference pref = findPreference(getString(R.string.key_default_transaction_type));		</span>
+<span class="nc" id="L71">		setLocalizedSummary(pref, defaultTransactionType);</span>
+<span class="nc" id="L72">		pref.setOnPreferenceChangeListener(this);</span>
+
+<span class="nc" id="L74">        pref = findPreference(getString(R.string.key_use_double_entry));</span>
+<span class="nc" id="L75">        pref.setOnPreferenceChangeListener(this);</span>
+
+<span class="nc" id="L77">		String keyCompactView = getString(R.string.key_use_compact_list);</span>
+<span class="nc" id="L78">		SwitchPreferenceCompat switchPref = (SwitchPreferenceCompat) findPreference(keyCompactView);</span>
+<span class="nc" id="L79">		switchPref.setChecked(sharedPreferences.getBoolean(keyCompactView, false));</span>
+
+<span class="nc" id="L81">		String keySaveBalance = getString(R.string.key_save_opening_balances);</span>
+<span class="nc" id="L82">		switchPref = (SwitchPreferenceCompat) findPreference(keySaveBalance);</span>
+<span class="nc" id="L83">		switchPref.setChecked(sharedPreferences.getBoolean(keySaveBalance, false));</span>
+
+<span class="nc" id="L85">		String keyDoubleEntry = getString(R.string.key_use_double_entry);</span>
+<span class="nc" id="L86">		switchPref = (SwitchPreferenceCompat) findPreference(keyDoubleEntry);</span>
+<span class="nc" id="L87">		switchPref.setChecked(sharedPreferences.getBoolean(keyDoubleEntry, true));</span>
+
+<span class="nc" id="L89">		Preference preference = findPreference(getString(R.string.key_delete_all_transactions));</span>
+<span class="nc" id="L90">        preference.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {</span>
+            @Override
+            public boolean onPreferenceClick(Preference preference) {
+<span class="nc" id="L93">                showDeleteTransactionsDialog();</span>
+<span class="nc" id="L94">                return true;</span>
+            }
+        });
+<span class="nc" id="L97">	}</span>
+
+	@Override
+	public boolean onPreferenceChange(Preference preference, Object newValue) {
+<span class="nc bnc" id="L101" title="All 2 branches missed.">		if (preference.getKey().equals(getString(R.string.key_use_double_entry))){</span>
+<span class="nc" id="L102">			boolean useDoubleEntry = (Boolean) newValue;</span>
+<span class="nc" id="L103">			setImbalanceAccountsHidden(useDoubleEntry);</span>
+<span class="nc" id="L104">        } else {</span>
+<span class="nc" id="L105">            setLocalizedSummary(preference, newValue.toString());</span>
+        }
+<span class="nc" id="L107">		return true;</span>
+	}
+
+    /**
+     * Deletes all transactions in the system
+     */
+    public void showDeleteTransactionsDialog(){
+        DeleteAllTransactionsConfirmationDialog deleteTransactionsConfirmationDialog =
+<span class="nc" id="L115">                DeleteAllTransactionsConfirmationDialog.newInstance();</span>
+<span class="nc" id="L116">        deleteTransactionsConfirmationDialog.show(getActivity().getSupportFragmentManager(), &quot;transaction_settings&quot;);</span>
+<span class="nc" id="L117">    }</span>
+
+
+	/**
+	 * Hide all imbalance accounts when double-entry mode is disabled
+	 * @param useDoubleEntry flag if double entry is enabled or not
+	 */
+	private void setImbalanceAccountsHidden(boolean useDoubleEntry) {
+<span class="nc bnc" id="L125" title="All 2 branches missed.">		String isHidden = useDoubleEntry ? &quot;0&quot; : &quot;1&quot;;</span>
+<span class="nc" id="L126">		AccountsDbAdapter accountsDbAdapter = AccountsDbAdapter.getInstance();</span>
+<span class="nc" id="L127">        List&lt;Commodity&gt; commodities = accountsDbAdapter.getCommoditiesInUse();</span>
+<span class="nc bnc" id="L128" title="All 2 branches missed.">		for (Commodity commodity : commodities) {</span>
+<span class="nc" id="L129">			String uid = accountsDbAdapter.getImbalanceAccountUID(commodity);</span>
+<span class="nc bnc" id="L130" title="All 2 branches missed.">			if (uid != null){</span>
+<span class="nc" id="L131">				accountsDbAdapter.updateRecord(uid, DatabaseSchema.AccountEntry.COLUMN_HIDDEN, isHidden);</span>
+			}
+<span class="nc" id="L133">		}</span>
+<span class="nc" id="L134">	}</span>
+    /**
+     * Localizes the label for DEBIT/CREDIT in the settings summary
+     * @param preference Preference whose summary is to be localized
+     * @param value New value for the preference summary
+     */
+	private void setLocalizedSummary(Preference preference, String value){
+<span class="nc bnc" id="L141" title="All 2 branches missed.">		String localizedLabel = value.equals(&quot;DEBIT&quot;) ? getString(R.string.label_debit) : getActivity().getString(R.string.label_credit);</span>
+<span class="nc" id="L142">		preference.setSummary(localizedLabel);</span>
+<span class="nc" id="L143">	}</span>
+	
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CalculatorKeyboard.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.ui.util.widget</a> &gt; <span class="el_source">CalculatorKeyboard.java</span></div><h1>CalculatorKeyboard.java</h1><pre class="source lang-java linenums">/**
+ * Copyright 2013 Maarten Pennings extended by SimplicityApks
+ *
+ * Modified by:
+ * Copyright 2015 Ã€lex Magaz GraÃ§a &lt;rivaldi8@gmail.com&gt;
+ * Copyright 2015 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * &lt;p/&gt;
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * &lt;p/&gt;
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * &lt;p/&gt;
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * &lt;p/&gt;
+ * If you use this software in a product, an acknowledgment in the product
+ * documentation would be appreciated but is not required.
+ */
+
+package org.gnucash.android.ui.util.widget;
+
+import android.app.Activity;
+import android.content.Context;
+import android.inputmethodservice.Keyboard;
+import android.inputmethodservice.KeyboardView;
+import android.inputmethodservice.KeyboardView.OnKeyboardActionListener;
+import android.provider.Settings;
+import android.support.annotation.XmlRes;
+import android.text.Editable;
+import android.view.HapticFeedbackConstants;
+import android.view.View;
+import android.view.WindowManager;
+import android.view.inputmethod.InputMethodManager;
+
+import java.text.DecimalFormatSymbols;
+
+
+/**
+ * When an activity hosts a keyboardView, this class allows several EditText's to register for it.
+ *
+ * Known issues:
+ *  - It's not possible to select text.
+ *  - When in landscape, the EditText is covered by the keyboard.
+ *  - No i18n.
+ *
+ * @author Maarten Pennings, extended by SimplicityApks
+ * @date 2012 December 23
+ *
+ * @author Ã€lex Magaz GraÃ§a &lt;rivaldi8@gmail.com&gt;
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ */
+public class CalculatorKeyboard {
+
+    public static final int KEY_CODE_DECIMAL_SEPARATOR = 46;
+    /** A link to the KeyboardView that is used to render this CalculatorKeyboard. */
+    private KeyboardView mKeyboardView;
+
+    private Context mContext;
+    private boolean hapticFeedback;
+
+<span class="nc" id="L67">    public static final String LOCALE_DECIMAL_SEPARATOR = Character.toString(DecimalFormatSymbols.getInstance().getDecimalSeparator());</span>
+
+<span class="nc bnc" id="L69" title="All 2 branches missed.">    private OnKeyboardActionListener mOnKeyboardActionListener = new OnKeyboardActionListener() {</span>
+        @Override
+        public void onKey(int primaryCode, int[] keyCodes) {
+<span class="nc" id="L72">            View focusCurrent = ((Activity)mContext).getWindow().getCurrentFocus();</span>
+<span class="nc bnc" id="L73" title="All 4 branches missed.">            assert focusCurrent != null;</span>
+
+            /*
+            if (focusCurrent == null || focusCurrent.getClass() != EditText.class)
+                return;
+            */
+
+<span class="nc bnc" id="L80" title="All 2 branches missed.">            if (!(focusCurrent instanceof CalculatorEditText)){</span>
+<span class="nc" id="L81">                return;</span>
+            }
+
+<span class="nc" id="L84">            CalculatorEditText calculatorEditText = (CalculatorEditText) focusCurrent;</span>
+<span class="nc" id="L85">            Editable editable = calculatorEditText.getText();</span>
+<span class="nc" id="L86">            int start = calculatorEditText.getSelectionStart();</span>
+<span class="nc" id="L87">            int end = calculatorEditText.getSelectionEnd();</span>
+
+            // FIXME: use replace() down
+            // delete the selection, if chars are selected:
+<span class="nc bnc" id="L91" title="All 2 branches missed.">            if (end &gt; start)</span>
+<span class="nc" id="L92">                editable.delete(start, end);</span>
+
+<span class="nc bnc" id="L94" title="All 7 branches missed.">            switch (primaryCode) {</span>
+                case KEY_CODE_DECIMAL_SEPARATOR:
+<span class="nc" id="L96">                    editable.insert(start, LOCALE_DECIMAL_SEPARATOR);</span>
+<span class="nc" id="L97">                    break;</span>
+                case 42:
+                case 43:
+                case 45:
+                case 47:
+                case 48:
+                case 49:
+                case 50:
+                case 51:
+                case 52:
+                case 53:
+                case 54:
+                case 55:
+                case 56:
+                case 57:
+                    //editable.replace(start, end, Character.toString((char) primaryCode));
+                    // XXX: could be android:keyOutputText attribute used instead of this?
+<span class="nc" id="L114">                    editable.insert(start, Character.toString((char) primaryCode));</span>
+<span class="nc" id="L115">                    break;</span>
+                case -5:
+<span class="nc bnc" id="L117" title="All 2 branches missed.">                    int deleteStart = start &gt; 0 ? start - 1: 0;</span>
+<span class="nc" id="L118">                    editable.delete(deleteStart, end);</span>
+<span class="nc" id="L119">                    break;</span>
+                case 1003: // C[lear]
+<span class="nc" id="L121">                    editable.clear();</span>
+<span class="nc" id="L122">                    break;</span>
+                case 1001:
+<span class="nc" id="L124">                    calculatorEditText.evaluate();</span>
+<span class="nc" id="L125">                    break;</span>
+                case 1002:
+<span class="nc" id="L127">                    calculatorEditText.focusSearch(View.FOCUS_DOWN).requestFocus();</span>
+<span class="nc" id="L128">                    hideCustomKeyboard();</span>
+                    break;
+            }
+<span class="nc" id="L131">        }</span>
+
+        @Override
+        public void onPress(int primaryCode) {
+<span class="nc bnc" id="L135" title="All 4 branches missed.">            if (isHapticFeedbackEnabled() &amp;&amp; primaryCode != 0)</span>
+<span class="nc" id="L136">                mKeyboardView.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);</span>
+<span class="nc" id="L137">        }</span>
+
+<span class="nc" id="L139">        @Override public void onRelease(int primaryCode) { }</span>
+<span class="nc" id="L140">        @Override public void onText(CharSequence text) { }</span>
+<span class="nc" id="L141">        @Override public void swipeLeft() { }</span>
+<span class="nc" id="L142">        @Override public void swipeRight() { }</span>
+<span class="nc" id="L143">        @Override public void swipeDown() { }</span>
+<span class="nc" id="L144">        @Override public void swipeUp() { }</span>
+    };
+
+    /**
+     * Returns true if the haptic feedback is enabled.
+     *
+     * @return true if the haptic feedback is enabled in the system settings.
+     */
+    private boolean isHapticFeedbackEnabled() {
+<span class="nc" id="L153">        int value = Settings.System.getInt(mKeyboardView.getContext().getContentResolver(),</span>
+                                           Settings.System.HAPTIC_FEEDBACK_ENABLED, 0);
+<span class="nc bnc" id="L155" title="All 2 branches missed.">        return value != 0;</span>
+    }
+
+    /**
+     * Create a custom keyboard, that uses the KeyboardView (with resource id &lt;var&gt;viewid&lt;/var&gt;) of the &lt;var&gt;host&lt;/var&gt; activity,
+     * and load the keyboard layout from xml file &lt;var&gt;layoutid&lt;/var&gt; (see {@link Keyboard} for description).
+     * Note that the &lt;var&gt;host&lt;/var&gt; activity must have a &lt;var&gt;KeyboardView&lt;/var&gt; in its layout (typically aligned with the bottom of the activity).
+     * Note that the keyboard layout xml file may include key codes for navigation; see the constants in this class for their values.
+     *
+     * @param context Context within with the calculator is created
+     * @param keyboardView KeyboardView in the layout
+     * @param keyboardLayoutResId The id of the xml file containing the keyboard layout.
+     */
+<span class="nc" id="L168">    public CalculatorKeyboard(Context context, KeyboardView keyboardView, @XmlRes int keyboardLayoutResId) {</span>
+<span class="nc" id="L169">        mContext = context;</span>
+<span class="nc" id="L170">        mKeyboardView = keyboardView;</span>
+<span class="nc" id="L171">        Keyboard keyboard = new Keyboard(mContext, keyboardLayoutResId);</span>
+<span class="nc bnc" id="L172" title="All 2 branches missed.">        for (Keyboard.Key key : keyboard.getKeys()) {</span>
+<span class="nc bnc" id="L173" title="All 2 branches missed.">            if (key.codes[0] == KEY_CODE_DECIMAL_SEPARATOR){</span>
+<span class="nc" id="L174">                key.label = LOCALE_DECIMAL_SEPARATOR;</span>
+<span class="nc" id="L175">                break;</span>
+            }
+<span class="nc" id="L177">        }</span>
+<span class="nc" id="L178">        mKeyboardView.setKeyboard(keyboard);</span>
+<span class="nc" id="L179">        mKeyboardView.setPreviewEnabled(false); // NOTE Do not show the preview balloons</span>
+<span class="nc" id="L180">        mKeyboardView.setOnKeyboardActionListener(mOnKeyboardActionListener);</span>
+        // Hide the standard keyboard initially
+<span class="nc" id="L182">        ((Activity)mContext).getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);</span>
+<span class="nc" id="L183">    }</span>
+
+    /** Returns whether the CalculatorKeyboard is visible. */
+    public boolean isCustomKeyboardVisible() {
+<span class="nc bnc" id="L187" title="All 2 branches missed.">        return mKeyboardView.getVisibility() == View.VISIBLE;</span>
+    }
+
+    /** Make the CalculatorKeyboard visible, and hide the system keyboard for view v. */
+    public void showCustomKeyboard(View v) {
+<span class="nc bnc" id="L192" title="All 2 branches missed.">        if (v != null)</span>
+<span class="nc" id="L193">            ((InputMethodManager) mContext.getSystemService(Activity.INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(v.getWindowToken(), 0);</span>
+
+<span class="nc" id="L195">        mKeyboardView.setVisibility(View.VISIBLE);</span>
+<span class="nc" id="L196">        mKeyboardView.setEnabled(true);</span>
+<span class="nc" id="L197">    }</span>
+
+    /** Make the CalculatorKeyboard invisible. */
+    public void hideCustomKeyboard() {
+<span class="nc" id="L201">        mKeyboardView.setVisibility(View.GONE);</span>
+<span class="nc" id="L202">        mKeyboardView.setEnabled(false);</span>
+<span class="nc" id="L203">    }</span>
+
+    public boolean onBackPressed() {
+<span class="nc bnc" id="L206" title="All 2 branches missed.">        if (isCustomKeyboardVisible()) {</span>
+<span class="nc" id="L207">            hideCustomKeyboard();</span>
+<span class="nc" id="L208">            return true;</span>
+        } else
+<span class="nc" id="L210">            return false;</span>
+    }
+
+    /**
+     * Returns the context of this keyboard
+     * @return Context
+     */
+    public Context getContext(){
+<span class="nc" id="L218">        return mContext;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

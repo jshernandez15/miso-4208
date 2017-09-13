@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PreferenceActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.ui.settings</a> &gt; <span class="el_source">PreferenceActivity.java</span></div><h1>PreferenceActivity.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2015 Oleksandr Tyshkovets &lt;olexandr.tyshkovets@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.ui.settings;
+
+import android.annotation.TargetApi;
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.os.Build;
+import android.os.Bundle;
+import android.support.annotation.Nullable;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
+import android.support.v4.widget.SlidingPaneLayout;
+import android.support.v7.app.ActionBar;
+import android.support.v7.preference.Preference;
+import android.support.v7.preference.PreferenceFragmentCompat;
+import android.support.v7.preference.PreferenceManager;
+import android.view.MenuItem;
+import android.view.View;
+
+import org.gnucash.android.R;
+import org.gnucash.android.app.GnuCashApplication;
+import org.gnucash.android.db.adapter.BooksDbAdapter;
+import org.gnucash.android.ui.passcode.PasscodeLockActivity;
+
+import butterknife.BindView;
+import butterknife.ButterKnife;
+
+/**
+ * Activity for unified preferences
+ */
+<span class="nc bnc" id="L47" title="All 2 branches missed.">public class PreferenceActivity extends PasscodeLockActivity implements</span>
+        PreferenceFragmentCompat.OnPreferenceStartFragmentCallback{
+
+    public static final String ACTION_MANAGE_BOOKS = &quot;org.gnucash.android.intent.action.MANAGE_BOOKS&quot;;
+
+    @BindView(R.id.slidingpane_layout) SlidingPaneLayout mSlidingPaneLayout;
+
+    @Override
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
+<span class="nc" id="L56">        super.onCreate(savedInstanceState);</span>
+<span class="nc" id="L57">        setContentView(R.layout.activity_settings);</span>
+
+<span class="nc" id="L59">        ButterKnife.bind(this);</span>
+
+<span class="nc bnc" id="L61" title="All 2 branches missed.">        mSlidingPaneLayout.setPanelSlideListener(new SlidingPaneLayout.PanelSlideListener() {</span>
+            @Override
+            public void onPanelSlide(View panel, float slideOffset) {
+                //nothing to see here, move along
+<span class="nc" id="L65">            }</span>
+
+            @Override
+            public void onPanelOpened(View panel) {
+<span class="nc" id="L69">                ActionBar actionBar = getSupportActionBar();</span>
+<span class="nc bnc" id="L70" title="All 4 branches missed.">                assert actionBar != null;</span>
+<span class="nc" id="L71">                actionBar.setTitle(R.string.title_settings);</span>
+<span class="nc" id="L72">            }</span>
+
+            @Override
+            public void onPanelClosed(View panel) {
+                //nothing to see here, move along
+<span class="nc" id="L77">            }</span>
+        });
+
+<span class="nc" id="L80">        String action = getIntent().getAction();</span>
+<span class="nc bnc" id="L81" title="All 4 branches missed.">        if (action != null &amp;&amp; action.equals(ACTION_MANAGE_BOOKS)){</span>
+<span class="nc" id="L82">            loadFragment(new BookManagerFragment());</span>
+<span class="nc" id="L83">            mSlidingPaneLayout.closePane();</span>
+        } else {
+<span class="nc" id="L85">            mSlidingPaneLayout.openPane();</span>
+<span class="nc" id="L86">            loadFragment(new GeneralPreferenceFragment());</span>
+        }
+
+<span class="nc" id="L89">        ActionBar actionBar = getSupportActionBar();</span>
+<span class="nc bnc" id="L90" title="All 4 branches missed.">        assert actionBar != null;</span>
+<span class="nc" id="L91">        actionBar.setTitle(R.string.title_settings);</span>
+<span class="nc" id="L92">        actionBar.setHomeButtonEnabled(true);</span>
+<span class="nc" id="L93">        actionBar.setDisplayHomeAsUpEnabled(true);</span>
+<span class="nc" id="L94">    }</span>
+
+    @Override
+    public boolean onPreferenceStartFragment(PreferenceFragmentCompat caller, Preference pref) {
+<span class="nc" id="L98">        String key = pref.getKey();</span>
+<span class="nc" id="L99">        Fragment fragment = null;</span>
+        try {
+<span class="nc" id="L101">            Class&lt;?&gt; clazz = Class.forName(pref.getFragment());</span>
+<span class="nc" id="L102">            fragment = (Fragment) clazz.newInstance();</span>
+<span class="nc" id="L103">        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {</span>
+<span class="nc" id="L104">            e.printStackTrace();</span>
+            //if we do not have a matching class, do nothing
+<span class="nc" id="L106">            return false;</span>
+<span class="nc" id="L107">        }</span>
+<span class="nc" id="L108">        loadFragment(fragment);</span>
+<span class="nc" id="L109">        mSlidingPaneLayout.closePane();</span>
+<span class="nc" id="L110">        return false;</span>
+    }
+
+    /**
+     * Load the provided fragment into the right pane, replacing the previous one
+     * @param fragment BaseReportFragment instance
+     */
+    private void loadFragment(Fragment fragment) {
+<span class="nc" id="L118">        FragmentManager fragmentManager = getSupportFragmentManager();</span>
+<span class="nc" id="L119">        FragmentTransaction fragmentTransaction = fragmentManager</span>
+<span class="nc" id="L120">                .beginTransaction();</span>
+
+<span class="nc" id="L122">        fragmentTransaction.replace(R.id.fragment_container, fragment);</span>
+<span class="nc" id="L123">        fragmentTransaction.commit();</span>
+<span class="nc" id="L124">    }</span>
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+<span class="nc bnc" id="L128" title="All 2 branches missed.">        switch (item.getItemId()) {</span>
+            case android.R.id.home:
+<span class="nc" id="L130">                android.app.FragmentManager fm = getFragmentManager();</span>
+<span class="nc bnc" id="L131" title="All 2 branches missed.">                if (fm.getBackStackEntryCount() &gt; 0) {</span>
+<span class="nc" id="L132">                    fm.popBackStack();</span>
+                } else {
+<span class="nc" id="L134">                    finish();</span>
+                }
+<span class="nc" id="L136">                return true;</span>
+
+            default:
+<span class="nc" id="L139">                return false;</span>
+        }
+    }
+
+    /**
+     * Returns the shared preferences file for the currently active book.
+     * Should be used instead of {@link PreferenceManager#getDefaultSharedPreferences(Context)}
+     * @return Shared preferences file
+     */
+    public static SharedPreferences getActiveBookSharedPreferences(){
+<span class="nc" id="L149">        return getBookSharedPreferences(BooksDbAdapter.getInstance().getActiveBookUID());</span>
+    }
+
+    /**
+     * Return the {@link SharedPreferences} for a specific book
+     * @param bookUID GUID of the book
+     * @return Shared preferences
+     */
+    public static SharedPreferences getBookSharedPreferences(String bookUID){
+<span class="nc" id="L158">        Context context = GnuCashApplication.getAppContext();</span>
+<span class="nc" id="L159">        return context.getSharedPreferences(bookUID, Context.MODE_PRIVATE);</span>
+    }
+
+    @Override
+    public void onBackPressed() {
+<span class="nc bnc" id="L164" title="All 2 branches missed.">        if (mSlidingPaneLayout.isOpen())</span>
+<span class="nc" id="L165">            super.onBackPressed();</span>
+        else
+<span class="nc" id="L167">            mSlidingPaneLayout.openPane();</span>
+<span class="nc" id="L168">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

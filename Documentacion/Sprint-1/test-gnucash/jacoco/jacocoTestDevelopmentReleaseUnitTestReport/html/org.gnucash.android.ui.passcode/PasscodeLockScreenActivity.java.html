@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PasscodeLockScreenActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.ui.passcode</a> &gt; <span class="el_source">PasscodeLockScreenActivity.java</span></div><h1>PasscodeLockScreenActivity.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2014 - 2015 Oleksandr Tyshkovets &lt;olexandr.tyshkovets@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.ui.passcode;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.preference.PreferenceManager;
+import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
+import android.widget.Toast;
+
+import org.gnucash.android.R;
+import org.gnucash.android.app.GnuCashApplication;
+import org.gnucash.android.ui.common.UxArgument;
+
+/**
+ * Activity for displaying and managing the passcode lock screen.
+ * @author Oleksandr Tyshkovets &lt;olexandr.tyshkovets@gmail.com&gt;
+ */
+<span class="nc" id="L34">public class PasscodeLockScreenActivity extends AppCompatActivity</span>
+        implements KeyboardFragment.OnPasscodeEnteredListener {
+
+    private static final String TAG = &quot;PassLockScreenActivity&quot;;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="nc" id="L41">        super.onCreate(savedInstanceState);</span>
+<span class="nc" id="L42">        setContentView(R.layout.passcode_lockscreen);</span>
+<span class="nc" id="L43">    }</span>
+
+    @Override
+    public void onPasscodeEntered(String pass) {
+<span class="nc" id="L47">        String passcode = PreferenceManager.getDefaultSharedPreferences(getApplicationContext())</span>
+<span class="nc" id="L48">                .getString(UxArgument.PASSCODE, &quot;&quot;);</span>
+<span class="nc" id="L49">        Log.d(TAG, &quot;Passcode: &quot; + passcode);</span>
+
+<span class="nc bnc" id="L51" title="All 2 branches missed.">        if (pass.equals(passcode)) {</span>
+<span class="nc bnc" id="L52" title="All 2 branches missed.">            if (UxArgument.DISABLE_PASSCODE.equals(getIntent().getStringExtra(UxArgument.DISABLE_PASSCODE))) {</span>
+<span class="nc" id="L53">                setResult(RESULT_OK);</span>
+<span class="nc" id="L54">                finish();</span>
+<span class="nc" id="L55">                return;</span>
+            }
+<span class="nc" id="L57">            GnuCashApplication.PASSCODE_SESSION_INIT_TIME = System.currentTimeMillis();</span>
+<span class="nc" id="L58">            startActivity(new Intent()</span>
+<span class="nc" id="L59">                    .setClassName(this, getIntent().getStringExtra(UxArgument.PASSCODE_CLASS_CALLER))</span>
+<span class="nc" id="L60">                    .setAction(getIntent().getAction())</span>
+<span class="nc" id="L61">                    .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK)</span>
+<span class="nc" id="L62">                    .putExtras(getIntent().getExtras())</span>
+            );
+        } else {
+<span class="nc" id="L65">            Toast.makeText(this, R.string.toast_wrong_passcode, Toast.LENGTH_SHORT).show();</span>
+        }
+<span class="nc" id="L67">    }</span>
+
+    @Override
+    public void onBackPressed() {
+<span class="nc" id="L71">        setResult(RESULT_CANCELED);</span>
+
+<span class="nc bnc" id="L73" title="All 2 branches missed.">        if (UxArgument.DISABLE_PASSCODE.equals(getIntent().getStringExtra(UxArgument.DISABLE_PASSCODE))) {</span>
+<span class="nc" id="L74">            finish();</span>
+<span class="nc" id="L75">            return;</span>
+        }
+
+<span class="nc" id="L78">        GnuCashApplication.PASSCODE_SESSION_INIT_TIME = System.currentTimeMillis() - GnuCashApplication.SESSION_TIMEOUT;</span>
+<span class="nc" id="L79">        startActivity(new Intent(Intent.ACTION_MAIN)</span>
+<span class="nc" id="L80">                .addCategory(Intent.CATEGORY_HOME)</span>
+<span class="nc" id="L81">                .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)</span>
+        );
+<span class="nc" id="L83">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

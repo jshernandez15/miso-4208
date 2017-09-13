@@ -1,0 +1,363 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GnuCashApplication.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.app</a> &gt; <span class="el_source">GnuCashApplication.java</span></div><h1>GnuCashApplication.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2013 - 2014 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.gnucash.android.app;
+
+import android.app.AlarmManager;
+import android.app.Application;
+import android.app.PendingIntent;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.database.SQLException;
+import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Color;
+import android.os.Build;
+import android.os.SystemClock;
+import android.support.annotation.NonNull;
+import android.support.multidex.MultiDexApplication;
+import android.support.v7.preference.PreferenceManager;
+import android.util.Log;
+
+import com.crashlytics.android.Crashlytics;
+import com.crashlytics.android.core.CrashlyticsCore;
+import com.uservoice.uservoicesdk.Config;
+import com.uservoice.uservoicesdk.UserVoice;
+
+import org.gnucash.android.BuildConfig;
+import org.gnucash.android.R;
+import org.gnucash.android.db.BookDbHelper;
+import org.gnucash.android.db.DatabaseHelper;
+import org.gnucash.android.db.adapter.AccountsDbAdapter;
+import org.gnucash.android.db.adapter.BooksDbAdapter;
+import org.gnucash.android.db.adapter.BudgetAmountsDbAdapter;
+import org.gnucash.android.db.adapter.BudgetsDbAdapter;
+import org.gnucash.android.db.adapter.CommoditiesDbAdapter;
+import org.gnucash.android.db.adapter.PricesDbAdapter;
+import org.gnucash.android.db.adapter.RecurrenceDbAdapter;
+import org.gnucash.android.db.adapter.ScheduledActionDbAdapter;
+import org.gnucash.android.db.adapter.SplitsDbAdapter;
+import org.gnucash.android.db.adapter.TransactionsDbAdapter;
+import org.gnucash.android.model.Commodity;
+import org.gnucash.android.model.Money;
+import org.gnucash.android.service.ScheduledActionService;
+import org.gnucash.android.ui.settings.PreferenceActivity;
+
+import java.util.Currency;
+import java.util.Locale;
+
+import io.fabric.sdk.android.Fabric;
+
+/**
+ * An {@link Application} subclass for retrieving static context
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ */
+<span class="nc" id="L68">public class GnuCashApplication extends MultiDexApplication {</span>
+
+    /**
+     * Authority (domain) for the file provider. Also used in the app manifest
+     */
+    public static final String FILE_PROVIDER_AUTHORITY = BuildConfig.APPLICATION_ID + &quot;.fileprovider&quot;;
+
+    /**
+     * Lifetime of passcode session
+     */
+    public static final long SESSION_TIMEOUT = 5 * 1000;
+
+    /**
+     * Init time of passcode session
+     */
+<span class="nc" id="L83">    public static long PASSCODE_SESSION_INIT_TIME = 0L;</span>
+
+    private static Context context;
+
+    private static AccountsDbAdapter mAccountsDbAdapter;
+
+    private static TransactionsDbAdapter mTransactionsDbAdapter;
+
+    private static SplitsDbAdapter mSplitsDbAdapter;
+
+    private static ScheduledActionDbAdapter mScheduledActionDbAdapter;
+
+    private static CommoditiesDbAdapter mCommoditiesDbAdapter;
+
+    private static PricesDbAdapter mPricesDbAdapter;
+
+    private static BudgetsDbAdapter mBudgetsDbAdapter;
+
+    private static BudgetAmountsDbAdapter mBudgetAmountsDbAdapter;
+
+    private static RecurrenceDbAdapter mRecurrenceDbAdapter;
+
+    private static BooksDbAdapter mBooksDbAdapter;
+    private static DatabaseHelper mDbHelper;
+
+    /**
+     * Returns darker version of specified &lt;code&gt;color&lt;/code&gt;.
+     * Use for theming the status bar color when setting the color of the actionBar
+     */
+    public static int darken(int color) {
+<span class="nc" id="L113">        float[] hsv = new float[3];</span>
+<span class="nc" id="L114">        Color.colorToHSV(color, hsv);</span>
+<span class="nc" id="L115">        hsv[2] *= 0.8f; // value component</span>
+<span class="nc" id="L116">        return Color.HSVToColor(hsv);</span>
+    }
+
+    @Override
+    public void onCreate(){
+<span class="nc" id="L121">        super.onCreate();</span>
+<span class="nc" id="L122">        GnuCashApplication.context = getApplicationContext();</span>
+
+<span class="nc" id="L124">        Fabric.with(this, new Crashlytics.Builder().core(</span>
+<span class="nc bnc" id="L125" title="All 2 branches missed.">                new CrashlyticsCore.Builder().disabled(!isCrashlyticsEnabled()).build())</span>
+<span class="nc" id="L126">                .build());</span>
+
+<span class="nc" id="L128">        setUpUserVoice();</span>
+
+<span class="nc" id="L130">        BookDbHelper bookDbHelper = new BookDbHelper(getApplicationContext());</span>
+<span class="nc" id="L131">        mBooksDbAdapter = new BooksDbAdapter(bookDbHelper.getWritableDatabase());</span>
+
+<span class="nc" id="L133">        initializeDatabaseAdapters();</span>
+<span class="nc" id="L134">        setDefaultCurrencyCode(getDefaultCurrencyCode());</span>
+
+<span class="nc" id="L136">        StethoUtils.install(this);</span>
+<span class="nc" id="L137">    }</span>
+
+    /**
+     * Initialize database adapter singletons for use in the application
+     * This method should be called every time a new book is opened
+     */
+    public static void initializeDatabaseAdapters() {
+<span class="nc bnc" id="L144" title="All 2 branches missed.">        if (mDbHelper != null){ //close if open</span>
+<span class="nc" id="L145">            mDbHelper.getReadableDatabase().close();</span>
+        }
+
+<span class="nc" id="L148">        mDbHelper = new DatabaseHelper(getAppContext(),</span>
+<span class="nc" id="L149">                mBooksDbAdapter.getActiveBookUID());</span>
+        SQLiteDatabase mainDb;
+        try {
+<span class="nc" id="L152">            mainDb = mDbHelper.getWritableDatabase();</span>
+<span class="nc" id="L153">        } catch (SQLException e) {</span>
+<span class="nc" id="L154">            Crashlytics.logException(e);</span>
+<span class="nc" id="L155">            Log.e(&quot;GnuCashApplication&quot;, &quot;Error getting database: &quot; + e.getMessage());</span>
+<span class="nc" id="L156">            mainDb = mDbHelper.getReadableDatabase();</span>
+<span class="nc" id="L157">        }</span>
+
+<span class="nc" id="L159">        mSplitsDbAdapter            = new SplitsDbAdapter(mainDb);</span>
+<span class="nc" id="L160">        mTransactionsDbAdapter      = new TransactionsDbAdapter(mainDb, mSplitsDbAdapter);</span>
+<span class="nc" id="L161">        mAccountsDbAdapter          = new AccountsDbAdapter(mainDb, mTransactionsDbAdapter);</span>
+<span class="nc" id="L162">        mRecurrenceDbAdapter        = new RecurrenceDbAdapter(mainDb);</span>
+<span class="nc" id="L163">        mScheduledActionDbAdapter   = new ScheduledActionDbAdapter(mainDb, mRecurrenceDbAdapter);</span>
+<span class="nc" id="L164">        mPricesDbAdapter            = new PricesDbAdapter(mainDb);</span>
+<span class="nc" id="L165">        mCommoditiesDbAdapter       = new CommoditiesDbAdapter(mainDb);</span>
+<span class="nc" id="L166">        mBudgetAmountsDbAdapter     = new BudgetAmountsDbAdapter(mainDb);</span>
+<span class="nc" id="L167">        mBudgetsDbAdapter           = new BudgetsDbAdapter(mainDb, mBudgetAmountsDbAdapter, mRecurrenceDbAdapter);</span>
+<span class="nc" id="L168">    }</span>
+
+    public static AccountsDbAdapter getAccountsDbAdapter() {
+<span class="nc" id="L171">        return mAccountsDbAdapter;</span>
+    }
+
+    public static TransactionsDbAdapter getTransactionDbAdapter() {
+<span class="nc" id="L175">        return mTransactionsDbAdapter;</span>
+    }
+
+    public static SplitsDbAdapter getSplitsDbAdapter() {
+<span class="nc" id="L179">        return mSplitsDbAdapter;</span>
+    }
+
+    public static ScheduledActionDbAdapter getScheduledEventDbAdapter(){
+<span class="nc" id="L183">        return mScheduledActionDbAdapter;</span>
+    }
+
+    public static CommoditiesDbAdapter getCommoditiesDbAdapter(){
+<span class="nc" id="L187">        return mCommoditiesDbAdapter;</span>
+    }
+
+    public static PricesDbAdapter getPricesDbAdapter(){
+<span class="nc" id="L191">        return mPricesDbAdapter;</span>
+    }
+
+    public static BudgetsDbAdapter getBudgetDbAdapter() {
+<span class="nc" id="L195">        return mBudgetsDbAdapter;</span>
+    }
+
+    public static RecurrenceDbAdapter getRecurrenceDbAdapter() {
+<span class="nc" id="L199">        return mRecurrenceDbAdapter;</span>
+    }
+
+    public static BudgetAmountsDbAdapter getBudgetAmountsDbAdapter(){
+<span class="nc" id="L203">        return mBudgetAmountsDbAdapter;</span>
+    }
+
+    public static BooksDbAdapter getBooksDbAdapter(){
+<span class="nc" id="L207">        return mBooksDbAdapter;</span>
+    }
+
+    /**
+     * Returns the currently active database in the application
+     * @return Currently active {@link SQLiteDatabase}
+     */
+    public static SQLiteDatabase getActiveDb(){
+<span class="nc" id="L215">        return mDbHelper.getWritableDatabase();</span>
+    }
+
+    /**
+     * Returns the application context
+     * @return Application {@link Context} object
+     */
+    public static Context getAppContext() {
+<span class="nc" id="L223">        return GnuCashApplication.context;</span>
+    }
+
+    /**
+     * Checks if crashlytics is enabled
+     * @return {@code true} if crashlytics is enabled, {@code false} otherwise
+     */
+    public static boolean isCrashlyticsEnabled(){
+<span class="nc" id="L231">        return PreferenceManager.getDefaultSharedPreferences(context).getBoolean(context.getString(R.string.key_enable_crashlytics), false);</span>
+    }
+
+    /**
+     * Returns &lt;code&gt;true&lt;/code&gt; if double entry is enabled in the app settings, &lt;code&gt;false&lt;/code&gt; otherwise.
+     * If the value is not set, the default value can be specified in the parameters.
+     * @return &lt;code&gt;true&lt;/code&gt; if double entry is enabled, &lt;code&gt;false&lt;/code&gt; otherwise
+     */
+    public static boolean isDoubleEntryEnabled(){
+<span class="nc" id="L240">        SharedPreferences sharedPrefs = PreferenceActivity.getActiveBookSharedPreferences();</span>
+<span class="nc" id="L241">        return sharedPrefs.getBoolean(context.getString(R.string.key_use_double_entry), true);</span>
+    }
+
+    /**
+     * Returns &lt;code&gt;true&lt;/code&gt; if setting is enabled to save opening balances after deleting transactions,
+     * &lt;code&gt;false&lt;/code&gt; otherwise.
+     * @param defaultValue Default value to return if double entry is not explicitly set
+     * @return &lt;code&gt;true&lt;/code&gt; if opening balances should be saved, &lt;code&gt;false&lt;/code&gt; otherwise
+     */
+    public static boolean shouldSaveOpeningBalances(boolean defaultValue){
+<span class="nc" id="L251">        SharedPreferences sharedPrefs = PreferenceActivity.getActiveBookSharedPreferences();</span>
+<span class="nc" id="L252">        return sharedPrefs.getBoolean(context.getString(R.string.key_save_opening_balances), defaultValue);</span>
+    }
+
+    /**
+     * Returns the default currency code for the application. &lt;br/&gt;
+     * What value is actually returned is determined in this order of priority:&lt;ul&gt;
+     *     &lt;li&gt;User currency preference (manually set be user in the app)&lt;/li&gt;
+     *     &lt;li&gt;Default currency for the device locale&lt;/li&gt;
+     *     &lt;li&gt;United States Dollars&lt;/li&gt;
+     * &lt;/ul&gt;
+     *
+     * @return Default currency code string for the application
+     */
+    public static String getDefaultCurrencyCode(){
+<span class="nc" id="L266">        Locale locale = getDefaultLocale();</span>
+
+<span class="nc" id="L268">        String currencyCode = &quot;USD&quot;; //start with USD as the default</span>
+<span class="nc" id="L269">        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);</span>
+        try { //there are some strange locales out there
+<span class="nc" id="L271">            currencyCode = Currency.getInstance(locale).getCurrencyCode();</span>
+<span class="nc" id="L272">        } catch (Throwable e) {</span>
+<span class="nc" id="L273">            Crashlytics.logException(e);</span>
+<span class="nc" id="L274">            Log.e(context.getString(R.string.app_name), &quot;&quot; + e.getMessage());</span>
+        } finally {
+<span class="nc" id="L276">            currencyCode = prefs.getString(context.getString(R.string.key_default_currency), currencyCode);</span>
+<span class="nc" id="L277">        }</span>
+<span class="nc" id="L278">        return currencyCode;</span>
+    }
+
+    /**
+     * Sets the default currency for the application in all relevant places:
+     * &lt;ul&gt;
+     *     &lt;li&gt;Shared preferences&lt;/li&gt;
+     *     &lt;li&gt;{@link Money#DEFAULT_CURRENCY_CODE}&lt;/li&gt;
+     *     &lt;li&gt;{@link Commodity#DEFAULT_COMMODITY}&lt;/li&gt;
+     * &lt;/ul&gt;
+     * @param currencyCode ISO 4217 currency code
+     * @see #getDefaultCurrencyCode()
+     */
+    public static void setDefaultCurrencyCode(@NonNull String currencyCode){
+<span class="nc" id="L292">        PreferenceManager.getDefaultSharedPreferences(context).edit()</span>
+<span class="nc" id="L293">                .putString(getAppContext().getString(R.string.key_default_currency), currencyCode)</span>
+<span class="nc" id="L294">                .apply();</span>
+<span class="nc" id="L295">        Money.DEFAULT_CURRENCY_CODE = currencyCode;</span>
+<span class="nc" id="L296">        Commodity.DEFAULT_COMMODITY = mCommoditiesDbAdapter.getCommodity(currencyCode);</span>
+<span class="nc" id="L297">    }</span>
+
+    /**
+     * Returns the default locale which is used for currencies, while handling special cases for
+     * locales which are not supported for currency such as en_GB
+     * @return The default locale for this device
+     */
+    public static Locale getDefaultLocale() {
+<span class="nc" id="L305">        Locale locale = Locale.getDefault();</span>
+        //sometimes the locale en_UK is returned which causes a crash with Currency
+<span class="nc bnc" id="L307" title="All 2 branches missed.">        if (locale.getCountry().equals(&quot;UK&quot;)) {</span>
+<span class="nc" id="L308">            locale = new Locale(locale.getLanguage(), &quot;GB&quot;);</span>
+        }
+
+        //for unsupported locale es_LG
+<span class="nc bnc" id="L312" title="All 2 branches missed.">        if (locale.getCountry().equals(&quot;LG&quot;)){</span>
+<span class="nc" id="L313">            locale = new Locale(locale.getLanguage(), &quot;ES&quot;);</span>
+        }
+
+<span class="nc bnc" id="L316" title="All 2 branches missed.">        if (locale.getCountry().equals(&quot;en&quot;)){</span>
+<span class="nc" id="L317">            locale = Locale.US;</span>
+        }
+<span class="nc" id="L319">        return locale;</span>
+    }
+
+    /**
+     * Starts the service for scheduled events and schedules an alarm to call the service twice daily.
+     * &lt;p&gt;If the alarm already exists, this method does nothing. If not, the alarm will be created
+     * Hence, there is no harm in calling the method repeatedly&lt;/p&gt;
+     * @param context Application context
+     */
+    public static void startScheduledActionExecutionService(Context context){
+<span class="nc" id="L329">        Intent alarmIntent = new Intent(context, ScheduledActionService.class);</span>
+<span class="nc" id="L330">        PendingIntent pendingIntent = PendingIntent.getService(context, 0, alarmIntent, PendingIntent.FLAG_NO_CREATE);</span>
+
+<span class="nc bnc" id="L332" title="All 2 branches missed.">        if (pendingIntent != null) //if service is already scheduled, just return</span>
+<span class="nc" id="L333">            return;</span>
+        else
+<span class="nc" id="L335">            pendingIntent = PendingIntent.getService(context, 0, alarmIntent, 0);</span>
+
+<span class="nc" id="L337">        AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);</span>
+<span class="nc" id="L338">        alarmManager.setInexactRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP,</span>
+<span class="nc" id="L339">                SystemClock.elapsedRealtime() + AlarmManager.INTERVAL_FIFTEEN_MINUTES,</span>
+                AlarmManager.INTERVAL_HOUR, pendingIntent);
+
+<span class="nc" id="L342">        context.startService(alarmIntent); //run the service the first time</span>
+<span class="nc" id="L343">    }</span>
+
+    /**
+     * Sets up UserVoice.
+     *
+     * &lt;p&gt;Allows users to contact with us and access help topics.&lt;/p&gt;
+     */
+    private void setUpUserVoice() {
+        // Set this up once when your application launches
+<span class="nc" id="L352">        Config config = new Config(&quot;gnucash.uservoice.com&quot;);</span>
+<span class="nc" id="L353">        config.setTopicId(107400);</span>
+<span class="nc" id="L354">        config.setForumId(320493);</span>
+<span class="nc" id="L355">        config.putUserTrait(&quot;app_version_name&quot;, BuildConfig.VERSION_NAME);</span>
+<span class="nc" id="L356">        config.putUserTrait(&quot;app_version_code&quot;, BuildConfig.VERSION_CODE);</span>
+<span class="nc" id="L357">        config.putUserTrait(&quot;android_version&quot;, Build.VERSION.RELEASE);</span>
+        // config.identifyUser(&quot;USER_ID&quot;, &quot;User Name&quot;, &quot;email@example.com&quot;);
+<span class="nc" id="L359">        UserVoice.init(config, this);</span>
+<span class="nc" id="L360">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

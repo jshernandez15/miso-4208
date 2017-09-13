@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DatabaseCursorLoader.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.db</a> &gt; <span class="el_source">DatabaseCursorLoader.java</span></div><h1>DatabaseCursorLoader.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2012 - 2014 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.db;
+
+import android.content.Context;
+import android.database.Cursor;
+import android.support.v4.content.AsyncTaskLoader;
+import android.support.v4.content.Loader;
+
+import org.gnucash.android.db.adapter.DatabaseAdapter;
+
+/**
+ * Abstract base class for asynchronously loads records from a database and manages the cursor.
+ * In order to use this class, you must subclass it and implement the
+ * {@link #loadInBackground()} method to load the particular records from the database.
+ * Ideally, the database has {@link DatabaseAdapter} which is used for managing access to the
+ * records from the database
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ * @see DatabaseAdapter
+ */
+public abstract class DatabaseCursorLoader extends AsyncTaskLoader&lt;Cursor&gt; {
+	/**
+	 * Cursor which will hold the loaded data set.
+	 * The cursor will be returned from the {@link #loadInBackground()} method
+	 */
+<span class="nc" id="L40">	private Cursor mCursor = null;</span>
+	
+	/**
+	 * {@link DatabaseAdapter} which will be used to load the records from the database
+	 */
+<span class="nc" id="L45">	protected DatabaseAdapter mDatabaseAdapter = null;</span>
+	
+	/**
+	 * A content observer which monitors the cursor and provides notifications when
+	 * the dataset backing the cursor changes. You need to register the oberserver on
+	 * your cursor using {@link #registerContentObserver(Cursor)}
+	 */
+	protected final Loader.ForceLoadContentObserver mObserver;
+	
+	/**
+	 * Constructor
+	 * Initializes the content observer
+	 * @param context Application context
+	 */
+	public DatabaseCursorLoader(Context context) {
+<span class="nc" id="L60">		super(context);</span>
+<span class="nc" id="L61">		mObserver = new ForceLoadContentObserver();</span>
+<span class="nc" id="L62">	}</span>
+
+	/**
+	 * Asynchronously loads the results from the database. 
+	 */
+	public abstract Cursor loadInBackground();
+
+	/**
+	 * Registers the content observer for the cursor. 
+	 * @param cursor {@link Cursor} whose content is to be observed for changes
+	 */
+	protected void registerContentObserver(Cursor cursor){
+<span class="nc" id="L74">		cursor.registerContentObserver(mObserver);</span>
+<span class="nc" id="L75">	}</span>
+	
+	@Override
+	public void deliverResult(Cursor data) {
+<span class="nc bnc" id="L79" title="All 2 branches missed.">		if (isReset()) {</span>
+<span class="nc bnc" id="L80" title="All 2 branches missed.">			if (data != null) {</span>
+<span class="nc" id="L81">				onReleaseResources(data);</span>
+			}
+<span class="nc" id="L83">			return;</span>
+		}
+
+<span class="nc" id="L86">		Cursor oldCursor = mCursor;</span>
+<span class="nc" id="L87">		mCursor = data;</span>
+
+<span class="nc bnc" id="L89" title="All 2 branches missed.">		if (isStarted()) {</span>
+<span class="nc" id="L90">			super.deliverResult(data);</span>
+		}
+
+<span class="nc bnc" id="L93" title="All 6 branches missed.">		if (oldCursor != null &amp;&amp; oldCursor != data &amp;&amp; !oldCursor.isClosed()) {</span>
+<span class="nc" id="L94">			onReleaseResources(oldCursor);</span>
+		}
+<span class="nc" id="L96">	}</span>
+
+	@Override
+	protected void onStartLoading() {
+<span class="nc bnc" id="L100" title="All 2 branches missed.">		if (mCursor != null){</span>
+<span class="nc" id="L101">			deliverResult(mCursor);</span>
+		}
+        
+<span class="nc bnc" id="L104" title="All 4 branches missed.">        if (takeContentChanged() || mCursor == null) {</span>
+            // If the data has changed since the last time it was loaded
+            // or is not currently available, start a load.
+<span class="nc" id="L107">            forceLoad();</span>
+        }
+<span class="nc" id="L109">	}</span>
+	
+	@Override
+	protected void onStopLoading() {
+<span class="nc" id="L113">		cancelLoad();</span>
+<span class="nc" id="L114">	}</span>
+	
+	@Override
+	public void onCanceled(Cursor data) {
+<span class="nc" id="L118">		super.onCanceled(data);</span>
+<span class="nc" id="L119">		onReleaseResources(data);</span>
+<span class="nc" id="L120">	}</span>
+	
+	/**
+     * Handles a request to completely reset the Loader.
+     */
+	@Override
+	protected void onReset() {
+<span class="nc" id="L127">		super.onReset();</span>
+		
+<span class="nc" id="L129">		onStopLoading();</span>
+
+        // At this point we can release the resources associated with 'mCursor'
+        // if needed.
+<span class="nc bnc" id="L133" title="All 4 branches missed.">        if (mCursor != null &amp;&amp; !mCursor.isClosed()) {</span>
+<span class="nc" id="L134">            onReleaseResources(mCursor);           </span>
+        }	
+<span class="nc" id="L136">        mCursor = null;</span>
+<span class="nc" id="L137">	}</span>
+	
+	/**
+     * Helper function to take care of releasing resources associated
+     * with an actively loaded data set.
+     * @param c {@link Cursor} to be released
+     */
+	protected void onReleaseResources(Cursor c) {
+<span class="nc bnc" id="L145" title="All 2 branches missed.">		if (c != null)</span>
+<span class="nc" id="L146">			c.close();</span>
+<span class="nc" id="L147">	}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

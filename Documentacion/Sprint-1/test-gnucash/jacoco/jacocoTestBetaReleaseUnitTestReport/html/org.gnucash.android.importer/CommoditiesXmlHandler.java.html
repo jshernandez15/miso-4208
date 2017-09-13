@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CommoditiesXmlHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.importer</a> &gt; <span class="el_source">CommoditiesXmlHandler.java</span></div><h1>CommoditiesXmlHandler.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2015 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.gnucash.android.importer;
+
+import android.database.sqlite.SQLiteDatabase;
+
+import org.gnucash.android.app.GnuCashApplication;
+import org.gnucash.android.db.adapter.CommoditiesDbAdapter;
+import org.gnucash.android.db.adapter.DatabaseAdapter;
+import org.gnucash.android.model.Commodity;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * XML stream handler for parsing currencies to add to the database
+ */
+public class CommoditiesXmlHandler extends DefaultHandler {
+
+    public static final String TAG_CURRENCY         = &quot;currency&quot;;
+    public static final String ATTR_ISO_CODE        = &quot;isocode&quot;;
+    public static final String ATTR_FULL_NAME       = &quot;fullname&quot;;
+    public static final String ATTR_NAMESPACE       = &quot;namespace&quot;;
+    public static final String ATTR_EXCHANGE_CODE   = &quot;exchange-code&quot;;
+    public static final String ATTR_SMALLEST_FRACTION = &quot;smallest-fraction&quot;;
+    public static final String ATTR_LOCAL_SYMBOL = &quot;local-symbol&quot;;
+    /**
+     * List of commodities parsed from the XML file.
+     * They will be all added to db at once at the end of the document
+     */
+    private List&lt;Commodity&gt; mCommodities;
+
+    private CommoditiesDbAdapter mCommoditiesDbAdapter;
+
+<span class="nc" id="L51">    public CommoditiesXmlHandler(SQLiteDatabase db){</span>
+<span class="nc bnc" id="L52" title="All 2 branches missed.">        if (db == null){</span>
+<span class="nc" id="L53">            mCommoditiesDbAdapter = GnuCashApplication.getCommoditiesDbAdapter();</span>
+        } else {
+<span class="nc" id="L55">            mCommoditiesDbAdapter = new CommoditiesDbAdapter(db);</span>
+        }
+<span class="nc" id="L57">        mCommodities = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L58">    }</span>
+
+    @Override
+    public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
+<span class="nc bnc" id="L62" title="All 2 branches missed.">        if (qName.equals(TAG_CURRENCY)) {</span>
+<span class="nc" id="L63">            String isoCode = attributes.getValue(ATTR_ISO_CODE);</span>
+<span class="nc" id="L64">            String fullname = attributes.getValue(ATTR_FULL_NAME);</span>
+<span class="nc" id="L65">            String namespace = attributes.getValue(ATTR_NAMESPACE);</span>
+<span class="nc" id="L66">            String cusip = attributes.getValue(ATTR_EXCHANGE_CODE);</span>
+            //TODO: investigate how up-to-date the currency XML list is and use of parts-per-unit vs smallest-fraction.
+            //some currencies like XAF have smallest fraction 100, but parts-per-unit of 1.
+            // However java.util.Currency agrees only with the parts-per-unit although we use smallest-fraction in the app
+            // This could lead to inconsistencies over time
+<span class="nc" id="L71">            String smallestFraction = attributes.getValue(ATTR_SMALLEST_FRACTION);</span>
+<span class="nc" id="L72">            String localSymbol = attributes.getValue(ATTR_LOCAL_SYMBOL);</span>
+
+<span class="nc" id="L74">            Commodity commodity = new Commodity(fullname, isoCode, Integer.parseInt(smallestFraction));</span>
+<span class="nc" id="L75">            commodity.setNamespace(Commodity.Namespace.valueOf(namespace));</span>
+<span class="nc" id="L76">            commodity.setCusip(cusip);</span>
+<span class="nc" id="L77">            commodity.setLocalSymbol(localSymbol);</span>
+
+<span class="nc" id="L79">            mCommodities.add(commodity);</span>
+        }
+<span class="nc" id="L81">    }</span>
+
+    @Override
+    public void endDocument() throws SAXException {
+<span class="nc" id="L85">        mCommoditiesDbAdapter.bulkAddRecords(mCommodities, DatabaseAdapter.UpdateMethod.insert);</span>
+<span class="nc" id="L86">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

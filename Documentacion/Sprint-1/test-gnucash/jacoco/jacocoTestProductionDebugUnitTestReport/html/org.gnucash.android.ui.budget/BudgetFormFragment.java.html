@@ -1,0 +1,363 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BudgetFormFragment.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.ui.budget</a> &gt; <span class="el_source">BudgetFormFragment.java</span></div><h1>BudgetFormFragment.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2015 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.ui.budget;
+
+import android.app.Activity;
+import android.content.Intent;
+import android.database.Cursor;
+import android.inputmethodservice.KeyboardView;
+import android.os.Bundle;
+import android.support.annotation.Nullable;
+import android.support.design.widget.TextInputLayout;
+import android.support.v4.app.Fragment;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Spinner;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.codetroopers.betterpickers.calendardatepicker.CalendarDatePickerDialogFragment;
+import com.codetroopers.betterpickers.recurrencepicker.EventRecurrence;
+import com.codetroopers.betterpickers.recurrencepicker.EventRecurrenceFormatter;
+import com.codetroopers.betterpickers.recurrencepicker.RecurrencePickerDialogFragment;
+
+import org.gnucash.android.R;
+import org.gnucash.android.db.DatabaseSchema;
+import org.gnucash.android.db.adapter.AccountsDbAdapter;
+import org.gnucash.android.db.adapter.BudgetsDbAdapter;
+import org.gnucash.android.db.adapter.DatabaseAdapter;
+import org.gnucash.android.model.Budget;
+import org.gnucash.android.model.BudgetAmount;
+import org.gnucash.android.model.Commodity;
+import org.gnucash.android.model.Money;
+import org.gnucash.android.model.Recurrence;
+import org.gnucash.android.ui.common.FormActivity;
+import org.gnucash.android.ui.common.UxArgument;
+import org.gnucash.android.ui.transaction.TransactionFormFragment;
+import org.gnucash.android.ui.util.RecurrenceParser;
+import org.gnucash.android.ui.util.RecurrenceViewClickListener;
+import org.gnucash.android.ui.util.widget.CalculatorEditText;
+import org.gnucash.android.util.QualifiedAccountNameCursorAdapter;
+
+import java.math.BigDecimal;
+import java.sql.Timestamp;
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+
+import butterknife.BindView;
+import butterknife.ButterKnife;
+import butterknife.OnClick;
+
+/**
+ * Fragment for creating or editing Budgets
+ */
+<span class="nc bnc" id="L80" title="All 2 branches missed.">public class BudgetFormFragment extends Fragment implements RecurrencePickerDialogFragment.OnRecurrenceSetListener, CalendarDatePickerDialogFragment.OnDateSetListener {</span>
+
+    public static final int REQUEST_EDIT_BUDGET_AMOUNTS = 0xBA;
+    @BindView(R.id.input_budget_name)   EditText mBudgetNameInput;
+    @BindView(R.id.input_description)   EditText mDescriptionInput;
+    @BindView(R.id.input_recurrence)    TextView mRecurrenceInput;
+    @BindView(R.id.name_text_input_layout)  TextInputLayout mNameTextInputLayout;
+    @BindView(R.id.calculator_keyboard)     KeyboardView mKeyboardView;
+    @BindView(R.id.input_budget_amount)     CalculatorEditText mBudgetAmountInput;
+    @BindView(R.id.input_budget_account_spinner) Spinner mBudgetAccountSpinner;
+    @BindView(R.id.btn_add_budget_amount)   Button mAddBudgetAmount;
+    @BindView(R.id.input_start_date)        TextView mStartDateInput;
+    @BindView(R.id.budget_amount_layout)    View mBudgetAmountLayout;
+
+<span class="nc" id="L94">    EventRecurrence mEventRecurrence = new EventRecurrence();</span>
+    String mRecurrenceRule;
+
+    private BudgetsDbAdapter mBudgetsDbAdapter;
+
+    private Budget mBudget;
+    private Calendar mStartDate;
+    private ArrayList&lt;BudgetAmount&gt; mBudgetAmounts;
+    private AccountsDbAdapter mAccountsDbAdapter;
+    private QualifiedAccountNameCursorAdapter mAccountsCursorAdapter;
+
+    @Nullable
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+<span class="nc" id="L108">        View view = inflater.inflate(R.layout.fragment_budget_form, container, false);</span>
+<span class="nc" id="L109">        ButterKnife.bind(this, view);</span>
+
+<span class="nc" id="L111">        view.findViewById(R.id.btn_remove_item).setVisibility(View.GONE);</span>
+<span class="nc" id="L112">        mBudgetAmountInput.bindListeners(mKeyboardView);</span>
+<span class="nc" id="L113">        mStartDateInput.setText(TransactionFormFragment.DATE_FORMATTER.format(mStartDate.getTime()));</span>
+<span class="nc" id="L114">        return view;</span>
+    }
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+<span class="nc" id="L119">        super.onCreate(savedInstanceState);</span>
+<span class="nc" id="L120">        mBudgetsDbAdapter = BudgetsDbAdapter.getInstance();</span>
+<span class="nc" id="L121">        mStartDate = Calendar.getInstance();</span>
+<span class="nc" id="L122">        mBudgetAmounts = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L123">        String conditions = &quot;(&quot; + DatabaseSchema.AccountEntry.COLUMN_HIDDEN + &quot; = 0 )&quot;;</span>
+<span class="nc" id="L124">        mAccountsDbAdapter = AccountsDbAdapter.getInstance();</span>
+<span class="nc" id="L125">        Cursor accountCursor = mAccountsDbAdapter.fetchAccountsOrderedByFavoriteAndFullName(conditions, null);</span>
+<span class="nc" id="L126">        mAccountsCursorAdapter = new QualifiedAccountNameCursorAdapter(getActivity(), accountCursor);</span>
+<span class="nc" id="L127">    }</span>
+
+    @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+<span class="nc" id="L131">        super.onActivityCreated(savedInstanceState);</span>
+
+<span class="nc" id="L133">        setHasOptionsMenu(true);</span>
+
+<span class="nc" id="L135">        mBudgetAccountSpinner.setAdapter(mAccountsCursorAdapter);</span>
+<span class="nc" id="L136">        String budgetUID = getArguments().getString(UxArgument.BUDGET_UID);</span>
+<span class="nc bnc" id="L137" title="All 2 branches missed.">        if (budgetUID != null){ //if we are editing the budget</span>
+<span class="nc" id="L138">            initViews(mBudget = mBudgetsDbAdapter.getRecord(budgetUID));</span>
+        }
+<span class="nc" id="L140">        ActionBar actionbar = ((AppCompatActivity) getActivity()).getSupportActionBar();</span>
+<span class="nc bnc" id="L141" title="All 4 branches missed.">        assert actionbar != null;</span>
+<span class="nc bnc" id="L142" title="All 2 branches missed.">        if (mBudget ==  null)</span>
+<span class="nc" id="L143">            actionbar.setTitle(&quot;Create Budget&quot;);</span>
+        else
+<span class="nc" id="L145">            actionbar.setTitle(&quot;Edit Budget&quot;);</span>
+
+<span class="nc" id="L147">        mRecurrenceInput.setOnClickListener(</span>
+<span class="nc" id="L148">                new RecurrenceViewClickListener((AppCompatActivity) getActivity(), mRecurrenceRule, this));</span>
+<span class="nc" id="L149">    }</span>
+
+    /**
+     * Initialize views when editing an existing budget
+     * @param budget Budget to use to initialize the views
+     */
+    private void initViews(Budget budget){
+<span class="nc" id="L156">        mBudgetNameInput.setText(budget.getName());</span>
+<span class="nc" id="L157">        mDescriptionInput.setText(budget.getDescription());</span>
+
+<span class="nc" id="L159">        String recurrenceRuleString = budget.getRecurrence().getRuleString();</span>
+<span class="nc" id="L160">        mRecurrenceRule = recurrenceRuleString;</span>
+<span class="nc" id="L161">        mEventRecurrence.parse(recurrenceRuleString);</span>
+<span class="nc" id="L162">        mRecurrenceInput.setText(budget.getRecurrence().getRepeatString());</span>
+
+<span class="nc" id="L164">        mBudgetAmounts = (ArrayList&lt;BudgetAmount&gt;) budget.getCompactedBudgetAmounts();</span>
+<span class="nc" id="L165">        toggleAmountInputVisibility();</span>
+<span class="nc" id="L166">    }</span>
+
+    /**
+     * Extracts the budget amounts from the form
+     * &lt;p&gt;If the budget amount was input using the simple form, then read the values.&lt;br&gt;
+     *     Else return the values gotten from the BudgetAmountEditor&lt;/p&gt;
+     * @return List of budget amounts
+     */
+    private ArrayList&lt;BudgetAmount&gt; extractBudgetAmounts(){
+<span class="nc" id="L175">        BigDecimal value = mBudgetAmountInput.getValue();</span>
+<span class="nc bnc" id="L176" title="All 2 branches missed.">        if (value == null)</span>
+<span class="nc" id="L177">            return mBudgetAmounts;</span>
+
+<span class="nc bnc" id="L179" title="All 2 branches missed.">        if (mBudgetAmounts.isEmpty()){ //has not been set in budget amounts editor</span>
+<span class="nc" id="L180">            ArrayList&lt;BudgetAmount&gt; budgetAmounts = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L181">            Money amount = new Money(value, Commodity.DEFAULT_COMMODITY);</span>
+<span class="nc" id="L182">            String accountUID = mAccountsDbAdapter.getUID(mBudgetAccountSpinner.getSelectedItemId());</span>
+<span class="nc" id="L183">            BudgetAmount budgetAmount = new BudgetAmount(amount, accountUID);</span>
+<span class="nc" id="L184">            budgetAmounts.add(budgetAmount);</span>
+<span class="nc" id="L185">            return budgetAmounts;</span>
+        } else {
+<span class="nc" id="L187">            return mBudgetAmounts;</span>
+        }
+    }
+
+    /**
+     * Checks that this budget can be saved
+     * Also sets the appropriate error messages on the relevant views
+     * &lt;p&gt;For a budget to be saved, it needs to have a name, an amount and a schedule&lt;/p&gt;
+     * @return {@code true} if the budget can be saved, {@code false} otherwise
+     */
+    private boolean canSave(){
+<span class="nc bnc" id="L198" title="All 6 branches missed.">        if (mEventRecurrence.until != null &amp;&amp; mEventRecurrence.until.length() &gt; 0</span>
+                || mEventRecurrence.count &lt;= 0){
+<span class="nc" id="L200">            Toast.makeText(getActivity(),</span>
+                    &quot;Set a number periods in the recurrence dialog to save the budget&quot;,
+<span class="nc" id="L202">                    Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L203">            return false;</span>
+        }
+
+<span class="nc" id="L206">        mBudgetAmounts = extractBudgetAmounts();</span>
+<span class="nc" id="L207">        String budgetName = mBudgetNameInput.getText().toString();</span>
+<span class="nc bnc" id="L208" title="All 2 branches missed.">        boolean canSave = mRecurrenceRule != null</span>
+<span class="nc bnc" id="L209" title="All 2 branches missed.">                &amp;&amp; !budgetName.isEmpty()</span>
+<span class="nc bnc" id="L210" title="All 2 branches missed.">                &amp;&amp; !mBudgetAmounts.isEmpty();</span>
+
+<span class="nc bnc" id="L212" title="All 2 branches missed.">        if (!canSave){</span>
+<span class="nc bnc" id="L213" title="All 2 branches missed.">            if (budgetName.isEmpty()){</span>
+<span class="nc" id="L214">                mNameTextInputLayout.setError(&quot;A name is required&quot;);</span>
+<span class="nc" id="L215">                mNameTextInputLayout.setErrorEnabled(true);</span>
+            } else {
+<span class="nc" id="L217">                mNameTextInputLayout.setErrorEnabled(false);</span>
+            }
+
+<span class="nc bnc" id="L220" title="All 2 branches missed.">            if (mBudgetAmounts.isEmpty()){</span>
+<span class="nc" id="L221">                mBudgetAmountInput.setError(&quot;Enter an amount for the budget&quot;);</span>
+<span class="nc" id="L222">                Toast.makeText(getActivity(), &quot;Add budget amounts in order to save the budget&quot;,</span>
+<span class="nc" id="L223">                        Toast.LENGTH_SHORT).show();</span>
+            }
+
+<span class="nc bnc" id="L226" title="All 2 branches missed.">            if (mRecurrenceRule == null){</span>
+<span class="nc" id="L227">                Toast.makeText(getActivity(), &quot;Set a repeat pattern to create a budget!&quot;,</span>
+<span class="nc" id="L228">                        Toast.LENGTH_SHORT).show();</span>
+            }
+        }
+
+<span class="nc" id="L232">        return canSave;</span>
+    }
+
+    /**
+     * Extracts the information from the form and saves the budget
+     */
+    private void saveBudget(){
+<span class="nc bnc" id="L239" title="All 2 branches missed.">        if (!canSave())</span>
+<span class="nc" id="L240">            return;</span>
+<span class="nc" id="L241">        String name = mBudgetNameInput.getText().toString().trim();</span>
+
+
+<span class="nc bnc" id="L244" title="All 2 branches missed.">        if (mBudget == null){</span>
+<span class="nc" id="L245">            mBudget = new Budget(name);</span>
+        } else {
+<span class="nc" id="L247">            mBudget.setName(name);</span>
+        }
+
+        // TODO: 22.10.2015 set the period num of the budget amount
+<span class="nc" id="L251">        extractBudgetAmounts();</span>
+<span class="nc" id="L252">        mBudget.setBudgetAmounts(mBudgetAmounts);</span>
+
+<span class="nc" id="L254">        mBudget.setDescription(mDescriptionInput.getText().toString().trim());</span>
+
+<span class="nc" id="L256">        Recurrence recurrence = RecurrenceParser.parse(mEventRecurrence);</span>
+<span class="nc" id="L257">        recurrence.setPeriodStart(new Timestamp(mStartDate.getTimeInMillis()));</span>
+<span class="nc" id="L258">        mBudget.setRecurrence(recurrence);</span>
+
+<span class="nc" id="L260">        mBudgetsDbAdapter.addRecord(mBudget, DatabaseAdapter.UpdateMethod.insert);</span>
+<span class="nc" id="L261">        getActivity().finish();</span>
+<span class="nc" id="L262">    }</span>
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+<span class="nc" id="L266">        inflater.inflate(R.menu.default_save_actions, menu);</span>
+<span class="nc" id="L267">    }</span>
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+<span class="nc bnc" id="L271" title="All 2 branches missed.">        switch (item.getItemId()){</span>
+            case R.id.menu_save:
+<span class="nc" id="L273">                saveBudget();</span>
+<span class="nc" id="L274">                return true;</span>
+        }
+<span class="nc" id="L276">        return false;</span>
+    }
+
+    @OnClick(R.id.input_start_date)
+    public void onClickBudgetStartDate(View v) {
+<span class="nc" id="L281">        long dateMillis = 0;</span>
+        try {
+<span class="nc" id="L283">            Date date = TransactionFormFragment.DATE_FORMATTER.parse(((TextView) v).getText().toString());</span>
+<span class="nc" id="L284">            dateMillis = date.getTime();</span>
+<span class="nc" id="L285">        } catch (ParseException e) {</span>
+<span class="nc" id="L286">            Log.e(getTag(), &quot;Error converting input time to Date object&quot;);</span>
+<span class="nc" id="L287">        }</span>
+<span class="nc" id="L288">        Calendar calendar = Calendar.getInstance();</span>
+<span class="nc" id="L289">        calendar.setTimeInMillis(dateMillis);</span>
+
+<span class="nc" id="L291">        int year = calendar.get(Calendar.YEAR);</span>
+<span class="nc" id="L292">        int monthOfYear = calendar.get(Calendar.MONTH);</span>
+<span class="nc" id="L293">        int dayOfMonth = calendar.get(Calendar.DAY_OF_MONTH);</span>
+<span class="nc" id="L294">        CalendarDatePickerDialogFragment datePickerDialog = new CalendarDatePickerDialogFragment();</span>
+<span class="nc" id="L295">        datePickerDialog.setOnDateSetListener(BudgetFormFragment.this);</span>
+<span class="nc" id="L296">        datePickerDialog.setPreselectedDate(year, monthOfYear, dayOfMonth);</span>
+<span class="nc" id="L297">        datePickerDialog.show(getFragmentManager(), &quot;date_picker_fragment&quot;);</span>
+<span class="nc" id="L298">    }</span>
+
+    @OnClick(R.id.btn_add_budget_amount)
+    public void onOpenBudgetAmountEditor(View v){
+<span class="nc" id="L302">        Intent intent = new Intent(getActivity(), FormActivity.class);</span>
+<span class="nc" id="L303">        intent.putExtra(UxArgument.FORM_TYPE, FormActivity.FormType.BUDGET_AMOUNT_EDITOR.name());</span>
+<span class="nc" id="L304">        mBudgetAmounts = extractBudgetAmounts();</span>
+<span class="nc" id="L305">        intent.putParcelableArrayListExtra(UxArgument.BUDGET_AMOUNT_LIST, mBudgetAmounts);</span>
+<span class="nc" id="L306">        startActivityForResult(intent, REQUEST_EDIT_BUDGET_AMOUNTS);</span>
+<span class="nc" id="L307">    }</span>
+
+    @Override
+    public void onRecurrenceSet(String rrule) {
+<span class="nc" id="L311">        mRecurrenceRule = rrule;</span>
+<span class="nc" id="L312">        String repeatString = getString(R.string.label_tap_to_create_schedule);</span>
+<span class="nc bnc" id="L313" title="All 2 branches missed.">        if (mRecurrenceRule != null){</span>
+<span class="nc" id="L314">            mEventRecurrence.parse(mRecurrenceRule);</span>
+<span class="nc" id="L315">            repeatString = EventRecurrenceFormatter.getRepeatString(getActivity(), getResources(), mEventRecurrence, true);</span>
+        }
+
+<span class="nc" id="L318">        mRecurrenceInput.setText(repeatString);</span>
+<span class="nc" id="L319">    }</span>
+
+    @Override
+    public void onDateSet(CalendarDatePickerDialogFragment dialog, int year, int monthOfYear, int dayOfMonth) {
+<span class="nc" id="L323">        Calendar cal = new GregorianCalendar(year, monthOfYear, dayOfMonth);</span>
+<span class="nc" id="L324">        mStartDateInput.setText(TransactionFormFragment.DATE_FORMATTER.format(cal.getTime()));</span>
+<span class="nc" id="L325">        mStartDate.set(Calendar.YEAR, year);</span>
+<span class="nc" id="L326">        mStartDate.set(Calendar.MONTH, monthOfYear);</span>
+<span class="nc" id="L327">        mStartDate.set(Calendar.DAY_OF_MONTH, dayOfMonth);</span>
+<span class="nc" id="L328">    }</span>
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+<span class="nc bnc" id="L332" title="All 2 branches missed.">        if (requestCode == REQUEST_EDIT_BUDGET_AMOUNTS){</span>
+<span class="nc bnc" id="L333" title="All 2 branches missed.">            if (resultCode == Activity.RESULT_OK){</span>
+<span class="nc" id="L334">                ArrayList&lt;BudgetAmount&gt; budgetAmounts = data.getParcelableArrayListExtra(UxArgument.BUDGET_AMOUNT_LIST);</span>
+<span class="nc bnc" id="L335" title="All 2 branches missed.">                if (budgetAmounts != null){</span>
+<span class="nc" id="L336">                    mBudgetAmounts = budgetAmounts;</span>
+<span class="nc" id="L337">                    toggleAmountInputVisibility();</span>
+                }
+<span class="nc" id="L339">                return;</span>
+            }
+        }
+<span class="nc" id="L342">        super.onActivityResult(requestCode, resultCode, data);</span>
+<span class="nc" id="L343">    }</span>
+
+    /**
+     * Toggles the visibility of the amount input based on {@link #mBudgetAmounts}
+     */
+    private void toggleAmountInputVisibility() {
+<span class="nc bnc" id="L349" title="All 2 branches missed.">        if (mBudgetAmounts.size() &gt; 1){</span>
+<span class="nc" id="L350">            mBudgetAmountLayout.setVisibility(View.GONE);</span>
+<span class="nc" id="L351">            mAddBudgetAmount.setText(&quot;Edit Budget Amounts&quot;);</span>
+        } else {
+<span class="nc" id="L353">            mAddBudgetAmount.setText(&quot;Add Budget Amounts&quot;);</span>
+<span class="nc" id="L354">            mBudgetAmountLayout.setVisibility(View.VISIBLE);</span>
+<span class="nc bnc" id="L355" title="All 2 branches missed.">            if (!mBudgetAmounts.isEmpty()) {</span>
+<span class="nc" id="L356">                BudgetAmount budgetAmount = mBudgetAmounts.get(0);</span>
+<span class="nc" id="L357">                mBudgetAmountInput.setValue(budgetAmount.getAmount().asBigDecimal());</span>
+<span class="nc" id="L358">                mBudgetAccountSpinner.setSelection(mAccountsCursorAdapter.getPosition(budgetAmount.getAccountUID()));</span>
+            }
+        }
+<span class="nc" id="L361">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

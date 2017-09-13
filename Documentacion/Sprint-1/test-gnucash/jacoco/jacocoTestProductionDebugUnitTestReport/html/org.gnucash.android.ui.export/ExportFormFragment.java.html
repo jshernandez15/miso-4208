@@ -1,0 +1,581 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ExportFormFragment.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.ui.export</a> &gt; <span class="el_source">ExportFormFragment.java</span></div><h1>ExportFormFragment.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2012-2013 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.ui.export;
+
+import android.app.Activity;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.net.Uri;
+import android.os.Bundle;
+import android.preference.PreferenceManager;
+import android.support.v4.app.Fragment;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.SwitchCompat;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
+import android.widget.LinearLayout;
+import android.widget.RadioButton;
+import android.widget.Spinner;
+import android.widget.TextView;
+
+import com.codetroopers.betterpickers.calendardatepicker.CalendarDatePickerDialogFragment;
+import com.codetroopers.betterpickers.radialtimepicker.RadialTimePickerDialogFragment;
+import com.codetroopers.betterpickers.recurrencepicker.EventRecurrence;
+import com.codetroopers.betterpickers.recurrencepicker.EventRecurrenceFormatter;
+import com.codetroopers.betterpickers.recurrencepicker.RecurrencePickerDialogFragment;
+import com.dropbox.core.android.Auth;
+
+import org.gnucash.android.R;
+import org.gnucash.android.app.GnuCashApplication;
+import org.gnucash.android.db.adapter.BooksDbAdapter;
+import org.gnucash.android.db.adapter.DatabaseAdapter;
+import org.gnucash.android.db.adapter.ScheduledActionDbAdapter;
+import org.gnucash.android.export.DropboxHelper;
+import org.gnucash.android.export.ExportAsyncTask;
+import org.gnucash.android.export.ExportFormat;
+import org.gnucash.android.export.ExportParams;
+import org.gnucash.android.export.Exporter;
+import org.gnucash.android.model.BaseModel;
+import org.gnucash.android.model.ScheduledAction;
+import org.gnucash.android.ui.common.UxArgument;
+import org.gnucash.android.ui.settings.BackupPreferenceFragment;
+import org.gnucash.android.ui.settings.dialog.OwnCloudDialogFragment;
+import org.gnucash.android.ui.transaction.TransactionFormFragment;
+import org.gnucash.android.ui.util.RecurrenceParser;
+import org.gnucash.android.ui.util.RecurrenceViewClickListener;
+import org.gnucash.android.util.PreferencesHelper;
+import org.gnucash.android.util.TimestampHelper;
+
+import java.sql.Timestamp;
+import java.text.ParseException;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+
+import butterknife.BindView;
+import butterknife.ButterKnife;
+
+
+/**
+ * Dialog fragment for exporting accounts and transactions in various formats
+ * &lt;p&gt;The dialog is used for collecting information on the export options and then passing them
+ * to the {@link org.gnucash.android.export.Exporter} responsible for exporting&lt;/p&gt;
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ */
+<span class="nc bnc" id="L89" title="All 2 branches missed.">public class ExportFormFragment extends Fragment implements</span>
+		RecurrencePickerDialogFragment.OnRecurrenceSetListener,
+		CalendarDatePickerDialogFragment.OnDateSetListener,
+		RadialTimePickerDialogFragment.OnTimeSetListener {
+
+	/**
+	 * Request code for intent to pick export file destination
+	 */
+	private static final int REQUEST_EXPORT_FILE = 0x14;
+
+	/**
+	 * Spinner for selecting destination for the exported file.
+	 * The destination could either be SD card, or another application which
+	 * accepts files, like Google Drive.
+	 */
+	@BindView(R.id.spinner_export_destination) Spinner mDestinationSpinner;
+	
+	/**
+	 * Checkbox for deleting all transactions after exporting them
+	 */
+	@BindView(R.id.checkbox_post_export_delete) CheckBox mDeleteAllCheckBox;
+
+    /**
+     * Text view for showing warnings based on chosen export format
+     */
+    @BindView(R.id.export_warning) TextView mExportWarningTextView;
+
+	@BindView(R.id.target_uri) TextView mTargetUriTextView;
+
+	/**
+	 * Recurrence text view
+	 */
+	@BindView(R.id.input_recurrence) TextView mRecurrenceTextView;
+
+	/**
+	 * Text view displaying start date to export from
+	 */
+	@BindView(R.id.export_start_date) TextView mExportStartDate;
+
+	@BindView(R.id.export_start_time) TextView mExportStartTime;
+
+	/**
+	 * Switch toggling whether to export all transactions or not
+	 */
+	@BindView(R.id.switch_export_all) SwitchCompat mExportAllSwitch;
+
+	@BindView(R.id.export_date_layout) LinearLayout mExportDateLayout;
+
+	@BindView(R.id.radio_ofx_format) RadioButton mOfxRadioButton;
+	@BindView(R.id.radio_qif_format) RadioButton mQifRadioButton;
+	@BindView(R.id.radio_xml_format) RadioButton mXmlRadioButton;
+
+	@BindView(R.id.recurrence_options) View mRecurrenceOptionsView;
+	/**
+	 * Event recurrence options
+	 */
+<span class="nc" id="L145">	private EventRecurrence mEventRecurrence = new EventRecurrence();</span>
+
+	/**
+	 * Recurrence rule
+	 */
+	private String mRecurrenceRule;
+
+<span class="nc" id="L152">	private Calendar mExportStartCalendar = Calendar.getInstance();</span>
+
+	/**
+	 * Tag for logging
+	 */
+	private static final String TAG = &quot;ExportFormFragment&quot;;
+
+	/**
+	 * Export format
+	 */
+<span class="nc" id="L162">    private ExportFormat mExportFormat = ExportFormat.QIF;</span>
+
+<span class="nc" id="L164">	private ExportParams.ExportTarget mExportTarget = ExportParams.ExportTarget.SD_CARD;</span>
+
+	/**
+	 * The Uri target for the export
+	 */
+	private Uri mExportUri;
+
+	/**
+	 * Flag to determine if export has been started.
+	 * Used to continue export after user has picked a destination file
+	 */
+<span class="nc" id="L175">	private boolean mExportStarted = false;</span>
+
+	private void onRadioButtonClicked(View view){
+<span class="nc bnc" id="L178" title="All 4 branches missed.">        switch (view.getId()){</span>
+            case R.id.radio_ofx_format:
+<span class="nc" id="L180">                mExportFormat = ExportFormat.OFX;</span>
+<span class="nc bnc" id="L181" title="All 2 branches missed.">                if (GnuCashApplication.isDoubleEntryEnabled()){</span>
+<span class="nc" id="L182">                    mExportWarningTextView.setText(getActivity().getString(R.string.export_warning_ofx));</span>
+<span class="nc" id="L183">                    mExportWarningTextView.setVisibility(View.VISIBLE);</span>
+                } else {
+<span class="nc" id="L185">                    mExportWarningTextView.setVisibility(View.GONE);</span>
+                }
+<span class="nc" id="L187">				mExportDateLayout.setVisibility(View.VISIBLE);</span>
+<span class="nc" id="L188">                break;</span>
+
+            case R.id.radio_qif_format:
+<span class="nc" id="L191">                mExportFormat = ExportFormat.QIF;</span>
+                //TODO: Also check that there exist transactions with multiple currencies before displaying warning
+<span class="nc bnc" id="L193" title="All 2 branches missed.">                if (GnuCashApplication.isDoubleEntryEnabled()) {</span>
+<span class="nc" id="L194">                    mExportWarningTextView.setText(getActivity().getString(R.string.export_warning_qif));</span>
+<span class="nc" id="L195">                    mExportWarningTextView.setVisibility(View.VISIBLE);</span>
+                } else {
+<span class="nc" id="L197">                    mExportWarningTextView.setVisibility(View.GONE);</span>
+                }
+<span class="nc" id="L199">				mExportDateLayout.setVisibility(View.VISIBLE);</span>
+<span class="nc" id="L200">				break;</span>
+
+			case R.id.radio_xml_format:
+<span class="nc" id="L203">				mExportFormat = ExportFormat.XML;</span>
+<span class="nc" id="L204">				mExportWarningTextView.setText(R.string.export_warning_xml);</span>
+<span class="nc" id="L205">				mExportDateLayout.setVisibility(View.GONE);</span>
+				break;
+        }
+<span class="nc" id="L208">    }</span>
+
+	@Override
+	public View onCreateView(LayoutInflater inflater, ViewGroup container,
+			Bundle savedInstanceState) {
+<span class="nc" id="L213">		View view = inflater.inflate(R.layout.fragment_export_form, container, false);</span>
+
+<span class="nc" id="L215">		ButterKnife.bind(this, view);</span>
+
+<span class="nc" id="L217">		bindViewListeners();</span>
+
+<span class="nc" id="L219">		return view;</span>
+	}
+	@Override
+	public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+<span class="nc" id="L223">		inflater.inflate(R.menu.default_save_actions, menu);</span>
+<span class="nc" id="L224">		MenuItem menuItem = menu.findItem(R.id.menu_save);</span>
+<span class="nc" id="L225">		menuItem.setTitle(R.string.btn_export);</span>
+<span class="nc" id="L226">	}</span>
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+<span class="nc bnc" id="L230" title="All 3 branches missed.">		switch (item.getItemId()){</span>
+			case R.id.menu_save:
+<span class="nc" id="L232">				startExport();</span>
+<span class="nc" id="L233">				return true;</span>
+
+			case android.R.id.home:
+<span class="nc" id="L236">				getActivity().finish();</span>
+<span class="nc" id="L237">				return true;</span>
+
+			default:
+<span class="nc" id="L240">				return super.onOptionsItemSelected(item);</span>
+		}
+	}
+
+	@Override
+	public void onActivityCreated(Bundle savedInstanceState) {		
+<span class="nc" id="L246">		super.onActivityCreated(savedInstanceState);</span>
+
+<span class="nc" id="L248">		ActionBar supportActionBar = ((AppCompatActivity) getActivity()).getSupportActionBar();</span>
+<span class="nc bnc" id="L249" title="All 4 branches missed.">		assert supportActionBar != null;</span>
+<span class="nc" id="L250">		supportActionBar.setTitle(R.string.title_export_dialog);</span>
+<span class="nc" id="L251">		setHasOptionsMenu(true);</span>
+<span class="nc" id="L252">	}</span>
+
+	@Override
+	public void onResume() {
+<span class="nc" id="L256">		super.onResume();</span>
+<span class="nc" id="L257">		DropboxHelper.retrieveAndSaveToken();</span>
+<span class="nc" id="L258">	}</span>
+
+	@Override
+    public void onPause() {
+<span class="nc" id="L262">        super.onPause();</span>
+        // When the user try to export sharing to 3rd party service like DropBox
+        // then pausing all activities. That cause passcode screen appearing happened.
+        // We use a disposable flag to skip this unnecessary passcode screen.
+<span class="nc" id="L266">        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());</span>
+<span class="nc" id="L267">        prefs.edit().putBoolean(UxArgument.SKIP_PASSCODE_SCREEN, true).apply();</span>
+<span class="nc" id="L268">    }</span>
+
+	/**
+	 * Starts the export of transactions with the specified parameters
+	 */
+	private void startExport(){
+<span class="nc bnc" id="L274" title="All 4 branches missed.">		if (mExportTarget == ExportParams.ExportTarget.URI &amp;&amp; mExportUri == null){</span>
+<span class="nc" id="L275">			mExportStarted = true;</span>
+<span class="nc" id="L276">			selectExportFile();</span>
+<span class="nc" id="L277">			return;</span>
+		}
+
+<span class="nc" id="L280">		ExportParams exportParameters = new ExportParams(mExportFormat);</span>
+
+<span class="nc bnc" id="L282" title="All 2 branches missed.">		if (mExportAllSwitch.isChecked()){</span>
+<span class="nc" id="L283">			exportParameters.setExportStartTime(TimestampHelper.getTimestampFromEpochZero());</span>
+		} else {
+<span class="nc" id="L285">			exportParameters.setExportStartTime(new Timestamp(mExportStartCalendar.getTimeInMillis()));</span>
+		}
+
+<span class="nc" id="L288">		exportParameters.setExportTarget(mExportTarget);</span>
+<span class="nc bnc" id="L289" title="All 2 branches missed.">		exportParameters.setExportLocation(mExportUri != null ? mExportUri.toString() : null);</span>
+<span class="nc" id="L290">		exportParameters.setDeleteTransactionsAfterExport(mDeleteAllCheckBox.isChecked());</span>
+
+<span class="nc" id="L292">		Log.i(TAG, &quot;Commencing async export of transactions&quot;);</span>
+<span class="nc" id="L293">		new ExportAsyncTask(getActivity(), GnuCashApplication.getActiveDb()).execute(exportParameters);</span>
+
+<span class="nc bnc" id="L295" title="All 2 branches missed.">		if (mRecurrenceRule != null) {</span>
+<span class="nc" id="L296">			ScheduledAction scheduledAction = new ScheduledAction(ScheduledAction.ActionType.BACKUP);</span>
+<span class="nc" id="L297">			scheduledAction.setRecurrence(RecurrenceParser.parse(mEventRecurrence));</span>
+<span class="nc" id="L298">			scheduledAction.setTag(exportParameters.toCsv());</span>
+<span class="nc" id="L299">			scheduledAction.setActionUID(BaseModel.generateUID());</span>
+<span class="nc" id="L300">			ScheduledActionDbAdapter.getInstance().addRecord(scheduledAction, DatabaseAdapter.UpdateMethod.insert);</span>
+		}
+
+<span class="nc" id="L303">		int position = mDestinationSpinner.getSelectedItemPosition();</span>
+<span class="nc" id="L304">		PreferenceManager.getDefaultSharedPreferences(getActivity())</span>
+<span class="nc" id="L305">				.edit().putInt(getString(R.string.key_last_export_destination), position)</span>
+<span class="nc" id="L306">				.apply();</span>
+
+		// finish the activity will cause the progress dialog to be leaked
+		// which would throw an exception
+		//getActivity().finish();
+<span class="nc" id="L311">	}</span>
+
+	/**
+	 * Bind views to actions when initializing the export form
+	 */
+	private void bindViewListeners(){
+		// export destination bindings
+<span class="nc" id="L318">		ArrayAdapter&lt;CharSequence&gt; adapter = ArrayAdapter.createFromResource(getActivity(),</span>
+		        R.array.export_destinations, android.R.layout.simple_spinner_item);
+<span class="nc" id="L320">		adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);		</span>
+<span class="nc" id="L321">		mDestinationSpinner.setAdapter(adapter);</span>
+<span class="nc" id="L322">		mDestinationSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {</span>
+			@Override
+			public void onItemSelected(AdapterView&lt;?&gt; parent, View view, int position, long id) {
+<span class="nc bnc" id="L325" title="All 2 branches missed.">				if (view == null) //the item selection is fired twice by the Android framework. Ignore the first one</span>
+<span class="nc" id="L326">					return;</span>
+<span class="nc bnc" id="L327" title="All 5 branches missed.">				switch (position) {</span>
+					case 0:
+<span class="nc" id="L329">						mExportTarget = ExportParams.ExportTarget.URI;</span>
+<span class="nc" id="L330">						mRecurrenceOptionsView.setVisibility(View.VISIBLE);</span>
+<span class="nc bnc" id="L331" title="All 2 branches missed.">						if (mExportUri != null)</span>
+<span class="nc" id="L332">							setExportUriText(mExportUri.toString());</span>
+<span class="nc" id="L333">						selectExportFile();</span>
+<span class="nc" id="L334">						break;</span>
+					case 1: //DROPBOX
+<span class="nc" id="L336">						setExportUriText(getString(R.string.label_dropbox_export_destination));</span>
+<span class="nc" id="L337">						mRecurrenceOptionsView.setVisibility(View.VISIBLE);</span>
+<span class="nc" id="L338">						mExportTarget = ExportParams.ExportTarget.DROPBOX;</span>
+<span class="nc" id="L339">						String dropboxAppKey = getString(R.string.dropbox_app_key, BackupPreferenceFragment.DROPBOX_APP_KEY);</span>
+<span class="nc" id="L340">						String dropboxAppSecret = getString(R.string.dropbox_app_secret, BackupPreferenceFragment.DROPBOX_APP_SECRET);</span>
+
+<span class="nc bnc" id="L342" title="All 2 branches missed.">						if (!DropboxHelper.hasToken()) {</span>
+<span class="nc" id="L343">							Auth.startOAuth2Authentication(getActivity(), dropboxAppKey);</span>
+						}
+						break;
+					case 2:
+<span class="nc" id="L347">						setExportUriText(null);</span>
+<span class="nc" id="L348">						mRecurrenceOptionsView.setVisibility(View.VISIBLE);</span>
+<span class="nc" id="L349">						mExportTarget = ExportParams.ExportTarget.OWNCLOUD;</span>
+<span class="nc" id="L350">						if(!(PreferenceManager.getDefaultSharedPreferences(getActivity())</span>
+<span class="nc bnc" id="L351" title="All 2 branches missed.">								.getBoolean(getString(R.string.key_owncloud_sync), false))) {</span>
+<span class="nc" id="L352">							OwnCloudDialogFragment ocDialog = OwnCloudDialogFragment.newInstance(null);</span>
+<span class="nc" id="L353">							ocDialog.show(getActivity().getSupportFragmentManager(), &quot;ownCloud dialog&quot;);</span>
+<span class="nc" id="L354">						}</span>
+						break;
+					case 3:
+<span class="nc" id="L357">						setExportUriText(getString(R.string.label_select_destination_after_export));</span>
+<span class="nc" id="L358">						mExportTarget = ExportParams.ExportTarget.SHARING;</span>
+<span class="nc" id="L359">						mRecurrenceOptionsView.setVisibility(View.GONE);</span>
+<span class="nc" id="L360">						break;</span>
+
+					default:
+<span class="nc" id="L363">						mExportTarget = ExportParams.ExportTarget.SD_CARD;</span>
+						break;
+				}
+<span class="nc" id="L366">			}</span>
+
+			@Override
+			public void onNothingSelected(AdapterView&lt;?&gt; parent) {
+
+<span class="nc" id="L371">			}</span>
+		});
+
+<span class="nc" id="L374">		int position = PreferenceManager.getDefaultSharedPreferences(getActivity())</span>
+<span class="nc" id="L375">				.getInt(getString(R.string.key_last_export_destination), 0);</span>
+<span class="nc" id="L376">		mDestinationSpinner.setSelection(position);</span>
+
+		//**************** export start time bindings ******************
+<span class="nc" id="L379">		Timestamp timestamp = PreferencesHelper.getLastExportTime();</span>
+<span class="nc" id="L380">		mExportStartCalendar.setTimeInMillis(timestamp.getTime());</span>
+
+<span class="nc" id="L382">		final Date date = new Date(timestamp.getTime());</span>
+<span class="nc" id="L383">		mExportStartDate.setText(TransactionFormFragment.DATE_FORMATTER.format(date));</span>
+<span class="nc" id="L384">		mExportStartTime.setText(TransactionFormFragment.TIME_FORMATTER.format(date));</span>
+
+<span class="nc" id="L386">		mExportStartDate.setOnClickListener(new View.OnClickListener() {</span>
+
+			@Override
+			public void onClick(View v) {
+<span class="nc" id="L390">				long dateMillis = 0;</span>
+				try {
+<span class="nc" id="L392">					Date date = TransactionFormFragment.DATE_FORMATTER.parse(mExportStartDate.getText().toString());</span>
+<span class="nc" id="L393">					dateMillis = date.getTime();</span>
+<span class="nc" id="L394">				} catch (ParseException e) {</span>
+<span class="nc" id="L395">					Log.e(getTag(), &quot;Error converting input time to Date object&quot;);</span>
+<span class="nc" id="L396">				}</span>
+<span class="nc" id="L397">				Calendar calendar = Calendar.getInstance();</span>
+<span class="nc" id="L398">				calendar.setTimeInMillis(dateMillis);</span>
+
+<span class="nc" id="L400">				int year = calendar.get(Calendar.YEAR);</span>
+<span class="nc" id="L401">				int monthOfYear = calendar.get(Calendar.MONTH);</span>
+<span class="nc" id="L402">				int dayOfMonth = calendar.get(Calendar.DAY_OF_MONTH);</span>
+<span class="nc" id="L403">				CalendarDatePickerDialogFragment datePickerDialog = new CalendarDatePickerDialogFragment();</span>
+<span class="nc" id="L404">				datePickerDialog.setOnDateSetListener(ExportFormFragment.this);</span>
+<span class="nc" id="L405">				datePickerDialog.setPreselectedDate(year, monthOfYear, dayOfMonth);</span>
+<span class="nc" id="L406">				datePickerDialog.show(getFragmentManager(), &quot;date_picker_fragment&quot;);</span>
+<span class="nc" id="L407">			}</span>
+		});
+
+<span class="nc" id="L410">		mExportStartTime.setOnClickListener(new View.OnClickListener() {</span>
+
+			@Override
+			public void onClick(View v) {
+<span class="nc" id="L414">				long timeMillis = 0;</span>
+				try {
+<span class="nc" id="L416">					Date date = TransactionFormFragment.TIME_FORMATTER.parse(mExportStartTime.getText().toString());</span>
+<span class="nc" id="L417">					timeMillis = date.getTime();</span>
+<span class="nc" id="L418">				} catch (ParseException e) {</span>
+<span class="nc" id="L419">					Log.e(getTag(), &quot;Error converting input time to Date object&quot;);</span>
+<span class="nc" id="L420">				}</span>
+
+<span class="nc" id="L422">				Calendar calendar = Calendar.getInstance();</span>
+<span class="nc" id="L423">				calendar.setTimeInMillis(timeMillis);</span>
+
+<span class="nc" id="L425">				RadialTimePickerDialogFragment timePickerDialog = new RadialTimePickerDialogFragment();</span>
+<span class="nc" id="L426">				timePickerDialog.setOnTimeSetListener(ExportFormFragment.this);</span>
+<span class="nc" id="L427">				timePickerDialog.setStartTime(calendar.get(Calendar.HOUR_OF_DAY),</span>
+<span class="nc" id="L428">						calendar.get(Calendar.MINUTE));</span>
+<span class="nc" id="L429">				timePickerDialog.show(getFragmentManager(), &quot;time_picker_dialog_fragment&quot;);</span>
+<span class="nc" id="L430">			}</span>
+		});
+
+<span class="nc" id="L433">		SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(getActivity());</span>
+<span class="nc" id="L434">		mExportAllSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {</span>
+			@Override
+			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+<span class="nc bnc" id="L437" title="All 2 branches missed.">				mExportStartDate.setEnabled(!isChecked);</span>
+<span class="nc bnc" id="L438" title="All 2 branches missed.">				mExportStartTime.setEnabled(!isChecked);</span>
+<span class="nc bnc" id="L439" title="All 2 branches missed.">				int color = isChecked ? android.R.color.darker_gray : android.R.color.black;</span>
+<span class="nc" id="L440">				mExportStartDate.setTextColor(getResources().getColor(color));</span>
+<span class="nc" id="L441">				mExportStartTime.setTextColor(getResources().getColor(color));</span>
+<span class="nc" id="L442">			}</span>
+		});
+
+<span class="nc" id="L445">		mExportAllSwitch.setChecked(sharedPrefs.getBoolean(getString(R.string.key_export_all_transactions), false));</span>
+<span class="nc" id="L446">		mDeleteAllCheckBox.setChecked(sharedPrefs.getBoolean(getString(R.string.key_delete_transactions_after_export), false));</span>
+
+<span class="nc" id="L448">		mRecurrenceTextView.setOnClickListener(new RecurrenceViewClickListener((AppCompatActivity) getActivity(), mRecurrenceRule, this));</span>
+
+		//this part (setting the export format) must come after the recurrence view bindings above
+<span class="nc" id="L451">        String defaultExportFormat = sharedPrefs.getString(getString(R.string.key_default_export_format), ExportFormat.QIF.name());</span>
+<span class="nc" id="L452">        mExportFormat = ExportFormat.valueOf(defaultExportFormat);</span>
+
+<span class="nc" id="L454">        View.OnClickListener radioClickListener = new View.OnClickListener() {</span>
+            @Override
+            public void onClick(View view) {
+<span class="nc" id="L457">                onRadioButtonClicked(view);</span>
+<span class="nc" id="L458">            }</span>
+        };
+
+<span class="nc" id="L461">		View v = getView();</span>
+<span class="nc bnc" id="L462" title="All 4 branches missed.">		assert v != null;</span>
+
+<span class="nc" id="L464">		mOfxRadioButton.setOnClickListener(radioClickListener);</span>
+<span class="nc" id="L465">		mQifRadioButton.setOnClickListener(radioClickListener);</span>
+<span class="nc" id="L466">		mXmlRadioButton.setOnClickListener(radioClickListener);</span>
+
+<span class="nc" id="L468">		ExportFormat defaultFormat = ExportFormat.valueOf(defaultExportFormat.toUpperCase());</span>
+<span class="nc bnc" id="L469" title="All 4 branches missed.">		switch (defaultFormat){</span>
+<span class="nc" id="L470">			case QIF: mQifRadioButton.performClick(); break;</span>
+<span class="nc" id="L471">			case OFX: mOfxRadioButton.performClick(); break;</span>
+<span class="nc" id="L472">			case XML: mXmlRadioButton.performClick(); break;</span>
+		}
+
+<span class="nc bnc" id="L475" title="All 2 branches missed.">		if (GnuCashApplication.isDoubleEntryEnabled()){</span>
+<span class="nc" id="L476">			mOfxRadioButton.setVisibility(View.GONE);</span>
+		} else {
+<span class="nc" id="L478">			mXmlRadioButton.setVisibility(View.GONE);</span>
+		}
+
+<span class="nc" id="L481">	}</span>
+
+	/**
+	 * Display the file path of the file where the export will be saved
+	 * @param filepath Path to export file. If {@code null}, the view will be hidden and nothing displayed
+	 */
+	private void setExportUriText(String filepath){
+<span class="nc bnc" id="L488" title="All 2 branches missed.">		if (filepath == null){</span>
+<span class="nc" id="L489">			mTargetUriTextView.setVisibility(View.GONE);</span>
+<span class="nc" id="L490">			mTargetUriTextView.setText(&quot;&quot;);</span>
+		} else {
+<span class="nc" id="L492">			mTargetUriTextView.setText(filepath);</span>
+<span class="nc" id="L493">			mTargetUriTextView.setVisibility(View.VISIBLE);</span>
+		}
+<span class="nc" id="L495">	}</span>
+
+	/**
+	 * Open a chooser for user to pick a file to export to
+	 */
+	private void selectExportFile() {
+<span class="nc" id="L501">		Intent createIntent = new Intent(Intent.ACTION_CREATE_DOCUMENT);</span>
+<span class="nc" id="L502">		createIntent.setType(&quot;text/*&quot;).addCategory(Intent.CATEGORY_OPENABLE);</span>
+<span class="nc" id="L503">		String bookName = BooksDbAdapter.getInstance().getActiveBookDisplayName();</span>
+
+<span class="nc bnc" id="L505" title="All 4 branches missed.">		if (mExportFormat == ExportFormat.XML || mExportFormat == ExportFormat.QIF) {</span>
+<span class="nc" id="L506">			createIntent.setType(&quot;application/zip&quot;);</span>
+		}
+
+<span class="nc" id="L509">		String filename = Exporter.buildExportFilename(mExportFormat, bookName);</span>
+<span class="nc bnc" id="L510" title="All 4 branches missed.">		if (mExportTarget == ExportParams.ExportTarget.URI &amp;&amp; mExportFormat == ExportFormat.QIF){</span>
+<span class="nc" id="L511">			filename += &quot;.zip&quot;;</span>
+		}
+
+<span class="nc" id="L514">		createIntent.putExtra(Intent.EXTRA_TITLE, filename);</span>
+<span class="nc" id="L515">		startActivityForResult(createIntent, REQUEST_EXPORT_FILE);</span>
+<span class="nc" id="L516">	}</span>
+
+	@Override
+	public void onRecurrenceSet(String rrule) {
+<span class="nc" id="L520">		mRecurrenceRule = rrule;</span>
+<span class="nc" id="L521">		String repeatString = getString(R.string.label_tap_to_create_schedule);</span>
+
+<span class="nc bnc" id="L523" title="All 2 branches missed.">		if (mRecurrenceRule != null){</span>
+<span class="nc" id="L524">			mEventRecurrence.parse(mRecurrenceRule);</span>
+<span class="nc" id="L525">			repeatString = EventRecurrenceFormatter.getRepeatString(getActivity(), getResources(),</span>
+					mEventRecurrence, true);
+		}
+<span class="nc" id="L528">		mRecurrenceTextView.setText(repeatString);</span>
+<span class="nc" id="L529">	}</span>
+
+	/**
+	 * Callback for when the activity chooser dialog is completed
+	 */
+	@Override
+	public void onActivityResult(int requestCode, int resultCode, Intent data) {
+
+<span class="nc bnc" id="L537" title="All 3 branches missed.">		switch (requestCode){</span>
+			case BackupPreferenceFragment.REQUEST_RESOLVE_CONNECTION:
+<span class="nc bnc" id="L539" title="All 2 branches missed.">				if (resultCode == Activity.RESULT_OK) {</span>
+<span class="nc" id="L540">					BackupPreferenceFragment.mGoogleApiClient.connect();</span>
+				}
+				break;
+
+			case REQUEST_EXPORT_FILE:
+<span class="nc bnc" id="L545" title="All 2 branches missed.">				if (resultCode == Activity.RESULT_OK){</span>
+<span class="nc bnc" id="L546" title="All 2 branches missed.">					if (data != null){</span>
+<span class="nc" id="L547">						mExportUri = data.getData();</span>
+					}
+
+<span class="nc" id="L550">					final int takeFlags = data.getFlags()</span>
+							&amp; (Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+<span class="nc" id="L552">					getActivity().getContentResolver().takePersistableUriPermission(mExportUri, takeFlags);</span>
+
+<span class="nc" id="L554">					mTargetUriTextView.setText(mExportUri.toString());</span>
+<span class="nc bnc" id="L555" title="All 2 branches missed.">					if (mExportStarted)</span>
+<span class="nc" id="L556">						startExport();</span>
+
+				}
+				break;
+		}
+<span class="nc" id="L561">	}</span>
+
+	@Override
+	public void onDateSet(CalendarDatePickerDialogFragment dialog, int year, int monthOfYear, int dayOfMonth) {
+<span class="nc" id="L565">		Calendar cal = new GregorianCalendar(year, monthOfYear, dayOfMonth);</span>
+<span class="nc" id="L566">		mExportStartDate.setText(TransactionFormFragment.DATE_FORMATTER.format(cal.getTime()));</span>
+<span class="nc" id="L567">		mExportStartCalendar.set(Calendar.YEAR, year);</span>
+<span class="nc" id="L568">		mExportStartCalendar.set(Calendar.MONTH, monthOfYear);</span>
+<span class="nc" id="L569">		mExportStartCalendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);</span>
+<span class="nc" id="L570">	}</span>
+
+	@Override
+	public void onTimeSet(RadialTimePickerDialogFragment dialog, int hourOfDay, int minute) {
+<span class="nc" id="L574">		Calendar cal = new GregorianCalendar(0, 0, 0, hourOfDay, minute);</span>
+<span class="nc" id="L575">		mExportStartTime.setText(TransactionFormFragment.TIME_FORMATTER.format(cal.getTime()));</span>
+<span class="nc" id="L576">		mExportStartCalendar.set(Calendar.HOUR_OF_DAY, hourOfDay);</span>
+<span class="nc" id="L577">		mExportStartCalendar.set(Calendar.MINUTE, minute);</span>
+<span class="nc" id="L578">	}</span>
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BudgetAmount.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.model</a> &gt; <span class="el_source">BudgetAmount.java</span></div><h1>BudgetAmount.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2015 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.gnucash.android.model;
+
+import android.os.Parcel;
+import android.os.Parcelable;
+
+import java.math.BigDecimal;
+
+/**
+ * Budget amounts for the different accounts.
+ * The {@link Money} amounts are absolute values
+ * @see Budget
+ */
+public class BudgetAmount extends BaseModel implements Parcelable {
+
+    private String mBudgetUID;
+    private String mAccountUID;
+    /**
+     * Period number for this budget amount
+     * A value of -1 indicates that this budget amount applies to all periods
+     */
+    private long mPeriodNum;
+    private Money mAmount;
+
+    /**
+     * Create a new budget amount
+     * @param budgetUID GUID of the budget
+     * @param accountUID GUID of the account
+     */
+<span class="fc" id="L44">    public BudgetAmount(String budgetUID, String accountUID){</span>
+<span class="fc" id="L45">        this.mBudgetUID = budgetUID;</span>
+<span class="fc" id="L46">        this.mAccountUID = accountUID;</span>
+<span class="fc" id="L47">    }</span>
+
+    /**
+     * Creates a new budget amount with the absolute value of {@code amount}
+     * @param amount Money amount of the budget
+     * @param accountUID GUID of the account
+     */
+<span class="fc" id="L54">    public BudgetAmount(Money amount, String accountUID){</span>
+<span class="fc" id="L55">        this.mAmount = amount.abs();</span>
+<span class="fc" id="L56">        this.mAccountUID = accountUID;</span>
+<span class="fc" id="L57">    }</span>
+    
+    public String getBudgetUID() {
+<span class="fc" id="L60">        return mBudgetUID;</span>
+    }
+
+    public void setBudgetUID(String budgetUID) {
+<span class="fc" id="L64">        this.mBudgetUID = budgetUID;</span>
+<span class="fc" id="L65">    }</span>
+
+    public String getAccountUID() {
+<span class="fc" id="L68">        return mAccountUID;</span>
+    }
+
+    public void setAccountUID(String accountUID) {
+<span class="nc" id="L72">        this.mAccountUID = accountUID;</span>
+<span class="nc" id="L73">    }</span>
+
+    /**
+     * Returns the period number of this budget amount
+     * &lt;p&gt;The period is zero-based index, and a value of -1 indicates that this budget amount is applicable to all budgeting periods&lt;/p&gt;
+     * @return Period number
+     */
+    public long getPeriodNum() {
+<span class="fc" id="L81">        return mPeriodNum;</span>
+    }
+
+    /**
+     * Set the period number for this budget amount
+     * &lt;p&gt;A value of -1 indicates that this BudgetAmount is for all periods&lt;/p&gt;
+     * @param periodNum Zero-based period number of the budget amount
+     */
+    public void setPeriodNum(long periodNum) {
+<span class="fc" id="L90">        this.mPeriodNum = periodNum;</span>
+<span class="fc" id="L91">    }</span>
+
+    /**
+     * Returns the Money amount of this budget amount
+     * @return Money amount
+     */
+    public Money getAmount() {
+<span class="fc" id="L98">        return mAmount;</span>
+    }
+
+    /**
+     * Sets the amount for the budget
+     * &lt;p&gt;The absolute value of the amount is used&lt;/p&gt;
+     * @param amount Money amount
+     */
+    public void setAmount(Money amount) {
+<span class="fc" id="L107">        this.mAmount = amount.abs();</span>
+<span class="fc" id="L108">    }</span>
+
+    @Override
+    public int describeContents() {
+<span class="nc" id="L112">        return 0;</span>
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+<span class="nc" id="L117">        dest.writeString(getUID());</span>
+<span class="nc" id="L118">        dest.writeString(mBudgetUID);</span>
+<span class="nc" id="L119">        dest.writeString(mAccountUID);</span>
+<span class="nc" id="L120">        dest.writeString(mAmount.toPlainString());</span>
+<span class="nc" id="L121">        dest.writeLong(mPeriodNum);</span>
+<span class="nc" id="L122">    }</span>
+
+<span class="fc" id="L124">    public static final Parcelable.Creator&lt;BudgetAmount&gt; CREATOR = new Parcelable.Creator&lt;BudgetAmount&gt;(){</span>
+
+        @Override
+        public BudgetAmount createFromParcel(Parcel source) {
+<span class="nc" id="L128">            return new BudgetAmount(source);</span>
+        }
+
+        @Override
+        public BudgetAmount[] newArray(int size) {
+<span class="nc" id="L133">            return new BudgetAmount[size];</span>
+        }
+    };
+
+    /**
+     * Private constructor for creating new BudgetAmounts from a Parcel
+     * @param source Parcel
+     */
+<span class="nc" id="L141">    private BudgetAmount(Parcel source){</span>
+<span class="nc" id="L142">        setUID(source.readString());</span>
+<span class="nc" id="L143">        mBudgetUID = source.readString();</span>
+<span class="nc" id="L144">        mAccountUID = source.readString();</span>
+<span class="nc" id="L145">        mAmount = new Money(new BigDecimal(source.readString()), Commodity.DEFAULT_COMMODITY);</span>
+<span class="nc" id="L146">        mPeriodNum = source.readLong();</span>
+<span class="nc" id="L147">    }</span>
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

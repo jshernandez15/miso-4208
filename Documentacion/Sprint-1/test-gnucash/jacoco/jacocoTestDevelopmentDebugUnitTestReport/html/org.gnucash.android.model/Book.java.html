@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Book.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.model</a> &gt; <span class="el_source">Book.java</span></div><h1>Book.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2015 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.model;
+
+import android.net.Uri;
+
+import java.sql.Timestamp;
+
+/**
+ * Represents a GnuCash book which is made up of accounts and transactions
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ */
+public class Book extends BaseModel {
+
+    private Uri mSourceUri;
+    private String mDisplayName;
+    private String mRootAccountUID;
+    private String mRootTemplateUID;
+    private boolean mActive;
+
+    private Timestamp mLastSync;
+
+    /**
+     * Default constructor
+     */
+<span class="nc" id="L40">    public Book(){</span>
+<span class="nc" id="L41">        init();</span>
+<span class="nc" id="L42">    }</span>
+
+    /**
+     * Create a new book instance
+     * @param rootAccountUID GUID of root account
+     */
+<span class="nc" id="L48">    public Book(String rootAccountUID){</span>
+<span class="nc" id="L49">        this.mRootAccountUID = rootAccountUID;</span>
+<span class="nc" id="L50">        init();</span>
+<span class="nc" id="L51">    }</span>
+
+    /**
+     * Initialize default values for the book
+     */
+    private void init(){
+<span class="nc" id="L57">        this.mRootTemplateUID = generateUID();</span>
+<span class="nc" id="L58">        mLastSync = new Timestamp(System.currentTimeMillis());</span>
+<span class="nc" id="L59">    }</span>
+
+    /**
+     * Return the root account GUID of this book
+     * @return GUID of the book root account
+     */
+    public String getRootAccountUID() {
+<span class="nc" id="L66">        return mRootAccountUID;</span>
+    }
+
+    /**
+     * Sets the GUID of the root account of this book.
+     * &lt;p&gt;Each book has only one root account&lt;/p&gt;
+     * @param rootAccountUID GUID of the book root account
+     */
+    public void setRootAccountUID(String rootAccountUID) {
+<span class="nc" id="L75">        mRootAccountUID = rootAccountUID;</span>
+<span class="nc" id="L76">    }</span>
+
+    /**
+     * Return GUID of the template root account
+     * @return GUID of template root acount
+     */
+    public String getRootTemplateUID() {
+<span class="nc" id="L83">        return mRootTemplateUID;</span>
+    }
+
+    /**
+     * Set the GUID of the root template account
+     * @param rootTemplateUID GUID of the root template account
+     */
+    public void setRootTemplateUID(String rootTemplateUID) {
+<span class="nc" id="L91">        mRootTemplateUID = rootTemplateUID;</span>
+<span class="nc" id="L92">    }</span>
+
+    /**
+     * Check if this book is the currently active book in the app
+     * &lt;p&gt;An active book is one whose data is currently displayed in the UI&lt;/p&gt;
+     * @return {@code true} if this is the currently active book, {@code false} otherwise
+     */
+    public boolean isActive() {
+<span class="nc" id="L100">        return mActive;</span>
+    }
+
+    /**
+     * Sets this book as the currently active one in the application
+     * @param active Flag for activating/deactivating the book
+     */
+    public void setActive(boolean active) {
+<span class="nc" id="L108">        mActive = active;</span>
+<span class="nc" id="L109">    }</span>
+
+    /**
+     * Return the Uri of the XML file from which the book was imported.
+     * &lt;p&gt;In API level 16 and above, this is the Uri from the storage access framework which will
+     * be used for synchronization of the book&lt;/p&gt;
+     * @return Uri of the book source XML
+     */
+    public Uri getSourceUri() {
+<span class="nc" id="L118">        return mSourceUri;</span>
+    }
+
+    /**
+     * Set the Uri of the XML source for the book
+     * &lt;p&gt;This Uri will be used for sync where applicable&lt;/p&gt;
+     * @param uri Uri of the GnuCash XML source file
+     */
+    public void setSourceUri(Uri uri) {
+<span class="nc" id="L127">        this.mSourceUri = uri;</span>
+<span class="nc" id="L128">    }</span>
+
+    /**
+     * Returns a name for the book
+     * &lt;p&gt;This is the user readable string which is used in UI unlike the root account GUID which
+     * is used for uniquely identifying each book&lt;/p&gt;
+     * @return Name of the book
+     */
+    public String getDisplayName() {
+<span class="nc" id="L137">        return mDisplayName;</span>
+    }
+
+    /**
+     * Set a name for the book
+     * @param name Name of the book
+     */
+    public void setDisplayName(String name) {
+<span class="nc" id="L145">        this.mDisplayName = name;</span>
+<span class="nc" id="L146">    }</span>
+
+    /**
+     * Get the time of last synchronization of the book
+     * @return Timestamp of last synchronization
+     */
+    public Timestamp getLastSync() {
+<span class="nc" id="L153">        return mLastSync;</span>
+    }
+
+    /**
+     * Set the time of last synchronization of the book
+     * @param lastSync Timestamp of last synchronization
+     */
+    public void setLastSync(Timestamp lastSync) {
+<span class="nc" id="L161">        this.mLastSync = lastSync;</span>
+<span class="nc" id="L162">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

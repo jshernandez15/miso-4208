@@ -1,0 +1,367 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DatabaseHelper.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.db</a> &gt; <span class="el_source">DatabaseHelper.java</span></div><h1>DatabaseHelper.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2012 - 2015 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.db;
+
+import android.content.Context;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
+import android.widget.Toast;
+
+import com.crashlytics.android.Crashlytics;
+
+import org.gnucash.android.app.GnuCashApplication;
+import org.gnucash.android.model.Commodity;
+import org.xml.sax.SAXException;
+
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
+import javax.xml.parsers.ParserConfigurationException;
+
+import static org.gnucash.android.db.DatabaseSchema.AccountEntry;
+import static org.gnucash.android.db.DatabaseSchema.BudgetAmountEntry;
+import static org.gnucash.android.db.DatabaseSchema.BudgetEntry;
+import static org.gnucash.android.db.DatabaseSchema.CommodityEntry;
+import static org.gnucash.android.db.DatabaseSchema.CommonColumns;
+import static org.gnucash.android.db.DatabaseSchema.PriceEntry;
+import static org.gnucash.android.db.DatabaseSchema.RecurrenceEntry;
+import static org.gnucash.android.db.DatabaseSchema.ScheduledActionEntry;
+import static org.gnucash.android.db.DatabaseSchema.SplitEntry;
+import static org.gnucash.android.db.DatabaseSchema.TransactionEntry;
+/**
+ * Helper class for managing the SQLite database.
+ * Creates the database and handles upgrades
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ */
+public class DatabaseHelper extends SQLiteOpenHelper {
+
+    /**
+	 * Tag for logging
+	 */
+<span class="nc" id="L58">	public static final String LOG_TAG = DatabaseHelper.class.getName();</span>
+
+    /**
+	 * SQL statement to create the accounts table in the database
+	 */
+<span class="nc" id="L63">	private static final String ACCOUNTS_TABLE_CREATE = &quot;create table &quot; + AccountEntry.TABLE_NAME + &quot; (&quot;</span>
+			+ AccountEntry._ID                      + &quot; integer primary key autoincrement, &quot;
+			+ AccountEntry.COLUMN_UID 	            + &quot; varchar(255) not null UNIQUE, &quot;
+			+ AccountEntry.COLUMN_NAME 	            + &quot; varchar(255) not null, &quot;
+			+ AccountEntry.COLUMN_TYPE              + &quot; varchar(255) not null, &quot;
+			+ AccountEntry.COLUMN_CURRENCY          + &quot; varchar(255) not null, &quot;
+            + AccountEntry.COLUMN_COMMODITY_UID     + &quot; varchar(255) not null, &quot;
+			+ AccountEntry.COLUMN_DESCRIPTION       + &quot; varchar(255), &quot;
+            + AccountEntry.COLUMN_COLOR_CODE        + &quot; varchar(255), &quot;
+            + AccountEntry.COLUMN_FAVORITE 		    + &quot; tinyint default 0, &quot;
+            + AccountEntry.COLUMN_HIDDEN 		    + &quot; tinyint default 0, &quot;
+            + AccountEntry.COLUMN_FULL_NAME 	    + &quot; varchar(255), &quot;
+            + AccountEntry.COLUMN_PLACEHOLDER           + &quot; tinyint default 0, &quot;
+            + AccountEntry.COLUMN_PARENT_ACCOUNT_UID    + &quot; varchar(255), &quot;
+            + AccountEntry.COLUMN_DEFAULT_TRANSFER_ACCOUNT_UID   + &quot; varchar(255), &quot;
+            + AccountEntry.COLUMN_CREATED_AT       + &quot; TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, &quot;
+            + AccountEntry.COLUMN_MODIFIED_AT      + &quot; TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, &quot;
+//            + &quot;FOREIGN KEY (&quot; 	+ AccountEntry.COLUMN_DEFAULT_TRANSFER_ACCOUNT_UID + &quot;) REFERENCES &quot; + AccountEntry.TABLE_NAME + &quot; (&quot; + AccountEntry.COLUMN_UID + &quot;) ON DELETE SET NULL, &quot;
+            + &quot;FOREIGN KEY (&quot; 	+ AccountEntry.COLUMN_COMMODITY_UID + &quot;) REFERENCES &quot; + CommodityEntry.TABLE_NAME + &quot; (&quot; + CommodityEntry.COLUMN_UID + &quot;) &quot;
+<span class="nc" id="L82">			+ &quot;);&quot; + createUpdatedAtTrigger(AccountEntry.TABLE_NAME);</span>
+	
+	/**
+	 * SQL statement to create the transactions table in the database
+	 */
+<span class="nc" id="L87">	private static final String TRANSACTIONS_TABLE_CREATE = &quot;create table &quot; + TransactionEntry.TABLE_NAME + &quot; (&quot;</span>
+			+ TransactionEntry._ID 		            + &quot; integer primary key autoincrement, &quot;
+			+ TransactionEntry.COLUMN_UID 		    + &quot; varchar(255) not null UNIQUE, &quot;
+			+ TransactionEntry.COLUMN_DESCRIPTION   + &quot; varchar(255), &quot;
+			+ TransactionEntry.COLUMN_NOTES         + &quot; text, &quot;
+			+ TransactionEntry.COLUMN_TIMESTAMP     + &quot; integer not null, &quot;
+			+ TransactionEntry.COLUMN_EXPORTED      + &quot; tinyint default 0, &quot;
+			+ TransactionEntry.COLUMN_TEMPLATE      + &quot; tinyint default 0, &quot;
+            + TransactionEntry.COLUMN_CURRENCY      + &quot; varchar(255) not null, &quot;
+            + TransactionEntry.COLUMN_COMMODITY_UID + &quot; varchar(255) not null, &quot;
+            + TransactionEntry.COLUMN_SCHEDX_ACTION_UID + &quot; varchar(255), &quot;
+            + TransactionEntry.COLUMN_CREATED_AT    + &quot; TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, &quot;
+            + TransactionEntry.COLUMN_MODIFIED_AT   + &quot; TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, &quot;
+            + &quot;FOREIGN KEY (&quot; 	+ TransactionEntry.COLUMN_SCHEDX_ACTION_UID + &quot;) REFERENCES &quot; + ScheduledActionEntry.TABLE_NAME + &quot; (&quot; + ScheduledActionEntry.COLUMN_UID + &quot;) ON DELETE SET NULL, &quot;
+            + &quot;FOREIGN KEY (&quot; 	+ TransactionEntry.COLUMN_COMMODITY_UID + &quot;) REFERENCES &quot; + CommodityEntry.TABLE_NAME + &quot; (&quot; + CommodityEntry.COLUMN_UID + &quot;) &quot;
+<span class="nc" id="L102">			+ &quot;);&quot; + createUpdatedAtTrigger(TransactionEntry.TABLE_NAME);</span>
+
+    /**
+     * SQL statement to create the transaction splits table
+     */
+<span class="nc" id="L107">    private static final String SPLITS_TABLE_CREATE = &quot;CREATE TABLE &quot; + SplitEntry.TABLE_NAME + &quot; (&quot;</span>
+            + SplitEntry._ID                    + &quot; integer primary key autoincrement, &quot;
+            + SplitEntry.COLUMN_UID             + &quot; varchar(255) not null UNIQUE, &quot;
+            + SplitEntry.COLUMN_MEMO 	        + &quot; text, &quot;
+            + SplitEntry.COLUMN_TYPE            + &quot; varchar(255) not null, &quot;
+            + SplitEntry.COLUMN_VALUE_NUM       + &quot; integer not null, &quot;
+            + SplitEntry.COLUMN_VALUE_DENOM     + &quot; integer not null, &quot;
+            + SplitEntry.COLUMN_QUANTITY_NUM    + &quot; integer not null, &quot;
+            + SplitEntry.COLUMN_QUANTITY_DENOM  + &quot; integer not null, &quot;
+            + SplitEntry.COLUMN_ACCOUNT_UID 	+ &quot; varchar(255) not null, &quot;
+            + SplitEntry.COLUMN_TRANSACTION_UID + &quot; varchar(255) not null, &quot;
+            + SplitEntry.COLUMN_RECONCILE_STATE + &quot; varchar(1) not null default 'n', &quot;
+            + SplitEntry.COLUMN_RECONCILE_DATE  + &quot; timestamp not null default current_timestamp, &quot;
+            + SplitEntry.COLUMN_CREATED_AT      + &quot; TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, &quot;
+            + SplitEntry.COLUMN_MODIFIED_AT     + &quot; TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, &quot;
+            + &quot;FOREIGN KEY (&quot; 	+ SplitEntry.COLUMN_ACCOUNT_UID + &quot;) REFERENCES &quot; + AccountEntry.TABLE_NAME + &quot; (&quot; + AccountEntry.COLUMN_UID + &quot;) ON DELETE CASCADE, &quot;
+            + &quot;FOREIGN KEY (&quot; 	+ SplitEntry.COLUMN_TRANSACTION_UID + &quot;) REFERENCES &quot; + TransactionEntry.TABLE_NAME + &quot; (&quot; + TransactionEntry.COLUMN_UID + &quot;) ON DELETE CASCADE &quot;
+<span class="nc" id="L124">            + &quot;);&quot; + createUpdatedAtTrigger(SplitEntry.TABLE_NAME);</span>
+
+
+<span class="nc" id="L127">    public static final String SCHEDULED_ACTIONS_TABLE_CREATE = &quot;CREATE TABLE &quot; + ScheduledActionEntry.TABLE_NAME + &quot; (&quot;</span>
+            + ScheduledActionEntry._ID                      + &quot; integer primary key autoincrement, &quot;
+            + ScheduledActionEntry.COLUMN_UID               + &quot; varchar(255) not null UNIQUE, &quot;
+            + ScheduledActionEntry.COLUMN_ACTION_UID        + &quot; varchar(255) not null, &quot;
+            + ScheduledActionEntry.COLUMN_TYPE              + &quot; varchar(255) not null, &quot;
+            + ScheduledActionEntry.COLUMN_RECURRENCE_UID    + &quot; varchar(255) not null, &quot;
+            + ScheduledActionEntry.COLUMN_TEMPLATE_ACCT_UID + &quot; varchar(255) not null, &quot;
+            + ScheduledActionEntry.COLUMN_LAST_RUN          + &quot; integer default 0, &quot;
+            + ScheduledActionEntry.COLUMN_START_TIME        + &quot; integer not null, &quot;
+            + ScheduledActionEntry.COLUMN_END_TIME          + &quot; integer default 0, &quot;
+            + ScheduledActionEntry.COLUMN_TAG               + &quot; text, &quot;
+            + ScheduledActionEntry.COLUMN_ENABLED           + &quot; tinyint default 1, &quot; //enabled by default
+            + ScheduledActionEntry.COLUMN_AUTO_CREATE       + &quot; tinyint default 1, &quot;
+            + ScheduledActionEntry.COLUMN_AUTO_NOTIFY       + &quot; tinyint default 0, &quot;
+            + ScheduledActionEntry.COLUMN_ADVANCE_CREATION  + &quot; integer default 0, &quot;
+            + ScheduledActionEntry.COLUMN_ADVANCE_NOTIFY    + &quot; integer default 0, &quot;
+            + ScheduledActionEntry.COLUMN_TOTAL_FREQUENCY   + &quot; integer default 0, &quot;
+            + ScheduledActionEntry.COLUMN_EXECUTION_COUNT   + &quot; integer default 0, &quot;
+            + ScheduledActionEntry.COLUMN_CREATED_AT        + &quot; TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, &quot;
+            + ScheduledActionEntry.COLUMN_MODIFIED_AT       + &quot; TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, &quot;
+            + &quot;FOREIGN KEY (&quot; 	+ ScheduledActionEntry.COLUMN_RECURRENCE_UID + &quot;) REFERENCES &quot; + RecurrenceEntry.TABLE_NAME + &quot; (&quot; + RecurrenceEntry.COLUMN_UID + &quot;) &quot;
+<span class="nc" id="L148">            + &quot;);&quot; + createUpdatedAtTrigger(ScheduledActionEntry.TABLE_NAME);</span>
+
+<span class="nc" id="L150">    public static final String COMMODITIES_TABLE_CREATE = &quot;CREATE TABLE &quot; + DatabaseSchema.CommodityEntry.TABLE_NAME + &quot; (&quot;</span>
+            + CommodityEntry._ID                + &quot; integer primary key autoincrement, &quot;
+            + CommodityEntry.COLUMN_UID         + &quot; varchar(255) not null UNIQUE, &quot;
+<span class="nc" id="L153">            + CommodityEntry.COLUMN_NAMESPACE   + &quot; varchar(255) not null default &quot; + Commodity.Namespace.ISO4217.name() + &quot;, &quot;</span>
+            + CommodityEntry.COLUMN_FULLNAME    + &quot; varchar(255) not null, &quot;
+            + CommodityEntry.COLUMN_MNEMONIC    + &quot; varchar(255) not null, &quot;
+            + CommodityEntry.COLUMN_LOCAL_SYMBOL+ &quot; varchar(255) not null default '', &quot;
+            + CommodityEntry.COLUMN_CUSIP       + &quot; varchar(255), &quot;
+            + CommodityEntry.COLUMN_SMALLEST_FRACTION + &quot; integer not null, &quot;
+            + CommodityEntry.COLUMN_QUOTE_FLAG  + &quot; integer not null, &quot;
+            + CommodityEntry.COLUMN_CREATED_AT  + &quot; TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, &quot;
+            + CommodityEntry.COLUMN_MODIFIED_AT + &quot; TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP &quot;
+<span class="nc" id="L162">            + &quot;);&quot; + createUpdatedAtTrigger(CommodityEntry.TABLE_NAME);</span>
+
+    /**
+     * SQL statement to create the commodity prices table
+     */
+<span class="nc" id="L167">    private static final String PRICES_TABLE_CREATE = &quot;CREATE TABLE &quot; + PriceEntry.TABLE_NAME + &quot; (&quot;</span>
+            + PriceEntry._ID                    + &quot; integer primary key autoincrement, &quot;
+            + PriceEntry.COLUMN_UID             + &quot; varchar(255) not null UNIQUE, &quot;
+            + PriceEntry.COLUMN_COMMODITY_UID 	+ &quot; varchar(255) not null, &quot;
+            + PriceEntry.COLUMN_CURRENCY_UID    + &quot; varchar(255) not null, &quot;
+            + PriceEntry.COLUMN_TYPE            + &quot; varchar(255), &quot;
+            + PriceEntry.COLUMN_DATE 	        + &quot; TIMESTAMP not null, &quot;
+            + PriceEntry.COLUMN_SOURCE          + &quot; text, &quot;
+            + PriceEntry.COLUMN_VALUE_NUM       + &quot; integer not null, &quot;
+            + PriceEntry.COLUMN_VALUE_DENOM     + &quot; integer not null, &quot;
+            + PriceEntry.COLUMN_CREATED_AT      + &quot; TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, &quot;
+            + PriceEntry.COLUMN_MODIFIED_AT     + &quot; TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, &quot;
+            + &quot;UNIQUE (&quot; + PriceEntry.COLUMN_COMMODITY_UID + &quot;, &quot; + PriceEntry.COLUMN_CURRENCY_UID + &quot;) ON CONFLICT REPLACE, &quot;
+            + &quot;FOREIGN KEY (&quot; 	+ PriceEntry.COLUMN_COMMODITY_UID + &quot;) REFERENCES &quot; + CommodityEntry.TABLE_NAME + &quot; (&quot; + CommodityEntry.COLUMN_UID + &quot;) ON DELETE CASCADE, &quot;
+            + &quot;FOREIGN KEY (&quot; 	+ PriceEntry.COLUMN_CURRENCY_UID + &quot;) REFERENCES &quot; + CommodityEntry.TABLE_NAME + &quot; (&quot; + CommodityEntry.COLUMN_UID + &quot;) ON DELETE CASCADE &quot;
+<span class="nc" id="L182">            + &quot;);&quot; + createUpdatedAtTrigger(PriceEntry.TABLE_NAME);</span>
+
+
+<span class="nc" id="L185">    private static final String BUDGETS_TABLE_CREATE = &quot;CREATE TABLE &quot; + BudgetEntry.TABLE_NAME + &quot; (&quot;</span>
+            + BudgetEntry._ID                   + &quot; integer primary key autoincrement, &quot;
+            + BudgetEntry.COLUMN_UID            + &quot; varchar(255) not null UNIQUE, &quot;
+            + BudgetEntry.COLUMN_NAME           + &quot; varchar(255) not null, &quot;
+            + BudgetEntry.COLUMN_DESCRIPTION    + &quot; varchar(255), &quot;
+            + BudgetEntry.COLUMN_RECURRENCE_UID + &quot; varchar(255) not null, &quot;
+            + BudgetEntry.COLUMN_NUM_PERIODS    + &quot; integer, &quot;
+            + BudgetEntry.COLUMN_CREATED_AT     + &quot; TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, &quot;
+            + BudgetEntry.COLUMN_MODIFIED_AT    + &quot; TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, &quot;
+            + &quot;FOREIGN KEY (&quot; 	+ BudgetEntry.COLUMN_RECURRENCE_UID + &quot;) REFERENCES &quot; + RecurrenceEntry.TABLE_NAME + &quot; (&quot; + RecurrenceEntry.COLUMN_UID + &quot;) &quot;
+<span class="nc" id="L195">            + &quot;);&quot; + createUpdatedAtTrigger(BudgetEntry.TABLE_NAME);</span>
+
+<span class="nc" id="L197">    private static final String BUDGET_AMOUNTS_TABLE_CREATE = &quot;CREATE TABLE &quot; + BudgetAmountEntry.TABLE_NAME + &quot; (&quot;</span>
+            + BudgetAmountEntry._ID                   + &quot; integer primary key autoincrement, &quot;
+            + BudgetAmountEntry.COLUMN_UID            + &quot; varchar(255) not null UNIQUE, &quot;
+            + BudgetAmountEntry.COLUMN_BUDGET_UID     + &quot; varchar(255) not null, &quot;
+            + BudgetAmountEntry.COLUMN_ACCOUNT_UID    + &quot; varchar(255) not null, &quot;
+            + BudgetAmountEntry.COLUMN_AMOUNT_NUM     + &quot; integer not null, &quot;
+            + BudgetAmountEntry.COLUMN_AMOUNT_DENOM   + &quot; integer not null, &quot;
+            + BudgetAmountEntry.COLUMN_PERIOD_NUM     + &quot; integer not null, &quot;
+            + BudgetAmountEntry.COLUMN_CREATED_AT     + &quot; TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, &quot;
+            + BudgetAmountEntry.COLUMN_MODIFIED_AT    + &quot; TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, &quot;
+            + &quot;FOREIGN KEY (&quot; 	+ BudgetAmountEntry.COLUMN_ACCOUNT_UID + &quot;) REFERENCES &quot; + AccountEntry.TABLE_NAME + &quot; (&quot; + AccountEntry.COLUMN_UID + &quot;) ON DELETE CASCADE, &quot;
+            + &quot;FOREIGN KEY (&quot; 	+ BudgetAmountEntry.COLUMN_BUDGET_UID + &quot;) REFERENCES &quot; + BudgetEntry.TABLE_NAME + &quot; (&quot; + BudgetEntry.COLUMN_UID + &quot;) ON DELETE CASCADE &quot;
+<span class="nc" id="L209">            + &quot;);&quot; + createUpdatedAtTrigger(BudgetAmountEntry.TABLE_NAME);</span>
+
+
+<span class="nc" id="L212">    private static final String RECURRENCE_TABLE_CREATE = &quot;CREATE TABLE &quot; + RecurrenceEntry.TABLE_NAME + &quot; (&quot;</span>
+            + RecurrenceEntry._ID                   + &quot; integer primary key autoincrement, &quot;
+            + RecurrenceEntry.COLUMN_UID            + &quot; varchar(255) not null UNIQUE, &quot;
+            + RecurrenceEntry.COLUMN_MULTIPLIER     + &quot; integer not null default 1, &quot;
+            + RecurrenceEntry.COLUMN_PERIOD_TYPE    + &quot; varchar(255) not null, &quot;
+            + RecurrenceEntry.COLUMN_BYDAY          + &quot; varchar(255), &quot;
+            + RecurrenceEntry.COLUMN_PERIOD_START   + &quot; timestamp not null, &quot;
+            + RecurrenceEntry.COLUMN_PERIOD_END   + &quot; timestamp, &quot;
+            + RecurrenceEntry.COLUMN_CREATED_AT     + &quot; TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, &quot;
+            + RecurrenceEntry.COLUMN_MODIFIED_AT    + &quot; TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP); &quot;
+<span class="nc" id="L222">            + createUpdatedAtTrigger(RecurrenceEntry.TABLE_NAME);</span>
+
+
+    /**
+	 * Constructor
+	 * @param context Application context
+     * @param databaseName Name of the database
+	 */
+	public DatabaseHelper(Context context, String databaseName){
+<span class="nc" id="L231">		super(context, databaseName, null, DatabaseSchema.DATABASE_VERSION);</span>
+
+<span class="nc" id="L233">	}</span>
+
+    /**
+     * Creates an update trigger to update the updated_at column for all records in the database.
+     * This has to be run per table, and is currently appended to the create table statement.
+     * @param tableName Name of table on which to create trigger
+     * @return SQL statement for creating trigger
+     */
+    static String createUpdatedAtTrigger(String tableName){
+<span class="nc" id="L242">        return &quot;CREATE TRIGGER update_time_trigger &quot;</span>
+                + &quot;  AFTER UPDATE ON &quot; + tableName + &quot; FOR EACH ROW&quot;
+                + &quot;  BEGIN &quot; + &quot;UPDATE &quot; + tableName
+                + &quot;  SET &quot; + CommonColumns.COLUMN_MODIFIED_AT + &quot; = CURRENT_TIMESTAMP&quot;
+                + &quot;  WHERE OLD.&quot; + CommonColumns.COLUMN_UID + &quot; = NEW.&quot; + CommonColumns.COLUMN_UID + &quot;;&quot;
+                + &quot;  END;&quot;;
+    }
+
+	@Override
+	public void onCreate(SQLiteDatabase db) {
+<span class="nc" id="L252">		createDatabaseTables(db);</span>
+
+<span class="nc" id="L254">	}</span>
+
+    @Override
+    public void onOpen(SQLiteDatabase db) {
+<span class="nc" id="L258">        super.onOpen(db);</span>
+<span class="nc" id="L259">        db.execSQL(&quot;PRAGMA foreign_keys=ON&quot;);</span>
+<span class="nc" id="L260">    }</span>
+
+    @Override
+	public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion){
+<span class="nc" id="L264">		Log.i(LOG_TAG, &quot;Upgrading database from version &quot;</span>
+                + oldVersion + &quot; to &quot; + newVersion);
+
+<span class="nc" id="L267">        Toast.makeText(GnuCashApplication.getAppContext(), &quot;Upgrading GnuCash database&quot;, Toast.LENGTH_SHORT).show();</span>
+        /*
+        * NOTE: In order to modify the database, create a new static method in the MigrationHelper class
+        * called upgradeDbToVersion&lt;#&gt;, e.g. int upgradeDbToVersion10(SQLiteDatabase) in order to upgrade to version 10.
+        * The upgrade method should return the new (upgraded) database version as the return value.
+        * Then all you need to do is increment the DatabaseSchema.DATABASE_VERSION to the appropriate number to trigger an upgrade.
+        */
+<span class="nc bnc" id="L274" title="All 2 branches missed.">		if (oldVersion &gt; newVersion) {</span>
+<span class="nc" id="L275">            throw new IllegalArgumentException(&quot;Database downgrades are not supported at the moment&quot;);</span>
+        }
+
+<span class="nc bnc" id="L278" title="All 2 branches missed.">        while(oldVersion &lt; newVersion){</span>
+            try {
+<span class="nc" id="L280">                Method method = MigrationHelper.class.getDeclaredMethod(&quot;upgradeDbToVersion&quot; + (oldVersion+1), SQLiteDatabase.class);</span>
+<span class="nc" id="L281">                Object result = method.invoke(null, db);</span>
+<span class="nc" id="L282">                oldVersion = Integer.parseInt(result.toString());</span>
+
+<span class="nc" id="L284">            } catch (NoSuchMethodException e) {</span>
+<span class="nc" id="L285">                String msg = String.format(&quot;Database upgrade method upgradeToVersion%d(SQLiteDatabase) definition not found &quot;, newVersion);</span>
+<span class="nc" id="L286">                Log.e(LOG_TAG, msg, e);</span>
+<span class="nc" id="L287">                Crashlytics.log(msg);</span>
+<span class="nc" id="L288">                Crashlytics.logException(e);</span>
+<span class="nc" id="L289">                throw new RuntimeException(e);</span>
+<span class="nc" id="L290">            }  catch (IllegalAccessException e) {</span>
+<span class="nc" id="L291">                String msg = String.format(&quot;Database upgrade to version %d failed. The upgrade method is inaccessible &quot;, newVersion);</span>
+<span class="nc" id="L292">                Log.e(LOG_TAG, msg, e);</span>
+<span class="nc" id="L293">                Crashlytics.log(msg);</span>
+<span class="nc" id="L294">                Crashlytics.logException(e);</span>
+<span class="nc" id="L295">                throw new RuntimeException(e);</span>
+<span class="nc" id="L296">            } catch (InvocationTargetException e){</span>
+<span class="nc" id="L297">                Crashlytics.logException(e.getTargetException());</span>
+<span class="nc" id="L298">                throw new RuntimeException(e.getTargetException());</span>
+<span class="nc" id="L299">            }</span>
+        }
+<span class="nc" id="L301">	}</span>
+
+
+    /**
+     * Creates the tables in the database and import default commodities into the database
+     * @param db Database instance
+     */
+    private void createDatabaseTables(SQLiteDatabase db) {
+<span class="nc" id="L309">        Log.i(LOG_TAG, &quot;Creating database tables&quot;);</span>
+<span class="nc" id="L310">        db.execSQL(ACCOUNTS_TABLE_CREATE);</span>
+<span class="nc" id="L311">        db.execSQL(TRANSACTIONS_TABLE_CREATE);</span>
+<span class="nc" id="L312">        db.execSQL(SPLITS_TABLE_CREATE);</span>
+<span class="nc" id="L313">        db.execSQL(SCHEDULED_ACTIONS_TABLE_CREATE);</span>
+<span class="nc" id="L314">        db.execSQL(COMMODITIES_TABLE_CREATE);</span>
+<span class="nc" id="L315">        db.execSQL(PRICES_TABLE_CREATE);</span>
+<span class="nc" id="L316">        db.execSQL(RECURRENCE_TABLE_CREATE);</span>
+<span class="nc" id="L317">        db.execSQL(BUDGETS_TABLE_CREATE);</span>
+<span class="nc" id="L318">        db.execSQL(BUDGET_AMOUNTS_TABLE_CREATE);</span>
+
+
+<span class="nc" id="L321">        String createAccountUidIndex = &quot;CREATE UNIQUE INDEX '&quot; + AccountEntry.INDEX_UID + &quot;' ON &quot;</span>
+                + AccountEntry.TABLE_NAME + &quot;(&quot; + AccountEntry.COLUMN_UID + &quot;)&quot;;
+
+<span class="nc" id="L324">        String createTransactionUidIndex = &quot;CREATE UNIQUE INDEX '&quot; + TransactionEntry.INDEX_UID + &quot;' ON &quot;</span>
+                + TransactionEntry.TABLE_NAME + &quot;(&quot; + TransactionEntry.COLUMN_UID + &quot;)&quot;;
+
+<span class="nc" id="L327">        String createSplitUidIndex = &quot;CREATE UNIQUE INDEX '&quot; + SplitEntry.INDEX_UID + &quot;' ON &quot;</span>
+                + SplitEntry.TABLE_NAME + &quot;(&quot; + SplitEntry.COLUMN_UID + &quot;)&quot;;
+
+<span class="nc" id="L330">        String createScheduledEventUidIndex = &quot;CREATE UNIQUE INDEX '&quot; + ScheduledActionEntry.INDEX_UID</span>
+                + &quot;' ON &quot; + ScheduledActionEntry.TABLE_NAME + &quot;(&quot; + ScheduledActionEntry.COLUMN_UID + &quot;)&quot;;
+
+<span class="nc" id="L333">        String createCommodityUidIndex = &quot;CREATE UNIQUE INDEX '&quot; + CommodityEntry.INDEX_UID</span>
+                + &quot;' ON &quot; + CommodityEntry.TABLE_NAME + &quot;(&quot; + CommodityEntry.COLUMN_UID + &quot;)&quot;;
+
+<span class="nc" id="L336">        String createPriceUidIndex = &quot;CREATE UNIQUE INDEX '&quot; + PriceEntry.INDEX_UID</span>
+                + &quot;' ON &quot; + PriceEntry.TABLE_NAME + &quot;(&quot; + PriceEntry.COLUMN_UID + &quot;)&quot;;
+
+<span class="nc" id="L339">        String createBudgetUidIndex = &quot;CREATE UNIQUE INDEX '&quot; + BudgetEntry.INDEX_UID</span>
+                + &quot;' ON &quot; + BudgetEntry.TABLE_NAME + &quot;(&quot; + BudgetEntry.COLUMN_UID + &quot;)&quot;;
+
+<span class="nc" id="L342">        String createBudgetAmountUidIndex = &quot;CREATE UNIQUE INDEX '&quot; + BudgetAmountEntry.INDEX_UID</span>
+                + &quot;' ON &quot; + BudgetAmountEntry.TABLE_NAME + &quot;(&quot; + BudgetAmountEntry.COLUMN_UID + &quot;)&quot;;
+
+<span class="nc" id="L345">        String createRecurrenceUidIndex = &quot;CREATE UNIQUE INDEX '&quot; + RecurrenceEntry.INDEX_UID</span>
+                + &quot;' ON &quot; + RecurrenceEntry.TABLE_NAME + &quot;(&quot; + RecurrenceEntry.COLUMN_UID + &quot;)&quot;;
+
+<span class="nc" id="L348">        db.execSQL(createAccountUidIndex);</span>
+<span class="nc" id="L349">        db.execSQL(createTransactionUidIndex);</span>
+<span class="nc" id="L350">        db.execSQL(createSplitUidIndex);</span>
+<span class="nc" id="L351">        db.execSQL(createScheduledEventUidIndex);</span>
+<span class="nc" id="L352">        db.execSQL(createCommodityUidIndex);</span>
+<span class="nc" id="L353">        db.execSQL(createPriceUidIndex);</span>
+<span class="nc" id="L354">        db.execSQL(createBudgetUidIndex);</span>
+<span class="nc" id="L355">        db.execSQL(createRecurrenceUidIndex);</span>
+<span class="nc" id="L356">        db.execSQL(createBudgetAmountUidIndex);</span>
+
+        try {
+<span class="nc" id="L359">            MigrationHelper.importCommodities(db);</span>
+<span class="nc" id="L360">        } catch (SAXException | ParserConfigurationException | IOException e) {</span>
+<span class="nc" id="L361">            Log.e(LOG_TAG, &quot;Error loading currencies into the database&quot;);</span>
+<span class="nc" id="L362">            e.printStackTrace();</span>
+<span class="nc" id="L363">            throw new RuntimeException(e);</span>
+<span class="nc" id="L364">        }</span>
+<span class="nc" id="L365">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

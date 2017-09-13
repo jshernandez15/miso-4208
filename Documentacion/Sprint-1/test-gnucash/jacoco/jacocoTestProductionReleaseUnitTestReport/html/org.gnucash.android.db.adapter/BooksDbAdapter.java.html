@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BooksDbAdapter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.db.adapter</a> &gt; <span class="el_source">BooksDbAdapter.java</span></div><h1>BooksDbAdapter.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2015 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.db.adapter;
+
+import android.content.ContentValues;
+import android.content.Context;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteStatement;
+import android.net.Uri;
+import android.support.annotation.NonNull;
+
+import org.gnucash.android.R;
+import org.gnucash.android.app.GnuCashApplication;
+import org.gnucash.android.db.DatabaseSchema.BookEntry;
+import org.gnucash.android.model.Book;
+import org.gnucash.android.ui.settings.PreferenceActivity;
+import org.gnucash.android.util.TimestampHelper;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Database adapter for creating/modifying book entries
+ */
+public class BooksDbAdapter extends DatabaseAdapter&lt;Book&gt; {
+
+    /**
+     * Opens the database adapter with an existing database
+     * @param db        SQLiteDatabase object
+     */
+    public BooksDbAdapter(SQLiteDatabase db) {
+<span class="nc" id="L47">        super(db, BookEntry.TABLE_NAME, new String[] {</span>
+                BookEntry.COLUMN_DISPLAY_NAME,
+                BookEntry.COLUMN_ROOT_GUID,
+                BookEntry.COLUMN_TEMPLATE_GUID,
+                BookEntry.COLUMN_SOURCE_URI,
+                BookEntry.COLUMN_ACTIVE,
+                BookEntry.COLUMN_UID,
+                BookEntry.COLUMN_LAST_SYNC
+        });
+<span class="nc" id="L56">    }</span>
+
+    /**
+     * Return the application instance of the books database adapter
+     * @return Books database adapter
+     */
+    public static BooksDbAdapter getInstance(){
+<span class="nc" id="L63">        return GnuCashApplication.getBooksDbAdapter();</span>
+    }
+
+    @Override
+    public Book buildModelInstance(@NonNull Cursor cursor) {
+<span class="nc" id="L68">        String rootAccountGUID = cursor.getString(cursor.getColumnIndexOrThrow(BookEntry.COLUMN_ROOT_GUID));</span>
+<span class="nc" id="L69">        String rootTemplateGUID =  cursor.getString(cursor.getColumnIndexOrThrow(BookEntry.COLUMN_TEMPLATE_GUID));</span>
+<span class="nc" id="L70">        String uriString = cursor.getString(cursor.getColumnIndexOrThrow(BookEntry.COLUMN_SOURCE_URI));</span>
+<span class="nc" id="L71">        String displayName = cursor.getString(cursor.getColumnIndexOrThrow(BookEntry.COLUMN_DISPLAY_NAME));</span>
+<span class="nc" id="L72">        int active = cursor.getInt(cursor.getColumnIndexOrThrow(BookEntry.COLUMN_ACTIVE));</span>
+<span class="nc" id="L73">        String lastSync = cursor.getString(cursor.getColumnIndexOrThrow(BookEntry.COLUMN_LAST_SYNC));</span>
+
+<span class="nc" id="L75">        Book book = new Book(rootAccountGUID);</span>
+<span class="nc" id="L76">        book.setDisplayName(displayName);</span>
+<span class="nc" id="L77">        book.setRootTemplateUID(rootTemplateGUID);</span>
+<span class="nc bnc" id="L78" title="All 2 branches missed.">        book.setSourceUri(uriString == null ? null : Uri.parse(uriString));</span>
+<span class="nc bnc" id="L79" title="All 2 branches missed.">        book.setActive(active &gt; 0);</span>
+<span class="nc" id="L80">        book.setLastSync(TimestampHelper.getTimestampFromUtcString(lastSync));</span>
+
+<span class="nc" id="L82">        populateBaseModelAttributes(cursor, book);</span>
+<span class="nc" id="L83">        return book;</span>
+    }
+
+    @Override
+    protected @NonNull SQLiteStatement setBindings(@NonNull SQLiteStatement stmt, @NonNull final Book book) {
+<span class="nc" id="L88">        stmt.clearBindings();</span>
+<span class="nc bnc" id="L89" title="All 2 branches missed.">        String displayName = book.getDisplayName() == null ? generateDefaultBookName() : book.getDisplayName();</span>
+<span class="nc" id="L90">        stmt.bindString(1, displayName);</span>
+<span class="nc" id="L91">        stmt.bindString(2, book.getRootAccountUID());</span>
+<span class="nc" id="L92">        stmt.bindString(3, book.getRootTemplateUID());</span>
+<span class="nc bnc" id="L93" title="All 2 branches missed.">        if (book.getSourceUri() != null)</span>
+<span class="nc" id="L94">            stmt.bindString(4, book.getSourceUri().toString());</span>
+<span class="nc bnc" id="L95" title="All 2 branches missed.">        stmt.bindLong(5, book.isActive() ? 1L : 0L);</span>
+<span class="nc" id="L96">        stmt.bindString(6, book.getUID());</span>
+<span class="nc" id="L97">        stmt.bindString(7, TimestampHelper.getUtcStringFromTimestamp(book.getLastSync()));</span>
+<span class="nc" id="L98">        return stmt;</span>
+    }
+
+
+    /**
+     * Deletes a book - removes the book record from the database and deletes the database file from the disk
+     * @param bookUID GUID of the book
+     * @return &lt;code&gt;true&lt;/code&gt; if deletion was successful, &lt;code&gt;false&lt;/code&gt; otherwise
+     * @see #deleteRecord(String)
+     */
+    public boolean deleteBook(@NonNull String bookUID){
+<span class="nc" id="L109">        Context context = GnuCashApplication.getAppContext();</span>
+<span class="nc" id="L110">        boolean result = context.deleteDatabase(bookUID);</span>
+<span class="nc bnc" id="L111" title="All 2 branches missed.">        if (result) //delete the db entry only if the file deletion was successful</span>
+<span class="nc" id="L112">            result &amp;= deleteRecord(bookUID);</span>
+
+<span class="nc" id="L114">        PreferenceActivity.getBookSharedPreferences(bookUID).edit().clear().apply();</span>
+
+<span class="nc" id="L116">        return result;</span>
+    }
+
+    /**
+     * Sets the book with unique identifier {@code uid} as active and all others as inactive
+     * &lt;p&gt;If the parameter is null, then the currently active book is not changed&lt;/p&gt;
+     * @param bookUID Unique identifier of the book
+     * @return GUID of the currently active book
+     */
+    public String setActive(@NonNull String bookUID){
+<span class="nc bnc" id="L126" title="All 2 branches missed.">        if (bookUID == null)</span>
+<span class="nc" id="L127">            return getActiveBookUID();</span>
+
+<span class="nc" id="L129">        ContentValues contentValues = new ContentValues();</span>
+<span class="nc" id="L130">        contentValues.put(BookEntry.COLUMN_ACTIVE, 0);</span>
+<span class="nc" id="L131">        mDb.update(mTableName, contentValues, null, null); //disable all</span>
+
+<span class="nc" id="L133">        contentValues.clear();</span>
+<span class="nc" id="L134">        contentValues.put(BookEntry.COLUMN_ACTIVE, 1);</span>
+<span class="nc" id="L135">        mDb.update(mTableName, contentValues, BookEntry.COLUMN_UID + &quot; = ?&quot;, new String[]{bookUID});</span>
+
+<span class="nc" id="L137">        return bookUID;</span>
+    }
+
+    /**
+     * Checks if the book is active or not
+     * @param bookUID GUID of the book
+     * @return {@code true} if the book is active, {@code false} otherwise
+     */
+    public boolean isActive(String bookUID){
+<span class="nc" id="L146">        String isActive = getAttribute(bookUID, BookEntry.COLUMN_ACTIVE);</span>
+<span class="nc bnc" id="L147" title="All 2 branches missed.">        return Integer.parseInt(isActive) &gt; 0;</span>
+    }
+
+    /**
+     * Returns the GUID of the current active book
+     * @return GUID of the active book
+     */
+    public @NonNull String getActiveBookUID(){
+<span class="nc" id="L155">        Cursor cursor = mDb.query(mTableName, new String[]{BookEntry.COLUMN_UID},</span>
+                BookEntry.COLUMN_ACTIVE + &quot;= 1&quot;, null, null, null, null, &quot;1&quot;);
+        try{
+<span class="nc bnc" id="L158" title="All 2 branches missed.">            if (cursor.getCount() == 0)</span>
+<span class="nc" id="L159">                throw new RuntimeException(&quot;There is no active book in the app. This should NEVER happen, fix your bugs!&quot;);</span>
+<span class="nc" id="L160">            cursor.moveToFirst();</span>
+<span class="nc" id="L161">            return cursor.getString(cursor.getColumnIndexOrThrow(BookEntry.COLUMN_UID));</span>
+        } finally {
+<span class="nc" id="L163">            cursor.close();</span>
+        }
+    }
+
+    public @NonNull List&lt;String&gt; getAllBookUIDs(){
+<span class="nc" id="L168">        List&lt;String&gt; bookUIDs = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L169">        try (Cursor cursor = mDb.query(true, mTableName, new String[]{BookEntry.COLUMN_UID},</span>
+                null, null, null, null, null, null)) {
+<span class="nc bnc" id="L171" title="All 2 branches missed.">            while (cursor.moveToNext()) {</span>
+<span class="nc" id="L172">                bookUIDs.add(cursor.getString(cursor.getColumnIndexOrThrow(BookEntry.COLUMN_UID)));</span>
+            }
+<span class="nc bnc" id="L174" title="All 8 branches missed.">        }</span>
+
+<span class="nc" id="L176">        return bookUIDs;</span>
+    }
+
+    /**
+     * Return the name of the currently active book.
+     * Or a generic name if there is no active book (should never happen)
+     * @return Display name of the book
+     */
+    public @NonNull String getActiveBookDisplayName(){
+<span class="nc" id="L185">        Cursor cursor = mDb.query(mTableName,</span>
+                new String[]{BookEntry.COLUMN_DISPLAY_NAME}, BookEntry.COLUMN_ACTIVE + &quot; = 1&quot;,
+                null, null, null, null);
+        try {
+<span class="nc bnc" id="L189" title="All 2 branches missed.">            if (cursor.moveToFirst()){</span>
+<span class="nc" id="L190">                return cursor.getString(cursor.getColumnIndexOrThrow(BookEntry.COLUMN_DISPLAY_NAME));</span>
+            }
+        } finally {
+<span class="nc" id="L193">            cursor.close();</span>
+<span class="nc" id="L194">        }</span>
+<span class="nc" id="L195">        return &quot;Book1&quot;;</span>
+    }
+
+    /**
+     * Generates a new default name for a new book
+     * @return String with default name
+     */
+    public @NonNull String generateDefaultBookName() {
+<span class="nc" id="L203">        long bookCount = getRecordsCount() + 1;</span>
+
+<span class="nc" id="L205">        String sql = &quot;SELECT COUNT(*) FROM &quot; + mTableName + &quot; WHERE &quot; + BookEntry.COLUMN_DISPLAY_NAME + &quot; = ?&quot;;</span>
+<span class="nc" id="L206">        SQLiteStatement statement = mDb.compileStatement(sql);</span>
+
+        while (true) {
+<span class="nc" id="L209">            Context context = GnuCashApplication.getAppContext();</span>
+<span class="nc" id="L210">            String name = context.getString(R.string.book_default_name, bookCount);</span>
+            //String name = &quot;Book&quot; + &quot; &quot; + bookCount;
+
+<span class="nc" id="L213">            statement.clearBindings();</span>
+<span class="nc" id="L214">            statement.bindString(1, name);</span>
+<span class="nc" id="L215">            long nameCount = statement.simpleQueryForLong();</span>
+
+<span class="nc bnc" id="L217" title="All 2 branches missed.">            if (nameCount == 0) {</span>
+<span class="nc" id="L218">                return name;</span>
+            }
+
+<span class="nc" id="L221">            bookCount++;</span>
+<span class="nc" id="L222">        }</span>
+
+    }
+
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

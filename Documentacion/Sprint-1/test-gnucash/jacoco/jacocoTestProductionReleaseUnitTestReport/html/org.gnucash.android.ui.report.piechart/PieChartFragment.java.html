@@ -1,0 +1,311 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PieChartFragment.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.ui.report.piechart</a> &gt; <span class="el_source">PieChartFragment.java</span></div><h1>PieChartFragment.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2014-2015 Oleksandr Tyshkovets &lt;olexandr.tyshkovets@gmail.com&gt;
+ * Copyright (c) 2015 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.ui.report.piechart;
+
+import android.content.Context;
+import android.graphics.Color;
+import android.os.Bundle;
+import android.preference.PreferenceManager;
+import android.support.annotation.Nullable;
+import android.view.Menu;
+import android.view.MenuItem;
+
+import com.github.mikephil.charting.charts.PieChart;
+import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.data.PieData;
+import com.github.mikephil.charting.data.PieDataSet;
+import com.github.mikephil.charting.highlight.Highlight;
+
+import org.gnucash.android.R;
+import org.gnucash.android.db.adapter.AccountsDbAdapter;
+import org.gnucash.android.model.Account;
+import org.gnucash.android.ui.report.BaseReportFragment;
+import org.gnucash.android.ui.report.ReportType;
+import org.gnucash.android.ui.report.ReportsActivity;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import butterknife.BindView;
+
+import static com.github.mikephil.charting.components.Legend.LegendForm;
+import static com.github.mikephil.charting.components.Legend.LegendPosition;
+
+/**
+ * Activity used for drawing a pie chart
+ *
+ * @author Oleksandr Tyshkovets &lt;olexandr.tyshkovets@gmail.com&gt;
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ */
+<span class="nc" id="L56">public class PieChartFragment extends BaseReportFragment {</span>
+
+    public static final String TOTAL_VALUE_LABEL_PATTERN = &quot;%s\n%.2f %s&quot;;
+    private static final int ANIMATION_DURATION = 1800;
+    public static final int CENTER_TEXT_SIZE = 18;
+    /**
+     * The space in degrees between the chart slices
+     */
+    public static final float SPACE_BETWEEN_SLICES = 2f;
+    /**
+     * All pie slices less than this threshold will be group in &quot;other&quot; slice. Using percents not absolute values.
+     */
+    private static final double GROUPING_SMALLER_SLICES_THRESHOLD = 5;
+
+    @BindView(R.id.pie_chart) PieChart mChart;
+
+    private AccountsDbAdapter mAccountsDbAdapter;
+
+<span class="nc" id="L74">    private boolean mChartDataPresent = true;</span>
+
+<span class="nc" id="L76">    private boolean mUseAccountColor = true;</span>
+
+<span class="nc" id="L78">    private boolean mGroupSmallerSlices = true;</span>
+
+    @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+<span class="nc" id="L82">        super.onActivityCreated(savedInstanceState);</span>
+
+<span class="nc" id="L84">        mUseAccountColor = PreferenceManager.getDefaultSharedPreferences(getActivity())</span>
+<span class="nc" id="L85">                .getBoolean(getString(R.string.key_use_account_color), false);</span>
+
+<span class="nc" id="L87">        mAccountsDbAdapter = AccountsDbAdapter.getInstance();</span>
+
+
+<span class="nc" id="L90">        mChart.setCenterTextSize(CENTER_TEXT_SIZE);</span>
+<span class="nc" id="L91">        mChart.setDescription(&quot;&quot;);</span>
+<span class="nc" id="L92">        mChart.setOnChartValueSelectedListener(this);</span>
+<span class="nc" id="L93">        mChart.getLegend().setForm(LegendForm.CIRCLE);</span>
+<span class="nc" id="L94">        mChart.getLegend().setWordWrapEnabled(true);</span>
+<span class="nc" id="L95">        mChart.getLegend().setPosition(LegendPosition.BELOW_CHART_CENTER);</span>
+
+<span class="nc" id="L97">    }</span>
+
+    @Override
+    public int getTitle() {
+<span class="nc" id="L101">        return R.string.title_pie_chart;</span>
+    }
+
+    @Override
+    public ReportType getReportType() {
+<span class="nc" id="L106">        return ReportType.PIE_CHART;</span>
+    }
+
+    @Override
+    public int getLayoutResource() {
+<span class="nc" id="L111">        return R.layout.fragment_pie_chart;</span>
+    }
+
+    @Override
+    protected void generateReport() {
+<span class="nc" id="L116">        PieData pieData = getData();</span>
+<span class="nc bnc" id="L117" title="All 4 branches missed.">        if (pieData != null &amp;&amp; pieData.getYValCount() != 0) {</span>
+<span class="nc" id="L118">            mChartDataPresent = true;</span>
+<span class="nc bnc" id="L119" title="All 2 branches missed.">            mChart.setData(mGroupSmallerSlices ? groupSmallerSlices(pieData, getActivity()) : pieData);</span>
+<span class="nc" id="L120">            float sum = mChart.getData().getYValueSum();</span>
+<span class="nc" id="L121">            String total = getResources().getString(R.string.label_chart_total);</span>
+<span class="nc" id="L122">            String currencySymbol = mCommodity.getSymbol();</span>
+<span class="nc" id="L123">            mChart.setCenterText(String.format(TOTAL_VALUE_LABEL_PATTERN, total, sum, currencySymbol));</span>
+<span class="nc" id="L124">        } else {</span>
+<span class="nc" id="L125">            mChartDataPresent = false;</span>
+<span class="nc" id="L126">            mChart.setCenterText(getResources().getString(R.string.label_chart_no_data));</span>
+<span class="nc" id="L127">            mChart.setData(getEmptyData());</span>
+        }
+<span class="nc" id="L129">    }</span>
+
+    @Override
+    protected void displayReport() {
+<span class="nc bnc" id="L133" title="All 2 branches missed.">        if (mChartDataPresent){</span>
+<span class="nc" id="L134">            mChart.animateXY(ANIMATION_DURATION, ANIMATION_DURATION);</span>
+        }
+
+<span class="nc" id="L137">        mSelectedValueTextView.setText(R.string.label_select_pie_slice_to_see_details);</span>
+<span class="nc" id="L138">        mChart.setTouchEnabled(mChartDataPresent);</span>
+<span class="nc" id="L139">        mChart.highlightValues(null);</span>
+<span class="nc" id="L140">        mChart.invalidate();</span>
+<span class="nc" id="L141">    }</span>
+
+    /**
+     * Returns {@code PieData} instance with data entries, colors and labels
+     * @return {@code PieData} instance
+     */
+    private PieData getData() {
+<span class="nc" id="L148">        PieDataSet dataSet = new PieDataSet(null, &quot;&quot;);</span>
+<span class="nc" id="L149">        List&lt;String&gt; labels = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L150">        List&lt;Integer&gt; colors = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L151" title="All 2 branches missed.">        for (Account account : mAccountsDbAdapter.getSimpleAccountList()) {</span>
+<span class="nc bnc" id="L152" title="All 2 branches missed.">            if (account.getAccountType() == mAccountType</span>
+<span class="nc bnc" id="L153" title="All 2 branches missed.">                    &amp;&amp; !account.isPlaceholderAccount()</span>
+<span class="nc bnc" id="L154" title="All 2 branches missed.">                    &amp;&amp; account.getCommodity().equals(mCommodity)) {</span>
+
+<span class="nc" id="L156">                double balance = mAccountsDbAdapter.getAccountsBalance(Collections.singletonList(account.getUID()),</span>
+<span class="nc" id="L157">                        mReportPeriodStart, mReportPeriodEnd).asDouble();</span>
+<span class="nc bnc" id="L158" title="All 2 branches missed.">                if (balance &gt; 0) {</span>
+<span class="nc" id="L159">                    dataSet.addEntry(new Entry((float) balance, dataSet.getEntryCount()));</span>
+                    int color;
+<span class="nc bnc" id="L161" title="All 2 branches missed.">                    if (mUseAccountColor) {</span>
+<span class="nc bnc" id="L162" title="All 2 branches missed.">                        color = (account.getColor() != Account.DEFAULT_COLOR)</span>
+<span class="nc" id="L163">                                ? account.getColor()</span>
+<span class="nc" id="L164">                                : ReportsActivity.COLORS[(dataSet.getEntryCount() - 1) % ReportsActivity.COLORS.length];</span>
+                    } else {
+<span class="nc" id="L166">                        color = ReportsActivity.COLORS[(dataSet.getEntryCount() - 1) % ReportsActivity.COLORS.length];</span>
+                    }
+<span class="nc" id="L168">                    colors.add(color);</span>
+<span class="nc" id="L169">                    labels.add(account.getName());</span>
+                }
+            }
+<span class="nc" id="L172">        }</span>
+<span class="nc" id="L173">        dataSet.setColors(colors);</span>
+<span class="nc" id="L174">        dataSet.setSliceSpace(SPACE_BETWEEN_SLICES);</span>
+<span class="nc" id="L175">        return new PieData(labels, dataSet);</span>
+    }
+
+
+    /**
+     * Returns a data object that represents situation when no user data available
+     * @return a {@code PieData} instance for situation when no user data available
+     */
+    private PieData getEmptyData() {
+<span class="nc" id="L184">        PieDataSet dataSet = new PieDataSet(null, getResources().getString(R.string.label_chart_no_data));</span>
+<span class="nc" id="L185">        dataSet.addEntry(new Entry(1, 0));</span>
+<span class="nc" id="L186">        dataSet.setColor(NO_DATA_COLOR);</span>
+<span class="nc" id="L187">        dataSet.setDrawValues(false);</span>
+<span class="nc" id="L188">        return new PieData(Collections.singletonList(&quot;&quot;), dataSet);</span>
+    }
+
+    /**
+     * Sorts the pie's slices in ascending order
+     */
+    private void bubbleSort() {
+<span class="nc" id="L195">        List&lt;String&gt; labels = mChart.getData().getXVals();</span>
+<span class="nc" id="L196">        List&lt;Entry&gt; values = mChart.getData().getDataSet().getYVals();</span>
+<span class="nc" id="L197">        List&lt;Integer&gt; colors = mChart.getData().getDataSet().getColors();</span>
+        float tmp1;
+        String tmp2;
+        Integer tmp3;
+<span class="nc bnc" id="L201" title="All 2 branches missed.">        for(int i = 0; i &lt; values.size() - 1; i++) {</span>
+<span class="nc bnc" id="L202" title="All 2 branches missed.">            for(int j = 1; j &lt; values.size() - i; j++) {</span>
+<span class="nc bnc" id="L203" title="All 2 branches missed.">                if (values.get(j-1).getVal() &gt; values.get(j).getVal()) {</span>
+<span class="nc" id="L204">                    tmp1 = values.get(j - 1).getVal();</span>
+<span class="nc" id="L205">                    values.get(j - 1).setVal(values.get(j).getVal());</span>
+<span class="nc" id="L206">                    values.get(j).setVal(tmp1);</span>
+
+<span class="nc" id="L208">                    tmp2 = labels.get(j - 1);</span>
+<span class="nc" id="L209">                    labels.set(j - 1, labels.get(j));</span>
+<span class="nc" id="L210">                    labels.set(j, tmp2);</span>
+
+<span class="nc" id="L212">                    tmp3 = colors.get(j - 1);</span>
+<span class="nc" id="L213">                    colors.set(j - 1, colors.get(j));</span>
+<span class="nc" id="L214">                    colors.set(j, tmp3);</span>
+                }
+            }
+        }
+
+<span class="nc" id="L219">        mChart.notifyDataSetChanged();</span>
+<span class="nc" id="L220">        mChart.highlightValues(null);</span>
+<span class="nc" id="L221">        mChart.invalidate();</span>
+<span class="nc" id="L222">    }</span>
+
+    @Override
+    public void onPrepareOptionsMenu(Menu menu) {
+<span class="nc" id="L226">        menu.findItem(R.id.menu_order_by_size).setVisible(mChartDataPresent);</span>
+<span class="nc" id="L227">        menu.findItem(R.id.menu_toggle_labels).setVisible(mChartDataPresent);</span>
+<span class="nc" id="L228">        menu.findItem(R.id.menu_group_other_slice).setVisible(mChartDataPresent);</span>
+        // hide line/bar chart specific menu items
+<span class="nc" id="L230">        menu.findItem(R.id.menu_percentage_mode).setVisible(false);</span>
+<span class="nc" id="L231">        menu.findItem(R.id.menu_toggle_average_lines).setVisible(false);</span>
+<span class="nc" id="L232">        menu.findItem(R.id.menu_group_reports_by).setVisible(false);</span>
+<span class="nc" id="L233">    }</span>
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+<span class="nc bnc" id="L237" title="All 2 branches missed.">        if (item.isCheckable())</span>
+<span class="nc bnc" id="L238" title="All 2 branches missed.">            item.setChecked(!item.isChecked());</span>
+<span class="nc bnc" id="L239" title="All 5 branches missed.">        switch (item.getItemId()) {</span>
+            case R.id.menu_order_by_size: {
+<span class="nc" id="L241">                bubbleSort();</span>
+<span class="nc" id="L242">                return true;</span>
+            }
+            case R.id.menu_toggle_legend: {
+<span class="nc bnc" id="L245" title="All 2 branches missed.">                mChart.getLegend().setEnabled(!mChart.getLegend().isEnabled());</span>
+<span class="nc" id="L246">                mChart.notifyDataSetChanged();</span>
+<span class="nc" id="L247">                mChart.invalidate();</span>
+<span class="nc" id="L248">                return true;</span>
+            }
+            case R.id.menu_toggle_labels: {
+<span class="nc bnc" id="L251" title="All 2 branches missed.">                mChart.getData().setDrawValues(!mChart.isDrawSliceTextEnabled());</span>
+<span class="nc bnc" id="L252" title="All 2 branches missed.">                mChart.setDrawSliceText(!mChart.isDrawSliceTextEnabled());</span>
+<span class="nc" id="L253">                mChart.invalidate();</span>
+<span class="nc" id="L254">                return true;</span>
+            }
+            case R.id.menu_group_other_slice: {
+<span class="nc bnc" id="L257" title="All 2 branches missed.">                mGroupSmallerSlices = !mGroupSmallerSlices;</span>
+<span class="nc" id="L258">                refresh();</span>
+<span class="nc" id="L259">                return true;</span>
+            }
+
+            default:
+<span class="nc" id="L263">                return super.onOptionsItemSelected(item);</span>
+        }
+    }
+
+    /**
+     * Groups smaller slices. All smaller slices will be combined and displayed as a single &quot;Other&quot;.
+     * @param data the pie data which smaller slices will be grouped
+     * @param context Context for retrieving resources
+     * @return a {@code PieData} instance with combined smaller slices
+     */
+    public static PieData groupSmallerSlices(PieData data, Context context) {
+<span class="nc" id="L274">        float otherSlice = 0f;</span>
+<span class="nc" id="L275">        List&lt;Entry&gt; newEntries = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L276">        List&lt;String&gt; newLabels = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L277">        List&lt;Integer&gt; newColors = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L278">        List&lt;Entry&gt; entries = data.getDataSet().getYVals();</span>
+<span class="nc bnc" id="L279" title="All 2 branches missed.">        for (int i = 0; i &lt; entries.size(); i++) {</span>
+<span class="nc" id="L280">            float val = entries.get(i).getVal();</span>
+<span class="nc bnc" id="L281" title="All 2 branches missed.">            if (val / data.getYValueSum() * 100 &gt; GROUPING_SMALLER_SLICES_THRESHOLD) {</span>
+<span class="nc" id="L282">                newEntries.add(new Entry(val, newEntries.size()));</span>
+<span class="nc" id="L283">                newLabels.add(data.getXVals().get(i));</span>
+<span class="nc" id="L284">                newColors.add(data.getDataSet().getColors().get(i));</span>
+            } else {
+<span class="nc" id="L286">                otherSlice += val;</span>
+            }
+        }
+
+<span class="nc bnc" id="L290" title="All 2 branches missed.">        if (otherSlice &gt; 0) {</span>
+<span class="nc" id="L291">            newEntries.add(new Entry(otherSlice, newEntries.size()));</span>
+<span class="nc" id="L292">            newLabels.add(context.getResources().getString(R.string.label_other_slice));</span>
+<span class="nc" id="L293">            newColors.add(Color.LTGRAY);</span>
+        }
+
+<span class="nc" id="L296">        PieDataSet dataSet = new PieDataSet(newEntries, &quot;&quot;);</span>
+<span class="nc" id="L297">        dataSet.setSliceSpace(SPACE_BETWEEN_SLICES);</span>
+<span class="nc" id="L298">        dataSet.setColors(newColors);</span>
+<span class="nc" id="L299">        return new PieData(newLabels, dataSet);</span>
+    }
+
+    @Override
+    public void onValueSelected(Entry e, int dataSetIndex, Highlight h) {
+<span class="nc bnc" id="L304" title="All 2 branches missed.">        if (e == null) return;</span>
+<span class="nc" id="L305">        String label = mChart.getData().getXVals().get(e.getXIndex());</span>
+<span class="nc" id="L306">        float value = e.getVal();</span>
+<span class="nc" id="L307">        float percent = value / mChart.getData().getYValueSum() * 100;</span>
+<span class="nc" id="L308">        mSelectedValueTextView.setText(String.format(SELECTED_VALUE_PATTERN, label, value, percent));</span>
+<span class="nc" id="L309">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

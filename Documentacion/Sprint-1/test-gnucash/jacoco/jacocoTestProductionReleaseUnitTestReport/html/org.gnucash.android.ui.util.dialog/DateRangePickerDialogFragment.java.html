@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DateRangePickerDialogFragment.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.ui.util.dialog</a> &gt; <span class="el_source">DateRangePickerDialogFragment.java</span></div><h1>DateRangePickerDialogFragment.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2015 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.ui.util.dialog;
+
+import android.app.Dialog;
+import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.support.v4.app.DialogFragment;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+
+import com.squareup.timessquare.CalendarPickerView;
+
+import org.gnucash.android.R;
+import org.joda.time.LocalDate;
+
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+
+import butterknife.BindView;
+import butterknife.ButterKnife;
+
+/**
+ * Dialog for picking date ranges in terms of months.
+ * It is currently used for selecting ranges for reports
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ */
+<span class="nc" id="L46">public class DateRangePickerDialogFragment extends DialogFragment{</span>
+
+    @BindView(R.id.calendar_view) CalendarPickerView mCalendarPickerView;
+    @BindView(R.id.btn_save)    Button mDoneButton;
+    @BindView(R.id.btn_cancel)  Button mCancelButton;
+
+<span class="nc" id="L52">    private Date mStartRange = LocalDate.now().minusMonths(1).toDate();</span>
+<span class="nc" id="L53">    private Date mEndRange = LocalDate.now().toDate();</span>
+    private OnDateRangeSetListener mDateRangeSetListener;
+    private static final long ONE_DAY_IN_MILLIS = 24 * 60 * 60 * 1000;
+
+    public static DateRangePickerDialogFragment newInstance(OnDateRangeSetListener dateRangeSetListener){
+<span class="nc" id="L58">        DateRangePickerDialogFragment fragment = new DateRangePickerDialogFragment();</span>
+<span class="nc" id="L59">        fragment.mDateRangeSetListener = dateRangeSetListener;</span>
+<span class="nc" id="L60">        return fragment;</span>
+    }
+
+    public static DateRangePickerDialogFragment newInstance(long startDate, long endDate,
+                                                            OnDateRangeSetListener dateRangeSetListener){
+<span class="nc" id="L65">        DateRangePickerDialogFragment fragment = new DateRangePickerDialogFragment();</span>
+<span class="nc" id="L66">        fragment.mStartRange = new Date(startDate);</span>
+<span class="nc" id="L67">        fragment.mEndRange = new Date(endDate);</span>
+<span class="nc" id="L68">        fragment.mDateRangeSetListener = dateRangeSetListener;</span>
+<span class="nc" id="L69">        return fragment;</span>
+    }
+
+    @Nullable
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+<span class="nc" id="L75">        View view = inflater.inflate(R.layout.dialog_date_range_picker, container, false);</span>
+<span class="nc" id="L76">        ButterKnife.bind(this, view);</span>
+
+
+<span class="nc" id="L79">        Calendar nextYear = Calendar.getInstance();</span>
+<span class="nc" id="L80">        nextYear.add(Calendar.YEAR, 1);</span>
+
+<span class="nc" id="L82">        Date today = new Date();</span>
+<span class="nc" id="L83">        mCalendarPickerView.init(mStartRange, mEndRange)</span>
+<span class="nc" id="L84">                .inMode(CalendarPickerView.SelectionMode.RANGE)</span>
+<span class="nc" id="L85">                .withSelectedDate(today);</span>
+
+<span class="nc" id="L87">        mDoneButton.setText(R.string.done_label);</span>
+<span class="nc" id="L88">        mDoneButton.setOnClickListener(new View.OnClickListener() {</span>
+            @Override
+            public void onClick(View v) {
+<span class="nc" id="L91">                List&lt;Date&gt; selectedDates = mCalendarPickerView.getSelectedDates();</span>
+<span class="nc" id="L92">                Date startDate = selectedDates.get(0);</span>
+                // If only one day is selected (no interval) start and end should be the same (the selected one)
+<span class="nc bnc" id="L94" title="All 2 branches missed.">                Date endDate = selectedDates.size() &gt; 1 ? selectedDates.get(selectedDates.size() - 1) : new Date(startDate.getTime());</span>
+                // CaledarPicker returns the start of the selected day but we want all transactions of that day to be included.
+                // Therefore we have to add 24 hours to the endDate.
+<span class="nc" id="L97">                endDate.setTime(endDate.getTime() + ONE_DAY_IN_MILLIS);</span>
+<span class="nc" id="L98">                mDateRangeSetListener.onDateRangeSet(startDate, endDate);</span>
+<span class="nc" id="L99">                dismiss();</span>
+<span class="nc" id="L100">            }</span>
+        });
+
+<span class="nc" id="L103">        mCancelButton.setOnClickListener(new View.OnClickListener(){</span>
+            @Override
+            public void onClick(View v) {
+<span class="nc" id="L106">                dismiss();</span>
+<span class="nc" id="L107">            }</span>
+        });
+<span class="nc" id="L109">        return view;</span>
+    }
+
+    @NonNull
+    @Override
+    public Dialog onCreateDialog(Bundle savedInstanceState) {
+<span class="nc" id="L115">        Dialog dialog = super.onCreateDialog(savedInstanceState);</span>
+<span class="nc" id="L116">        dialog.setTitle(&quot;Pick time range&quot;);</span>
+<span class="nc" id="L117">        return dialog;</span>
+    }
+
+    public interface OnDateRangeSetListener {
+        void onDateRangeSet(Date startDate, Date endDate);
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

@@ -1,0 +1,1322 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AccountsDbAdapter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.db.adapter</a> &gt; <span class="el_source">AccountsDbAdapter.java</span></div><h1>AccountsDbAdapter.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2012 - 2015 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ * Copyright (c) 2014 Yongxin Wang &lt;fefe.wyx@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.db.adapter;
+
+import android.content.ContentValues;
+import android.content.Context;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteStatement;
+import android.graphics.Color;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.text.TextUtils;
+import android.util.Log;
+
+import org.gnucash.android.R;
+import org.gnucash.android.app.GnuCashApplication;
+import org.gnucash.android.db.DatabaseSchema;
+import org.gnucash.android.model.Account;
+import org.gnucash.android.model.AccountType;
+import org.gnucash.android.model.Commodity;
+import org.gnucash.android.model.Money;
+import org.gnucash.android.model.Split;
+import org.gnucash.android.model.Transaction;
+import org.gnucash.android.model.TransactionType;
+import org.gnucash.android.util.TimestampHelper;
+
+import java.math.BigDecimal;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+
+import static org.gnucash.android.db.DatabaseSchema.AccountEntry;
+import static org.gnucash.android.db.DatabaseSchema.SplitEntry;
+import static org.gnucash.android.db.DatabaseSchema.TransactionEntry;
+
+/**
+ * Manages persistence of {@link Account}s in the database
+ * Handles adding, modifying and deleting of account records.
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ * @author Yongxin Wang &lt;fefe.wyx@gmail.com&gt;
+ * @author Oleksandr Tyshkovets &lt;olexandr.tyshkovets@gmail.com&gt;
+ */
+public class AccountsDbAdapter extends DatabaseAdapter&lt;Account&gt; {
+    /**
+     * Separator used for account name hierarchies between parent and child accounts
+     */
+    public static final String ACCOUNT_NAME_SEPARATOR = &quot;:&quot;;
+
+    /**
+     * ROOT account full name.
+     * should ensure the ROOT account's full name will always sort before any other
+     * account's full name.
+     */
+    public static final String ROOT_ACCOUNT_FULL_NAME = &quot; &quot;;
+
+	/**
+	 * Transactions database adapter for manipulating transactions associated with accounts
+	 */
+    private final TransactionsDbAdapter mTransactionsAdapter;
+
+    /**
+     * Commodities database adapter for commodity manipulation
+     */
+    private final CommoditiesDbAdapter mCommoditiesDbAdapter;
+
+    /**
+     * Overloaded constructor. Creates an adapter for an already open database
+     * @param db SQliteDatabase instance
+     */
+    public AccountsDbAdapter(SQLiteDatabase db, TransactionsDbAdapter transactionsDbAdapter) {
+<span class="nc" id="L89">        super(db, AccountEntry.TABLE_NAME, new String[]{</span>
+                AccountEntry.COLUMN_NAME         ,
+                AccountEntry.COLUMN_DESCRIPTION  ,
+                AccountEntry.COLUMN_TYPE         ,
+                AccountEntry.COLUMN_CURRENCY     ,
+                AccountEntry.COLUMN_COLOR_CODE   ,
+                AccountEntry.COLUMN_FAVORITE     ,
+                AccountEntry.COLUMN_FULL_NAME    ,
+                AccountEntry.COLUMN_PLACEHOLDER  ,
+                AccountEntry.COLUMN_CREATED_AT   ,
+                AccountEntry.COLUMN_HIDDEN       ,
+                AccountEntry.COLUMN_COMMODITY_UID,
+                AccountEntry.COLUMN_PARENT_ACCOUNT_UID,
+                AccountEntry.COLUMN_DEFAULT_TRANSFER_ACCOUNT_UID
+        });
+<span class="nc" id="L104">        mTransactionsAdapter = transactionsDbAdapter;</span>
+<span class="nc" id="L105">        mCommoditiesDbAdapter = new CommoditiesDbAdapter(db);</span>
+<span class="nc" id="L106">    }</span>
+
+    /**
+     * Convenience overloaded constructor. 
+     * This is used when an AccountsDbAdapter object is needed quickly. Otherwise, the other 
+     * constructor {@link #AccountsDbAdapter(SQLiteDatabase, TransactionsDbAdapter)}
+     * should be used whenever possible
+     * @param db Database to create an adapter for
+     */
+    public AccountsDbAdapter(SQLiteDatabase db){
+<span class="nc" id="L116">        super(db, AccountEntry.TABLE_NAME, new String[]{</span>
+                AccountEntry.COLUMN_NAME         ,
+                AccountEntry.COLUMN_DESCRIPTION  ,
+                AccountEntry.COLUMN_TYPE         ,
+                AccountEntry.COLUMN_CURRENCY     ,
+                AccountEntry.COLUMN_COLOR_CODE   ,
+                AccountEntry.COLUMN_FAVORITE     ,
+                AccountEntry.COLUMN_FULL_NAME    ,
+                AccountEntry.COLUMN_PLACEHOLDER  ,
+                AccountEntry.COLUMN_CREATED_AT   ,
+                AccountEntry.COLUMN_HIDDEN       ,
+                AccountEntry.COLUMN_COMMODITY_UID,
+                AccountEntry.COLUMN_PARENT_ACCOUNT_UID,
+                AccountEntry.COLUMN_DEFAULT_TRANSFER_ACCOUNT_UID
+        });
+
+<span class="nc" id="L132">        mTransactionsAdapter = new TransactionsDbAdapter(db, new SplitsDbAdapter(db));</span>
+<span class="nc" id="L133">        mCommoditiesDbAdapter = new CommoditiesDbAdapter(db);</span>
+<span class="nc" id="L134">    }</span>
+
+    /**
+     * Returns an application-wide instance of this database adapter
+     * @return Instance of Accounts db adapter
+     */
+    public static AccountsDbAdapter getInstance(){
+<span class="nc" id="L141">        return GnuCashApplication.getAccountsDbAdapter();</span>
+    }
+
+    /**
+	 * Adds an account to the database. 
+	 * If an account already exists in the database with the same GUID, it is replaced.
+	 * @param account {@link Account} to be inserted to database
+	 */
+    @Override
+	public void addRecord(@NonNull Account account, UpdateMethod updateMethod){
+<span class="nc" id="L151">        Log.d(LOG_TAG, &quot;Replace account to db&quot;);</span>
+        //in-case the account already existed, we want to update the templates based on it as well
+<span class="nc" id="L153">        List&lt;Transaction&gt; templateTransactions = mTransactionsAdapter.getScheduledTransactionsForAccount(account.getUID());</span>
+<span class="nc" id="L154">        super.addRecord(account, updateMethod);</span>
+<span class="nc" id="L155">        String accountUID = account.getUID();</span>
+		//now add transactions if there are any
+<span class="nc bnc" id="L157" title="All 2 branches missed.">		if (account.getAccountType() != AccountType.ROOT){</span>
+            //update the fully qualified account name
+<span class="nc" id="L159">            updateRecord(accountUID, AccountEntry.COLUMN_FULL_NAME, getFullyQualifiedAccountName(accountUID));</span>
+<span class="nc bnc" id="L160" title="All 2 branches missed.">            for (Transaction t : account.getTransactions()) {</span>
+<span class="nc" id="L161">                t.setCommodity(account.getCommodity());</span>
+<span class="nc" id="L162">		        mTransactionsAdapter.addRecord(t, updateMethod);</span>
+<span class="nc" id="L163">			}</span>
+<span class="nc bnc" id="L164" title="All 2 branches missed.">            for (Transaction transaction : templateTransactions) {</span>
+<span class="nc" id="L165">                mTransactionsAdapter.addRecord(transaction, UpdateMethod.update);</span>
+<span class="nc" id="L166">            }</span>
+        }
+<span class="nc" id="L168">	}</span>
+
+    /**
+     * Adds some accounts and their transactions to the database in bulk.
+     * &lt;p&gt;If an account already exists in the database with the same GUID, it is replaced.
+     * This function will NOT try to determine the full name
+     * of the accounts inserted, full names should be generated prior to the insert.
+     * &lt;br&gt;All or none of the accounts will be inserted;&lt;/p&gt;
+     * @param accountList {@link Account} to be inserted to database
+     * @return number of rows inserted
+     */
+    @Override
+    public long bulkAddRecords(@NonNull List&lt;Account&gt; accountList, UpdateMethod updateMethod){
+        //scheduled transactions are not fetched from the database when getting account transactions
+        //so we retrieve those which affect this account and then re-save them later
+        //this is necessary because the database has ON DELETE CASCADE between accounts and splits
+        //and all accounts are editing via SQL REPLACE
+
+        //// TODO: 20.04.2016 Investigate if we can safely remove updating the transactions when bulk updating accounts
+<span class="nc" id="L187">        List&lt;Transaction&gt; transactionList = new ArrayList&lt;&gt;(accountList.size()*2);</span>
+<span class="nc bnc" id="L188" title="All 2 branches missed.">        for (Account account : accountList) {</span>
+<span class="nc" id="L189">            transactionList.addAll(account.getTransactions());</span>
+<span class="nc" id="L190">            transactionList.addAll(mTransactionsAdapter.getScheduledTransactionsForAccount(account.getUID()));</span>
+<span class="nc" id="L191">        }</span>
+<span class="nc" id="L192">        long nRow = super.bulkAddRecords(accountList, updateMethod);</span>
+
+<span class="nc bnc" id="L194" title="All 4 branches missed.">        if (nRow &gt; 0 &amp;&amp; !transactionList.isEmpty()){</span>
+<span class="nc" id="L195">            mTransactionsAdapter.bulkAddRecords(transactionList, updateMethod);</span>
+        }
+<span class="nc" id="L197">        return nRow;</span>
+    }
+
+    @Override
+    protected @NonNull SQLiteStatement setBindings(@NonNull SQLiteStatement stmt, @NonNull final Account account) {
+<span class="nc" id="L202">        stmt.clearBindings();</span>
+<span class="nc" id="L203">        stmt.bindString(1, account.getName());</span>
+<span class="nc bnc" id="L204" title="All 2 branches missed.">        if (account.getDescription() != null)</span>
+<span class="nc" id="L205">            stmt.bindString(2, account.getDescription());</span>
+<span class="nc" id="L206">        stmt.bindString(3, account.getAccountType().name());</span>
+<span class="nc" id="L207">        stmt.bindString(4, account.getCommodity().getCurrencyCode());</span>
+<span class="nc bnc" id="L208" title="All 2 branches missed.">        if (account.getColor() != Account.DEFAULT_COLOR) {</span>
+<span class="nc" id="L209">            stmt.bindString(5, convertToRGBHexString(account.getColor()));</span>
+        }
+<span class="nc bnc" id="L211" title="All 2 branches missed.">        stmt.bindLong(6, account.isFavorite() ? 1 : 0);</span>
+<span class="nc" id="L212">        stmt.bindString(7, account.getFullName());</span>
+<span class="nc bnc" id="L213" title="All 2 branches missed.">        stmt.bindLong(8, account.isPlaceholderAccount() ? 1 : 0);</span>
+<span class="nc" id="L214">        stmt.bindString(9, TimestampHelper.getUtcStringFromTimestamp(account.getCreatedTimestamp()));</span>
+<span class="nc bnc" id="L215" title="All 2 branches missed.">        stmt.bindLong(10, account.isHidden() ? 1 : 0);</span>
+<span class="nc" id="L216">        stmt.bindString(11, account.getCommodity().getUID());</span>
+
+<span class="nc" id="L218">        String parentAccountUID = account.getParentUID();</span>
+<span class="nc bnc" id="L219" title="All 4 branches missed.">        if (parentAccountUID == null &amp;&amp; account.getAccountType() != AccountType.ROOT) {</span>
+<span class="nc" id="L220">            parentAccountUID = getOrCreateGnuCashRootAccountUID();</span>
+        }
+<span class="nc bnc" id="L222" title="All 2 branches missed.">        if (parentAccountUID != null) {</span>
+<span class="nc" id="L223">            stmt.bindString(12, parentAccountUID);</span>
+        }
+<span class="nc bnc" id="L225" title="All 2 branches missed.">        if (account.getDefaultTransferAccountUID() != null) {</span>
+<span class="nc" id="L226">            stmt.bindString(13, account.getDefaultTransferAccountUID());</span>
+        }
+<span class="nc" id="L228">        stmt.bindString(14, account.getUID());</span>
+
+<span class="nc" id="L230">        return stmt;</span>
+    }
+
+    private String convertToRGBHexString(int color) {
+<span class="nc" id="L234">        return String.format(&quot;#%06X&quot;, (0xFFFFFF &amp; color));</span>
+    }
+
+    /**
+     * Marks all transactions for a given account as exported
+     * @param accountUID Unique ID of the record to be marked as exported
+     * @return Number of records marked as exported
+     */
+    public int markAsExported(String accountUID){
+<span class="nc" id="L243">        ContentValues contentValues = new ContentValues();</span>
+<span class="nc" id="L244">        contentValues.put(TransactionEntry.COLUMN_EXPORTED, 1);</span>
+<span class="nc" id="L245">        return mDb.update(</span>
+                TransactionEntry.TABLE_NAME,
+                contentValues,
+                TransactionEntry.COLUMN_UID + &quot; IN ( &quot; +
+                        &quot;SELECT DISTINCT &quot; + TransactionEntry.TABLE_NAME + &quot;.&quot; + TransactionEntry.COLUMN_UID +
+                        &quot; FROM &quot; + TransactionEntry.TABLE_NAME + &quot; , &quot; + SplitEntry.TABLE_NAME + &quot; ON &quot; +
+                        TransactionEntry.TABLE_NAME + &quot;.&quot; + TransactionEntry.COLUMN_UID + &quot; = &quot; +
+                        SplitEntry.TABLE_NAME + &quot;.&quot; + SplitEntry.COLUMN_TRANSACTION_UID + &quot; , &quot; +
+                        AccountEntry.TABLE_NAME + &quot; ON &quot; + SplitEntry.TABLE_NAME + &quot;.&quot; +
+                        SplitEntry.COLUMN_ACCOUNT_UID + &quot; = &quot; + AccountEntry.TABLE_NAME + &quot;.&quot; +
+                        AccountEntry.COLUMN_UID + &quot; WHERE &quot; + AccountEntry.TABLE_NAME + &quot;.&quot; +
+                        AccountEntry.COLUMN_UID + &quot; = ? &quot;
+                        + &quot; ) &quot;,
+                new String[]{accountUID}
+        );
+    }
+
+    /**
+     * This feature goes through all the rows in the accounts and changes value for &lt;code&gt;columnKey&lt;/code&gt; to &lt;code&gt;newValue&lt;/code&gt;&lt;br/&gt;
+     * The &lt;code&gt;newValue&lt;/code&gt; parameter is taken as string since SQLite typically stores everything as text.
+     * &lt;p&gt;&lt;b&gt;This method affects all rows, exercise caution when using it&lt;/b&gt;&lt;/p&gt;
+     * @param columnKey Name of column to be updated
+     * @param newValue New value to be assigned to the columnKey
+     * @return Number of records affected
+     */
+    public int updateAllAccounts(String columnKey, String newValue){
+<span class="nc" id="L271">        ContentValues contentValues = new ContentValues();</span>
+<span class="nc bnc" id="L272" title="All 2 branches missed.">        if (newValue == null) {</span>
+<span class="nc" id="L273">            contentValues.putNull(columnKey);</span>
+        } else {
+<span class="nc" id="L275">            contentValues.put(columnKey, newValue);</span>
+        }
+<span class="nc" id="L277">        return mDb.update(AccountEntry.TABLE_NAME, contentValues, null, null);</span>
+    }
+
+    /**
+     * Updates a specific entry of an account
+     * @param accountId Database record ID of the account to be updated
+     * @param columnKey Name of column to be updated
+     * @param newValue  New value to be assigned to the columnKey
+     * @return Number of records affected
+     */
+    public int updateAccount(long accountId, String columnKey, String newValue){
+<span class="nc" id="L288">        return updateRecord(AccountEntry.TABLE_NAME, accountId, columnKey, newValue);</span>
+    }
+
+    /**
+     * This method goes through all the children of {@code accountUID} and updates the parent account
+     * to {@code newParentAccountUID}. The fully qualified account names for all descendant accounts will also be updated.
+     * @param accountUID GUID of the account
+     * @param newParentAccountUID GUID of the new parent account
+     */
+    public void reassignDescendantAccounts(@NonNull String accountUID, @NonNull String newParentAccountUID) {
+<span class="nc" id="L298">        List&lt;String&gt; descendantAccountUIDs = getDescendantAccountUIDs(accountUID, null, null);</span>
+<span class="nc bnc" id="L299" title="All 2 branches missed.">        if (descendantAccountUIDs.size() &gt; 0) {</span>
+<span class="nc" id="L300">            List&lt;Account&gt; descendantAccounts = getSimpleAccountList(</span>
+<span class="nc" id="L301">                    AccountEntry.COLUMN_UID + &quot; IN ('&quot; + TextUtils.join(&quot;','&quot;, descendantAccountUIDs) + &quot;')&quot;,</span>
+                    null,
+                    null
+            );
+<span class="nc" id="L305">            HashMap&lt;String, Account&gt; mapAccounts = new HashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L306" title="All 2 branches missed.">            for (Account account : descendantAccounts)</span>
+<span class="nc" id="L307">                mapAccounts.put(account.getUID(), account);</span>
+            String parentAccountFullName;
+<span class="nc bnc" id="L309" title="All 2 branches missed.">            if (getAccountType(newParentAccountUID) == AccountType.ROOT) {</span>
+<span class="nc" id="L310">                parentAccountFullName = &quot;&quot;;</span>
+            } else {
+<span class="nc" id="L312">                parentAccountFullName = getAccountFullName(newParentAccountUID);</span>
+            }
+<span class="nc" id="L314">            ContentValues contentValues = new ContentValues();</span>
+<span class="nc bnc" id="L315" title="All 2 branches missed.">            for (String acctUID : descendantAccountUIDs) {</span>
+<span class="nc" id="L316">                Account acct = mapAccounts.get(acctUID);</span>
+<span class="nc bnc" id="L317" title="All 2 branches missed.">                if (accountUID.equals(acct.getParentUID())) {</span>
+                    // direct descendant
+<span class="nc" id="L319">                    acct.setParentUID(newParentAccountUID);</span>
+<span class="nc bnc" id="L320" title="All 4 branches missed.">                    if (parentAccountFullName == null || parentAccountFullName.isEmpty()) {</span>
+<span class="nc" id="L321">                        acct.setFullName(acct.getName());</span>
+                    } else {
+<span class="nc" id="L323">                        acct.setFullName(parentAccountFullName + ACCOUNT_NAME_SEPARATOR + acct.getName());</span>
+                    }
+                    // update DB
+<span class="nc" id="L326">                    contentValues.clear();</span>
+<span class="nc" id="L327">                    contentValues.put(AccountEntry.COLUMN_PARENT_ACCOUNT_UID, newParentAccountUID);</span>
+<span class="nc" id="L328">                    contentValues.put(AccountEntry.COLUMN_FULL_NAME, acct.getFullName());</span>
+<span class="nc" id="L329">                    mDb.update(</span>
+                            AccountEntry.TABLE_NAME, contentValues,
+                            AccountEntry.COLUMN_UID + &quot; = ?&quot;,
+<span class="nc" id="L332">                            new String[]{acct.getUID()}</span>
+                    );
+                } else {
+                    // indirect descendant
+<span class="nc" id="L336">                    acct.setFullName(</span>
+<span class="nc" id="L337">                            mapAccounts.get(acct.getParentUID()).getFullName() +</span>
+<span class="nc" id="L338">                                    ACCOUNT_NAME_SEPARATOR + acct.getName()</span>
+                    );
+                    // update DB
+<span class="nc" id="L341">                    contentValues.clear();</span>
+<span class="nc" id="L342">                    contentValues.put(AccountEntry.COLUMN_FULL_NAME, acct.getFullName());</span>
+<span class="nc" id="L343">                    mDb.update(</span>
+                            AccountEntry.TABLE_NAME, contentValues,
+                            AccountEntry.COLUMN_UID + &quot; = ?&quot;,
+<span class="nc" id="L346">                            new String[]{acct.getUID()}</span>
+                    );
+                }
+<span class="nc" id="L349">            }</span>
+        }
+<span class="nc" id="L351">    }</span>
+
+    /**
+     * Deletes an account and its transactions, and all its sub-accounts and their transactions.
+     * &lt;p&gt;Not only the splits belonging to the account and its descendants will be deleted, rather,
+     * the complete transactions associated with this account and its descendants
+     * (i.e. as long as the transaction has at least one split belonging to one of the accounts).
+     * This prevents an split imbalance from being caused.&lt;/p&gt;
+     * &lt;p&gt;If you want to preserve transactions, make sure to first reassign the children accounts (see {@link #reassignDescendantAccounts(String, String)}
+     * before calling this method. This method will however not delete a root account. &lt;/p&gt;
+     * &lt;p&gt;&lt;b&gt;This method does a thorough delete, use with caution!!!&lt;/b&gt;&lt;/p&gt;
+     * @param accountId Database record ID of account
+     * @return &lt;code&gt;true&lt;/code&gt; if the account and subaccounts were all successfully deleted, &lt;code&gt;false&lt;/code&gt; if
+     * even one was not deleted
+     * @see #reassignDescendantAccounts(String, String)
+     */
+    public boolean recursiveDeleteAccount(long accountId){
+<span class="nc" id="L368">        String accountUID = getUID(accountId);</span>
+<span class="nc bnc" id="L369" title="All 2 branches missed.">        if (getAccountType(accountUID) == AccountType.ROOT) {</span>
+            // refuse to delete ROOT
+<span class="nc" id="L371">            return false;</span>
+        }
+
+<span class="nc" id="L374">        Log.d(LOG_TAG, &quot;Delete account with rowId with its transactions and sub-accounts: &quot; + accountId);</span>
+
+<span class="nc" id="L376">        List&lt;String&gt; descendantAccountUIDs = getDescendantAccountUIDs(accountUID, null, null);</span>
+<span class="nc" id="L377">        mDb.beginTransaction();</span>
+        try {
+<span class="nc" id="L379">            descendantAccountUIDs.add(accountUID); //add account to descendants list just for convenience</span>
+<span class="nc bnc" id="L380" title="All 2 branches missed.">            for (String descendantAccountUID : descendantAccountUIDs) {</span>
+<span class="nc" id="L381">                mTransactionsAdapter.deleteTransactionsForAccount(descendantAccountUID);</span>
+<span class="nc" id="L382">            }</span>
+
+<span class="nc" id="L384">            String accountUIDList = &quot;'&quot; + TextUtils.join(&quot;','&quot;, descendantAccountUIDs) + &quot;'&quot;;</span>
+
+            // delete accounts
+<span class="nc" id="L387">            long deletedCount = mDb.delete(</span>
+                    AccountEntry.TABLE_NAME,
+                    AccountEntry.COLUMN_UID + &quot; IN (&quot; + accountUIDList + &quot;)&quot;,
+                    null
+            );
+
+            //if we delete some accounts, reset the default transfer account to NULL
+            //there is also a database trigger from db version &gt; 12
+<span class="nc bnc" id="L395" title="All 2 branches missed.">            if (deletedCount &gt; 0){</span>
+<span class="nc" id="L396">                ContentValues contentValues = new ContentValues();</span>
+<span class="nc" id="L397">                contentValues.putNull(AccountEntry.COLUMN_DEFAULT_TRANSFER_ACCOUNT_UID);</span>
+<span class="nc" id="L398">                mDb.update(mTableName, contentValues,</span>
+                        AccountEntry.COLUMN_DEFAULT_TRANSFER_ACCOUNT_UID + &quot; IN (&quot; + accountUIDList + &quot;)&quot;,
+                        null);
+            }
+
+<span class="nc" id="L403">            mDb.setTransactionSuccessful();</span>
+<span class="nc" id="L404">            return true;</span>
+        }
+        finally {
+<span class="nc" id="L407">            mDb.endTransaction();</span>
+        }
+    }
+
+	/**
+	 * Builds an account instance with the provided cursor and loads its corresponding transactions.
+	 *
+	 * @param c Cursor pointing to account record in database
+	 * @return {@link Account} object constructed from database record
+	 */
+    @Override
+    public Account buildModelInstance(@NonNull final Cursor c){
+<span class="nc" id="L419">        Account account = buildSimpleAccountInstance(c);</span>
+<span class="nc" id="L420">        account.setTransactions(mTransactionsAdapter.getAllTransactionsForAccount(account.getUID()));</span>
+
+<span class="nc" id="L422">        return account;</span>
+	}
+
+    /**
+     * Builds an account instance with the provided cursor and loads its corresponding transactions.
+     * &lt;p&gt;The method will not move the cursor position, so the cursor should already be pointing
+     * to the account record in the database&lt;br/&gt;
+     * &lt;b&gt;Note&lt;/b&gt; Unlike {@link  #buildModelInstance(android.database.Cursor)} this method will not load transactions&lt;/p&gt;
+     *
+     * @param c Cursor pointing to account record in database
+     * @return {@link Account} object constructed from database record
+     */
+    private Account buildSimpleAccountInstance(Cursor c) {
+<span class="nc" id="L435">        Account account = new Account(c.getString(c.getColumnIndexOrThrow(AccountEntry.COLUMN_NAME)));</span>
+<span class="nc" id="L436">        populateBaseModelAttributes(c, account);</span>
+
+<span class="nc" id="L438">        String description = c.getString(c.getColumnIndexOrThrow(AccountEntry.COLUMN_DESCRIPTION));</span>
+<span class="nc bnc" id="L439" title="All 2 branches missed.">        account.setDescription(description == null ? &quot;&quot; : description);</span>
+<span class="nc" id="L440">        account.setParentUID(c.getString(c.getColumnIndexOrThrow(AccountEntry.COLUMN_PARENT_ACCOUNT_UID)));</span>
+<span class="nc" id="L441">        account.setAccountType(AccountType.valueOf(c.getString(c.getColumnIndexOrThrow(AccountEntry.COLUMN_TYPE))));</span>
+<span class="nc" id="L442">        String currencyCode = c.getString(c.getColumnIndexOrThrow(AccountEntry.COLUMN_CURRENCY));</span>
+<span class="nc" id="L443">        account.setCommodity(mCommoditiesDbAdapter.getCommodity(currencyCode));</span>
+<span class="nc bnc" id="L444" title="All 2 branches missed.">        account.setPlaceHolderFlag(c.getInt(c.getColumnIndexOrThrow(AccountEntry.COLUMN_PLACEHOLDER)) == 1);</span>
+<span class="nc" id="L445">        account.setDefaultTransferAccountUID(c.getString(c.getColumnIndexOrThrow(AccountEntry.COLUMN_DEFAULT_TRANSFER_ACCOUNT_UID)));</span>
+<span class="nc" id="L446">        String color = c.getString(c.getColumnIndexOrThrow(AccountEntry.COLUMN_COLOR_CODE));</span>
+<span class="nc bnc" id="L447" title="All 2 branches missed.">        if (color != null)</span>
+<span class="nc" id="L448">            account.setColor(color);</span>
+<span class="nc bnc" id="L449" title="All 2 branches missed.">        account.setFavorite(c.getInt(c.getColumnIndexOrThrow(AccountEntry.COLUMN_FAVORITE)) == 1);</span>
+<span class="nc" id="L450">        account.setFullName(c.getString(c.getColumnIndexOrThrow(AccountEntry.COLUMN_FULL_NAME)));</span>
+<span class="nc bnc" id="L451" title="All 2 branches missed.">        account.setHidden(c.getInt(c.getColumnIndexOrThrow(AccountEntry.COLUMN_HIDDEN)) == 1);</span>
+<span class="nc" id="L452">        return account;</span>
+    }
+
+    /**
+	 * Returns the  unique ID of the parent account of the account with unique ID &lt;code&gt;uid&lt;/code&gt;
+	 * If the account has no parent, null is returned
+	 * @param uid Unique Identifier of account whose parent is to be returned. Should not be null
+	 * @return DB record UID of the parent account, null if the account has no parent
+	 */
+    public String getParentAccountUID(@NonNull String uid){
+<span class="nc" id="L462">		Cursor cursor = mDb.query(AccountEntry.TABLE_NAME,</span>
+                new String[]{AccountEntry.COLUMN_PARENT_ACCOUNT_UID},
+                AccountEntry.COLUMN_UID + &quot; = ?&quot;,
+                new String[]{uid},
+                null, null, null, null);
+        try {
+<span class="nc bnc" id="L468" title="All 2 branches missed.">            if (cursor.moveToFirst()) {</span>
+<span class="nc" id="L469">                Log.d(LOG_TAG, &quot;Found parent account UID, returning value&quot;);</span>
+<span class="nc" id="L470">                return cursor.getString(cursor.getColumnIndexOrThrow(AccountEntry.COLUMN_PARENT_ACCOUNT_UID));</span>
+            } else {
+<span class="nc" id="L472">                return null;</span>
+            }
+        } finally {
+<span class="nc" id="L475">            cursor.close();</span>
+        }
+	}
+
+    /**
+     * Returns the color code for the account in format #rrggbb
+     * @param accountId Database row ID of the account
+     * @return String color code of account or null if none
+     */
+    public String getAccountColorCode(long accountId){
+<span class="nc" id="L485">        Cursor c = mDb.query(AccountEntry.TABLE_NAME,</span>
+                new String[]{AccountEntry._ID, AccountEntry.COLUMN_COLOR_CODE},
+                AccountEntry._ID + &quot;=&quot; + accountId,
+                null, null, null, null);
+        try {
+<span class="nc bnc" id="L490" title="All 2 branches missed.">            if (c.moveToFirst()) {</span>
+<span class="nc" id="L491">                return c.getString(c.getColumnIndexOrThrow(AccountEntry.COLUMN_COLOR_CODE));</span>
+            }
+            else {
+<span class="nc" id="L494">                return null;</span>
+            }
+        } finally {
+<span class="nc" id="L497">            c.close();</span>
+        }
+    }
+
+    /**
+     * Overloaded method. Resolves the account unique ID from the row ID and makes a call to {@link #getAccountType(String)}
+     * @param accountId Database row ID of the account
+     * @return {@link AccountType} of the account
+     */
+    public AccountType getAccountType(long accountId){
+<span class="nc" id="L507">        return getAccountType(getUID(accountId));</span>
+    }
+
+    /**
+     * Returns a list of all account entries in the system (includes root account)
+     * No transactions are loaded, just the accounts
+     * @return List of {@link Account}s in the database
+     */
+    public List&lt;Account&gt; getSimpleAccountList(){
+<span class="nc" id="L516">        LinkedList&lt;Account&gt; accounts = new LinkedList&lt;&gt;();</span>
+<span class="nc" id="L517">        Cursor c = fetchAccounts(null, null, AccountEntry.COLUMN_FULL_NAME + &quot; ASC&quot;);</span>
+
+        try {
+<span class="nc bnc" id="L520" title="All 2 branches missed.">            while (c.moveToNext()) {</span>
+<span class="nc" id="L521">                accounts.add(buildSimpleAccountInstance(c));</span>
+            }
+        }
+        finally {
+<span class="nc" id="L525">            c.close();</span>
+<span class="nc" id="L526">        }</span>
+<span class="nc" id="L527">        return accounts;</span>
+    }
+
+    /**
+     * Returns a list of all account entries in the system (includes root account)
+     * No transactions are loaded, just the accounts
+     * @return List of {@link Account}s in the database
+     */
+    public List&lt;Account&gt; getSimpleAccountList(String where, String[] whereArgs, String orderBy){
+<span class="nc" id="L536">        LinkedList&lt;Account&gt; accounts = new LinkedList&lt;&gt;();</span>
+<span class="nc" id="L537">        Cursor c = fetchAccounts(where, whereArgs, orderBy);</span>
+        try {
+<span class="nc bnc" id="L539" title="All 2 branches missed.">            while (c.moveToNext()) {</span>
+<span class="nc" id="L540">                accounts.add(buildSimpleAccountInstance(c));</span>
+            }
+        }
+        finally {
+<span class="nc" id="L544">            c.close();</span>
+<span class="nc" id="L545">        }</span>
+<span class="nc" id="L546">        return accounts;</span>
+    }
+	/**
+	 * Returns a list of accounts which have transactions that have not been exported yet
+     * @param lastExportTimeStamp Timestamp after which to any transactions created/modified should be exported
+	 * @return List of {@link Account}s with unexported transactions
+	 */
+    public List&lt;Account&gt; getExportableAccounts(Timestamp lastExportTimeStamp){
+<span class="nc" id="L554">        LinkedList&lt;Account&gt; accountsList = new LinkedList&lt;&gt;();</span>
+<span class="nc" id="L555">        Cursor cursor = mDb.query(</span>
+                TransactionEntry.TABLE_NAME + &quot; , &quot; + SplitEntry.TABLE_NAME +
+                        &quot; ON &quot; + TransactionEntry.TABLE_NAME + &quot;.&quot; + TransactionEntry.COLUMN_UID + &quot; = &quot; +
+                        SplitEntry.TABLE_NAME + &quot;.&quot; + SplitEntry.COLUMN_TRANSACTION_UID + &quot; , &quot; +
+                        AccountEntry.TABLE_NAME + &quot; ON &quot; + AccountEntry.TABLE_NAME + &quot;.&quot; +
+                        AccountEntry.COLUMN_UID + &quot; = &quot; + SplitEntry.TABLE_NAME + &quot;.&quot; +
+                        SplitEntry.COLUMN_ACCOUNT_UID,
+                new String[]{AccountEntry.TABLE_NAME + &quot;.*&quot;},
+                TransactionEntry.TABLE_NAME + &quot;.&quot; + TransactionEntry.COLUMN_MODIFIED_AT + &quot; &gt; ?&quot;,
+<span class="nc" id="L564">                new String[]{TimestampHelper.getUtcStringFromTimestamp(lastExportTimeStamp)},</span>
+                AccountEntry.TABLE_NAME + &quot;.&quot; + AccountEntry.COLUMN_UID,
+                null,
+                null
+        );
+        try {
+<span class="nc bnc" id="L570" title="All 2 branches missed.">            while (cursor.moveToNext()) {</span>
+<span class="nc" id="L571">                accountsList.add(buildModelInstance(cursor));</span>
+            }
+        }
+        finally {
+<span class="nc" id="L575">            cursor.close();</span>
+<span class="nc" id="L576">        }</span>
+<span class="nc" id="L577">        return accountsList;</span>
+	}
+
+    /**
+     * Retrieves the unique ID of the imbalance account for a particular currency (creates the imbalance account
+     * on demand if necessary)
+     * @param commodity Commodity for the imbalance account
+     * @return String unique ID of the account
+     */
+    public String getOrCreateImbalanceAccountUID(Commodity commodity){
+<span class="nc" id="L587">        String imbalanceAccountName = getImbalanceAccountName(commodity);</span>
+<span class="nc" id="L588">        String uid = findAccountUidByFullName(imbalanceAccountName);</span>
+<span class="nc bnc" id="L589" title="All 2 branches missed.">        if (uid == null){</span>
+<span class="nc" id="L590">            Account account = new Account(imbalanceAccountName, commodity);</span>
+<span class="nc" id="L591">            account.setAccountType(AccountType.BANK);</span>
+<span class="nc" id="L592">            account.setParentUID(getOrCreateGnuCashRootAccountUID());</span>
+<span class="nc bnc" id="L593" title="All 2 branches missed.">            account.setHidden(!GnuCashApplication.isDoubleEntryEnabled());</span>
+<span class="nc" id="L594">            account.setColor(&quot;#964B00&quot;);</span>
+<span class="nc" id="L595">            addRecord(account, UpdateMethod.insert);</span>
+<span class="nc" id="L596">            uid = account.getUID();</span>
+        }
+<span class="nc" id="L598">        return uid;</span>
+    }
+
+    /**
+     * Returns the GUID of the imbalance account for the commodity
+     *
+     * &lt;p&gt;This method will not create the imbalance account if it doesn't exist&lt;/p&gt;
+     *
+     * @param commodity Commodity for the imbalance account
+     * @return GUID of the account or null if the account doesn't exist yet
+     * @see #getOrCreateImbalanceAccountUID(Commodity)
+     */
+    public String getImbalanceAccountUID(Commodity commodity){
+<span class="nc" id="L611">        String imbalanceAccountName = getImbalanceAccountName(commodity);</span>
+<span class="nc" id="L612">        return findAccountUidByFullName(imbalanceAccountName);</span>
+    }
+
+    /**
+     * Creates the account with the specified name and returns its unique identifier.
+     * &lt;p&gt;If a full hierarchical account name is provided, then the whole hierarchy is created and the
+     * unique ID of the last account (at bottom) of the hierarchy is returned&lt;/p&gt;
+     * @param fullName Fully qualified name of the account
+     * @param accountType Type to assign to all accounts created
+     * @return String unique ID of the account at bottom of hierarchy
+     */
+    public String createAccountHierarchy(String fullName, AccountType accountType) {
+<span class="nc bnc" id="L624" title="All 2 branches missed.">        if (&quot;&quot;.equals(fullName)) {</span>
+<span class="nc" id="L625">            throw new IllegalArgumentException(&quot;fullName cannot be empty&quot;);</span>
+        }
+<span class="nc" id="L627">        String[] tokens = fullName.trim().split(ACCOUNT_NAME_SEPARATOR);</span>
+<span class="nc" id="L628">        String uid = getOrCreateGnuCashRootAccountUID();</span>
+<span class="nc" id="L629">        String parentName = &quot;&quot;;</span>
+<span class="nc" id="L630">        ArrayList&lt;Account&gt; accountsList = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L631" title="All 2 branches missed.">        for (String token : tokens) {</span>
+<span class="nc" id="L632">            parentName += token;</span>
+<span class="nc" id="L633">            String parentUID = findAccountUidByFullName(parentName);</span>
+<span class="nc bnc" id="L634" title="All 2 branches missed.">            if (parentUID != null) { //the parent account exists, don't recreate</span>
+<span class="nc" id="L635">                uid = parentUID;</span>
+            } else {
+<span class="nc" id="L637">                Account account = new Account(token);</span>
+<span class="nc" id="L638">                account.setAccountType(accountType);</span>
+<span class="nc" id="L639">                account.setParentUID(uid); //set its parent</span>
+<span class="nc" id="L640">                account.setFullName(parentName);</span>
+<span class="nc" id="L641">                accountsList.add(account);</span>
+<span class="nc" id="L642">                uid = account.getUID();</span>
+            }
+<span class="nc" id="L644">            parentName += ACCOUNT_NAME_SEPARATOR;</span>
+        }
+<span class="nc bnc" id="L646" title="All 2 branches missed.">        if (accountsList.size() &gt; 0) {</span>
+<span class="nc" id="L647">            bulkAddRecords(accountsList, UpdateMethod.insert);</span>
+        }
+        // if fullName is not empty, loop will be entered and then uid will never be null
+        //noinspection ConstantConditions
+<span class="nc" id="L651">        return uid;</span>
+    }
+
+    /**
+     * Returns the unique ID of the opening balance account or creates one if necessary
+     * @return String unique ID of the opening balance account
+     */
+    public String getOrCreateOpeningBalanceAccountUID() {
+<span class="nc" id="L659">        String openingBalanceAccountName = getOpeningBalanceAccountFullName();</span>
+<span class="nc" id="L660">        String uid = findAccountUidByFullName(openingBalanceAccountName);</span>
+<span class="nc bnc" id="L661" title="All 2 branches missed.">        if (uid == null) {</span>
+<span class="nc" id="L662">            uid = createAccountHierarchy(openingBalanceAccountName, AccountType.EQUITY);</span>
+        }
+<span class="nc" id="L664">        return uid;</span>
+    }
+
+    /**
+     * Finds an account unique ID by its full name
+     * @param fullName Fully qualified name of the account
+     * @return String unique ID of the account or null if no match is found
+     */
+    public String findAccountUidByFullName(String fullName){
+<span class="nc" id="L673">        Cursor c = mDb.query(AccountEntry.TABLE_NAME, new String[]{AccountEntry.COLUMN_UID},</span>
+                AccountEntry.COLUMN_FULL_NAME + &quot;= ?&quot;, new String[]{fullName},
+                null, null, null, &quot;1&quot;);
+        try {
+<span class="nc bnc" id="L677" title="All 2 branches missed.">            if (c.moveToNext()) {</span>
+<span class="nc" id="L678">                return c.getString(c.getColumnIndexOrThrow(AccountEntry.COLUMN_UID));</span>
+            } else {
+<span class="nc" id="L680">                return null;</span>
+            }
+        } finally {
+<span class="nc" id="L683">            c.close();</span>
+        }
+    }
+
+	/**
+	 * Returns a cursor to all account records in the database.
+     * GnuCash ROOT accounts and hidden accounts will &lt;b&gt;not&lt;/b&gt; be included in the result set
+	 * @return {@link Cursor} to all account records
+	 */
+    @Override
+	public Cursor fetchAllRecords(){
+<span class="nc" id="L694">		Log.v(LOG_TAG, &quot;Fetching all accounts from db&quot;);</span>
+<span class="nc" id="L695">        String selection =  AccountEntry.COLUMN_HIDDEN + &quot; = 0 AND &quot; + AccountEntry.COLUMN_TYPE + &quot; != ?&quot; ;</span>
+<span class="nc" id="L696">        return mDb.query(AccountEntry.TABLE_NAME,</span>
+                null,
+                selection,
+<span class="nc" id="L699">                new String[]{AccountType.ROOT.name()},</span>
+                null, null,
+                AccountEntry.COLUMN_NAME + &quot; ASC&quot;);
+	}
+
+    /**
+     * Returns a cursor to all account records in the database ordered by full name.
+     * GnuCash ROOT accounts and hidden accounts will not be included in the result set.
+     * @return {@link Cursor} to all account records
+     */
+    public Cursor fetchAllRecordsOrderedByFullName(){
+<span class="nc" id="L710">        Log.v(LOG_TAG, &quot;Fetching all accounts from db&quot;);</span>
+<span class="nc" id="L711">        String selection =  AccountEntry.COLUMN_HIDDEN + &quot; = 0 AND &quot; + AccountEntry.COLUMN_TYPE + &quot; != ?&quot; ;</span>
+<span class="nc" id="L712">        return mDb.query(AccountEntry.TABLE_NAME,</span>
+                null,
+                selection,
+<span class="nc" id="L715">                new String[]{AccountType.ROOT.name()},</span>
+                null, null,
+                AccountEntry.COLUMN_FULL_NAME + &quot; ASC&quot;);
+    }
+
+    /**
+     * Returns a Cursor set of accounts which fulfill &lt;code&gt;where&lt;/code&gt;
+     * and ordered by &lt;code&gt;orderBy&lt;/code&gt;
+     * @param where SQL WHERE statement without the 'WHERE' itself
+     * @param whereArgs args to where clause
+     * @param orderBy orderBy clause
+     * @return Cursor set of accounts which fulfill &lt;code&gt;where&lt;/code&gt;
+     */
+    public Cursor fetchAccounts(@Nullable String where, @Nullable String[] whereArgs, @Nullable String orderBy){
+<span class="nc bnc" id="L729" title="All 2 branches missed.">        if (orderBy == null){</span>
+<span class="nc" id="L730">            orderBy = AccountEntry.COLUMN_NAME + &quot; ASC&quot;;</span>
+        }
+<span class="nc" id="L732">        Log.v(LOG_TAG, &quot;Fetching all accounts from db where &quot; + where + &quot; order by &quot; + orderBy);</span>
+
+<span class="nc" id="L734">        return mDb.query(AccountEntry.TABLE_NAME,</span>
+                null, where, whereArgs, null, null,
+                orderBy);
+    }
+    
+    /**
+     * Returns a Cursor set of accounts which fulfill &lt;code&gt;where&lt;/code&gt;
+     * &lt;p&gt;This method returns the accounts list sorted by the full account name&lt;/p&gt;
+     * @param where SQL WHERE statement without the 'WHERE' itself
+     * @param whereArgs where args
+     * @return Cursor set of accounts which fulfill &lt;code&gt;where&lt;/code&gt;
+     */
+    public Cursor fetchAccountsOrderedByFullName(String where, String[] whereArgs) {
+<span class="nc" id="L747">        Log.v(LOG_TAG, &quot;Fetching all accounts from db where &quot; + where);</span>
+<span class="nc" id="L748">        return mDb.query(AccountEntry.TABLE_NAME,</span>
+                null, where, whereArgs, null, null,
+                AccountEntry.COLUMN_FULL_NAME + &quot; ASC&quot;);
+    }
+
+    /**
+     * Returns a Cursor set of accounts which fulfill &lt;code&gt;where&lt;/code&gt;
+     * &lt;p&gt;This method returns the favorite accounts first, sorted by name, and then the other accounts,
+     * sorted by name.&lt;/p&gt;
+     * @param where SQL WHERE statement without the 'WHERE' itself
+     * @param whereArgs where args
+     * @return Cursor set of accounts which fulfill &lt;code&gt;where&lt;/code&gt;
+     */
+    public Cursor fetchAccountsOrderedByFavoriteAndFullName(String where, String[] whereArgs) {
+<span class="nc" id="L762">        Log.v(LOG_TAG, &quot;Fetching all accounts from db where &quot; + where + &quot; order by Favorite then Name&quot;);</span>
+<span class="nc" id="L763">        return mDb.query(AccountEntry.TABLE_NAME,</span>
+                null, where, whereArgs, null, null,
+                AccountEntry.COLUMN_FAVORITE + &quot; DESC, &quot; + AccountEntry.COLUMN_FULL_NAME + &quot; ASC&quot;);
+    }
+
+    /**
+     * Returns the balance of an account while taking sub-accounts into consideration
+     * @return Account Balance of an account including sub-accounts
+     */
+    public Money getAccountBalance(String accountUID){
+<span class="nc" id="L773">        return computeBalance(accountUID, -1, -1);</span>
+    }
+
+    /**
+     * Returns the balance of an account within the specified time range while taking sub-accounts into consideration
+     * @param accountUID the account's UUID
+     * @param startTimestamp the start timestamp of the time range
+     * @param endTimestamp the end timestamp of the time range
+     * @return the balance of an account within the specified range including sub-accounts
+     */
+    public Money getAccountBalance(String accountUID, long startTimestamp, long endTimestamp) {
+<span class="nc" id="L784">        return computeBalance(accountUID, startTimestamp, endTimestamp);</span>
+    }
+
+    /**
+     * Compute the account balance for all accounts with the specified type within a specific duration
+     * @param accountType Account Type for which to compute balance
+     * @param startTimestamp Begin time for the duration in milliseconds
+     * @param endTimestamp End time for duration in milliseconds
+     * @return Account balance
+     */
+    public Money getAccountBalance(AccountType accountType, long startTimestamp, long endTimestamp){
+<span class="nc" id="L795">        Cursor cursor = fetchAccounts(AccountEntry.COLUMN_TYPE + &quot;= ?&quot;,</span>
+<span class="nc" id="L796">                new String[]{accountType.name()}, null);</span>
+<span class="nc" id="L797">        List&lt;String&gt; accountUidList = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L798" title="All 2 branches missed.">        while (cursor.moveToNext()){</span>
+<span class="nc" id="L799">            String accountUID = cursor.getString(cursor.getColumnIndexOrThrow(AccountEntry.COLUMN_UID));</span>
+<span class="nc" id="L800">            accountUidList.add(accountUID);</span>
+<span class="nc" id="L801">        }</span>
+<span class="nc" id="L802">        cursor.close();</span>
+
+<span class="nc" id="L804">        boolean hasDebitNormalBalance = accountType.hasDebitNormalBalance();</span>
+<span class="nc" id="L805">        String currencyCode = GnuCashApplication.getDefaultCurrencyCode();</span>
+
+<span class="nc" id="L807">        Log.d(LOG_TAG, &quot;all account list : &quot; + accountUidList.size());</span>
+<span class="nc" id="L808">        SplitsDbAdapter splitsDbAdapter = mTransactionsAdapter.getSplitDbAdapter();</span>
+
+<span class="nc bnc" id="L810" title="All 4 branches missed.">        return (startTimestamp == -1 &amp;&amp; endTimestamp == -1)</span>
+<span class="nc" id="L811">                ? splitsDbAdapter.computeSplitBalance(accountUidList, currencyCode, hasDebitNormalBalance)</span>
+<span class="nc" id="L812">                : splitsDbAdapter.computeSplitBalance(accountUidList, currencyCode, hasDebitNormalBalance, startTimestamp, endTimestamp);</span>
+    }
+
+    /**
+     * Returns the account balance for all accounts types specified
+     * @param accountTypes List of account types
+     * @param start Begin timestamp for transactions
+     * @param end End timestamp of transactions
+     * @return Money balance of the account types
+     */
+    public Money getAccountBalance(List&lt;AccountType&gt; accountTypes, long start, long end){
+<span class="nc" id="L823">        Money balance = Money.createZeroInstance(GnuCashApplication.getDefaultCurrencyCode());</span>
+<span class="nc bnc" id="L824" title="All 2 branches missed.">        for (AccountType accountType : accountTypes) {</span>
+<span class="nc" id="L825">            balance = balance.add(getAccountBalance(accountType, start, end));</span>
+<span class="nc" id="L826">        }</span>
+<span class="nc" id="L827">        return balance;</span>
+    }
+
+    private Money computeBalance(String accountUID, long startTimestamp, long endTimestamp) {
+<span class="nc" id="L831">        Log.d(LOG_TAG, &quot;Computing account balance for account ID &quot; + accountUID);</span>
+<span class="nc" id="L832">        String currencyCode = mTransactionsAdapter.getAccountCurrencyCode(accountUID);</span>
+<span class="nc" id="L833">        boolean hasDebitNormalBalance = getAccountType(accountUID).hasDebitNormalBalance();</span>
+
+<span class="nc" id="L835">        List&lt;String&gt; accountsList = getDescendantAccountUIDs(accountUID,</span>
+                null, null);
+
+<span class="nc" id="L838">        accountsList.add(0, accountUID);</span>
+
+<span class="nc" id="L840">        Log.d(LOG_TAG, &quot;all account list : &quot; + accountsList.size());</span>
+<span class="nc" id="L841">        SplitsDbAdapter splitsDbAdapter = mTransactionsAdapter.getSplitDbAdapter();</span>
+<span class="nc bnc" id="L842" title="All 4 branches missed.">        return (startTimestamp == -1 &amp;&amp; endTimestamp == -1)</span>
+<span class="nc" id="L843">                ? splitsDbAdapter.computeSplitBalance(accountsList, currencyCode, hasDebitNormalBalance)</span>
+<span class="nc" id="L844">                : splitsDbAdapter.computeSplitBalance(accountsList, currencyCode, hasDebitNormalBalance, startTimestamp, endTimestamp);</span>
+        
+    }
+
+    /**
+     * Returns the balance of account list within the specified time range. The default currency
+     * takes as base currency.
+     * @param accountUIDList list of account UIDs
+     * @param startTimestamp the start timestamp of the time range
+     * @param endTimestamp the end timestamp of the time range
+     * @return Money balance of account list
+     */
+    public Money getAccountsBalance(@NonNull  List&lt;String&gt; accountUIDList, long startTimestamp, long endTimestamp) {
+<span class="nc" id="L857">        String currencyCode = GnuCashApplication.getDefaultCurrencyCode();</span>
+<span class="nc" id="L858">        Money balance = Money.createZeroInstance(currencyCode);</span>
+
+<span class="nc bnc" id="L860" title="All 2 branches missed.">        if (accountUIDList.isEmpty())</span>
+<span class="nc" id="L861">            return balance;</span>
+
+<span class="nc" id="L863">        boolean hasDebitNormalBalance = getAccountType(accountUIDList.get(0)).hasDebitNormalBalance();</span>
+
+<span class="nc" id="L865">        SplitsDbAdapter splitsDbAdapter = mTransactionsAdapter.getSplitDbAdapter();</span>
+<span class="nc bnc" id="L866" title="All 4 branches missed.">        Money splitSum = (startTimestamp == -1 &amp;&amp; endTimestamp == -1)</span>
+<span class="nc" id="L867">                ? splitsDbAdapter.computeSplitBalance(accountUIDList, currencyCode, hasDebitNormalBalance)</span>
+<span class="nc" id="L868">                : splitsDbAdapter.computeSplitBalance(accountUIDList, currencyCode, hasDebitNormalBalance, startTimestamp, endTimestamp);</span>
+
+<span class="nc" id="L870">        return balance.add(splitSum);</span>
+    }
+
+    /**
+     * Retrieve all descendant accounts of an account
+     * Note, in filtering, once an account is filtered out, all its descendants
+     * will also be filtered out, even they don't meet the filter where
+     * @param accountUID The account to retrieve descendant accounts
+     * @param where      Condition to filter accounts
+     * @param whereArgs  Condition args to filter accounts
+     * @return The descendant accounts list.
+     */
+    public List&lt;String&gt; getDescendantAccountUIDs(String accountUID, String where, String[] whereArgs) {
+        // accountsList will hold accountUID with all descendant accounts.
+        // accountsListLevel will hold descendant accounts of the same level
+<span class="nc" id="L885">        ArrayList&lt;String&gt; accountsList = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L886">        ArrayList&lt;String&gt; accountsListLevel = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L887">        accountsListLevel.add(accountUID);</span>
+        for (;;) {
+<span class="nc" id="L889">            Cursor cursor = mDb.query(AccountEntry.TABLE_NAME,</span>
+                    new String[]{AccountEntry.COLUMN_UID},
+<span class="nc bnc" id="L891" title="All 2 branches missed.">                    AccountEntry.COLUMN_PARENT_ACCOUNT_UID + &quot; IN ( '&quot; + TextUtils.join(&quot;' , '&quot;, accountsListLevel) + &quot;' )&quot; +</span>
+                            (where == null ? &quot;&quot; : &quot; AND &quot; + where),
+                    whereArgs, null, null, null);
+<span class="nc" id="L894">            accountsListLevel.clear();</span>
+<span class="nc bnc" id="L895" title="All 2 branches missed.">            if (cursor != null) {</span>
+                try {
+<span class="nc" id="L897">                    int columnIndex = cursor.getColumnIndexOrThrow(AccountEntry.COLUMN_UID);</span>
+<span class="nc bnc" id="L898" title="All 2 branches missed.">                    while (cursor.moveToNext()) {</span>
+<span class="nc" id="L899">                        accountsListLevel.add(cursor.getString(columnIndex));</span>
+                    }
+                } finally {
+<span class="nc" id="L902">                    cursor.close();</span>
+<span class="nc" id="L903">                }</span>
+            }
+<span class="nc bnc" id="L905" title="All 2 branches missed.">            if (accountsListLevel.size() &gt; 0) {</span>
+<span class="nc" id="L906">                accountsList.addAll(accountsListLevel);</span>
+            }
+            else {
+                break;
+            }
+<span class="nc" id="L911">        }</span>
+<span class="nc" id="L912">        return accountsList;</span>
+    }
+
+    /**
+     * Returns a cursor to the dataset containing sub-accounts of the account with record ID &lt;code&gt;accoundId&lt;/code&gt;
+     * @param accountUID GUID of the parent account
+     * @return {@link Cursor} to the sub accounts data set
+     */
+    public Cursor fetchSubAccounts(String accountUID) {
+<span class="nc" id="L921">        Log.v(LOG_TAG, &quot;Fetching sub accounts for account id &quot; + accountUID);</span>
+<span class="nc" id="L922">        String selection = AccountEntry.COLUMN_HIDDEN + &quot; = 0 AND &quot;</span>
+                + AccountEntry.COLUMN_PARENT_ACCOUNT_UID + &quot; = ?&quot;;
+<span class="nc" id="L924">        return mDb.query(AccountEntry.TABLE_NAME,</span>
+                null,
+                selection,
+                new String[]{accountUID}, null, null, AccountEntry.COLUMN_NAME + &quot; ASC&quot;);
+    }
+
+    /**
+     * Returns the top level accounts i.e. accounts with no parent or with the GnuCash ROOT account as parent
+     * @return Cursor to the top level accounts
+     */
+    public Cursor fetchTopLevelAccounts() {
+        //condition which selects accounts with no parent, whose UID is not ROOT and whose type is not ROOT
+<span class="nc" id="L936">        return fetchAccounts(&quot;(&quot; + AccountEntry.COLUMN_PARENT_ACCOUNT_UID + &quot; IS NULL OR &quot;</span>
+                        + AccountEntry.COLUMN_PARENT_ACCOUNT_UID + &quot; = ?) AND &quot;
+                        + AccountEntry.COLUMN_HIDDEN + &quot; = 0 AND &quot;
+                        + AccountEntry.COLUMN_TYPE + &quot; != ?&quot;,
+<span class="nc" id="L940">                new String[]{getOrCreateGnuCashRootAccountUID(), AccountType.ROOT.name()},</span>
+                AccountEntry.COLUMN_NAME + &quot; ASC&quot;);
+    }
+
+    /**
+     * Returns a cursor to accounts which have recently had transactions added to them
+     * @return Cursor to recently used accounts
+     */
+    public Cursor fetchRecentAccounts(int numberOfRecent) {
+<span class="nc" id="L949">        return mDb.query(TransactionEntry.TABLE_NAME</span>
+                        + &quot; LEFT OUTER JOIN &quot; + SplitEntry.TABLE_NAME + &quot; ON &quot;
+                        + TransactionEntry.TABLE_NAME + &quot;.&quot; + TransactionEntry.COLUMN_UID + &quot; = &quot;
+                        + SplitEntry.TABLE_NAME + &quot;.&quot; + SplitEntry.COLUMN_TRANSACTION_UID
+                        + &quot; , &quot; + AccountEntry.TABLE_NAME + &quot; ON &quot; + SplitEntry.TABLE_NAME + &quot;.&quot; + SplitEntry.COLUMN_ACCOUNT_UID
+                        + &quot; = &quot; + AccountEntry.TABLE_NAME + &quot;.&quot; + AccountEntry.COLUMN_UID,
+                new String[]{AccountEntry.TABLE_NAME + &quot;.*&quot;},
+                AccountEntry.COLUMN_HIDDEN + &quot; = 0&quot;,
+                null,
+                SplitEntry.TABLE_NAME + &quot;.&quot; + SplitEntry.COLUMN_ACCOUNT_UID, //groupby
+                null, //haveing
+                &quot;MAX ( &quot; + TransactionEntry.TABLE_NAME + &quot;.&quot; + TransactionEntry.COLUMN_TIMESTAMP + &quot; ) DESC&quot;, // order
+<span class="nc" id="L961">                Integer.toString(numberOfRecent) // limit;</span>
+        );
+    }
+
+    /**
+     * Fetches favorite accounts from the database
+     * @return Cursor holding set of favorite accounts
+     */
+    public Cursor fetchFavoriteAccounts(){
+<span class="nc" id="L970">        Log.v(LOG_TAG, &quot;Fetching favorite accounts from db&quot;);</span>
+<span class="nc" id="L971">        String condition = AccountEntry.COLUMN_FAVORITE + &quot; = 1&quot;;</span>
+<span class="nc" id="L972">        return mDb.query(AccountEntry.TABLE_NAME,</span>
+                null, condition, null, null, null,
+                AccountEntry.COLUMN_NAME + &quot; ASC&quot;);
+    }
+
+    /**
+     * Returns the GnuCash ROOT account UID if one exists (or creates one if necessary).
+     * &lt;p&gt;In GnuCash desktop account structure, there is a root account (which is not visible in the UI) from which
+     * other top level accounts derive. GnuCash Android also enforces a ROOT account now&lt;/p&gt;
+     * @return Unique ID of the GnuCash root account.
+     */
+    public String getOrCreateGnuCashRootAccountUID() {
+<span class="nc" id="L984">        Cursor cursor = fetchAccounts(AccountEntry.COLUMN_TYPE + &quot;= ?&quot;,</span>
+<span class="nc" id="L985">                new String[]{AccountType.ROOT.name()}, null);</span>
+        try {
+<span class="nc bnc" id="L987" title="All 2 branches missed.">            if (cursor.moveToFirst()) {</span>
+<span class="nc" id="L988">                return cursor.getString(cursor.getColumnIndexOrThrow(AccountEntry.COLUMN_UID));</span>
+            }
+        } finally {
+<span class="nc" id="L991">            cursor.close();</span>
+<span class="nc" id="L992">        }</span>
+        // No ROOT exits, create a new one
+<span class="nc" id="L994">        Account rootAccount = new Account(&quot;ROOT Account&quot;, new CommoditiesDbAdapter(mDb).getCommodity(&quot;USD&quot;));</span>
+<span class="nc" id="L995">        rootAccount.setAccountType(AccountType.ROOT);</span>
+<span class="nc" id="L996">        rootAccount.setFullName(ROOT_ACCOUNT_FULL_NAME);</span>
+<span class="nc" id="L997">        rootAccount.setHidden(true);</span>
+<span class="nc" id="L998">        rootAccount.setPlaceHolderFlag(true);</span>
+<span class="nc" id="L999">        ContentValues contentValues = new ContentValues();</span>
+<span class="nc" id="L1000">        contentValues.put(AccountEntry.COLUMN_UID, rootAccount.getUID());</span>
+<span class="nc" id="L1001">        contentValues.put(AccountEntry.COLUMN_NAME, rootAccount.getName());</span>
+<span class="nc" id="L1002">        contentValues.put(AccountEntry.COLUMN_FULL_NAME, rootAccount.getFullName());</span>
+<span class="nc" id="L1003">        contentValues.put(AccountEntry.COLUMN_TYPE, rootAccount.getAccountType().name());</span>
+<span class="nc bnc" id="L1004" title="All 2 branches missed.">        contentValues.put(AccountEntry.COLUMN_HIDDEN, rootAccount.isHidden() ? 1 : 0);</span>
+<span class="nc" id="L1005">        String defaultCurrencyCode = GnuCashApplication.getDefaultCurrencyCode();</span>
+<span class="nc" id="L1006">        contentValues.put(AccountEntry.COLUMN_CURRENCY, defaultCurrencyCode);</span>
+<span class="nc" id="L1007">        contentValues.put(AccountEntry.COLUMN_COMMODITY_UID, getCommodityUID(defaultCurrencyCode));</span>
+<span class="nc" id="L1008">        Log.i(LOG_TAG, &quot;Creating ROOT account&quot;);</span>
+<span class="nc" id="L1009">        mDb.insert(AccountEntry.TABLE_NAME, null, contentValues);</span>
+<span class="nc" id="L1010">        return rootAccount.getUID();</span>
+    }
+
+    /**
+     * Returns the number of accounts for which the account with ID &lt;code&gt;accoundId&lt;/code&gt; is a first level parent
+     * @param accountUID String Unique ID (GUID) of the account
+     * @return Number of sub accounts
+     */
+    public int getSubAccountCount(String accountUID){
+        //TODO: at some point when API level 11 and above only is supported, use DatabaseUtils.queryNumEntries
+
+<span class="nc" id="L1021">        String queryCount = &quot;SELECT COUNT(*) FROM &quot; + AccountEntry.TABLE_NAME + &quot; WHERE &quot;</span>
+                + AccountEntry.COLUMN_PARENT_ACCOUNT_UID + &quot; = ?&quot;;
+<span class="nc" id="L1023">        Cursor cursor = mDb.rawQuery(queryCount, new String[]{accountUID});</span>
+<span class="nc" id="L1024">        cursor.moveToFirst();</span>
+<span class="nc" id="L1025">        int count = cursor.getInt(0);</span>
+<span class="nc" id="L1026">        cursor.close();</span>
+<span class="nc" id="L1027">        return count;</span>
+    }
+
+    /**
+	 * Returns currency code of account with database ID &lt;code&gt;id&lt;/code&gt;
+	 * @param uid GUID of the account
+	 * @return Currency code of the account
+	 */
+	public String getCurrencyCode(String uid){
+<span class="nc" id="L1036">		return getAccountCurrencyCode(uid);</span>
+	}
+
+    /**
+     * Returns the simple name of the account with unique ID &lt;code&gt;accountUID&lt;/code&gt;.
+     * @param accountUID Unique identifier of the account
+     * @return Name of the account as String
+     * @throws java.lang.IllegalArgumentException if accountUID does not exist
+     * @see #getFullyQualifiedAccountName(String)
+     */
+    public String getAccountName(String accountUID){
+<span class="nc" id="L1047">        return getAttribute(accountUID, AccountEntry.COLUMN_NAME);</span>
+    }
+
+    /**
+     * Returns the default transfer account record ID for the account with UID &lt;code&gt;accountUID&lt;/code&gt;
+     * @param accountID Database ID of the account record
+     * @return Record ID of default transfer account
+     */
+    public long getDefaultTransferAccountID(long accountID){
+<span class="nc" id="L1056">        Cursor cursor = mDb.query(AccountEntry.TABLE_NAME,</span>
+                new String[]{AccountEntry.COLUMN_DEFAULT_TRANSFER_ACCOUNT_UID},
+                AccountEntry._ID + &quot; = &quot; + accountID,
+                null, null, null, null);
+       try {
+<span class="nc bnc" id="L1061" title="All 2 branches missed.">            if (cursor.moveToNext()) {</span>
+<span class="nc" id="L1062">                String uid = cursor.getString(</span>
+<span class="nc" id="L1063">                        cursor.getColumnIndexOrThrow(AccountEntry.COLUMN_DEFAULT_TRANSFER_ACCOUNT_UID));</span>
+<span class="nc bnc" id="L1064" title="All 2 branches missed.">                if (uid == null)</span>
+<span class="nc" id="L1065">                    return 0;</span>
+                else
+<span class="nc" id="L1067">                    return getID(uid);</span>
+            } else {
+<span class="nc" id="L1069">                return 0;</span>
+            }
+        } finally {
+<span class="nc" id="L1072">            cursor.close();</span>
+        }
+    }
+
+    /**
+     * Returns the full account name including the account hierarchy (parent accounts)
+     * @param accountUID Unique ID of account
+     * @return Fully qualified (with parent hierarchy) account name
+     */
+    public String getFullyQualifiedAccountName(String accountUID){
+<span class="nc" id="L1082">        String accountName = getAccountName(accountUID);</span>
+<span class="nc" id="L1083">        String parentAccountUID = getParentAccountUID(accountUID);</span>
+
+<span class="nc bnc" id="L1085" title="All 4 branches missed.">        if (parentAccountUID == null || parentAccountUID.equalsIgnoreCase(getOrCreateGnuCashRootAccountUID())){</span>
+<span class="nc" id="L1086">            return accountName;</span>
+        }
+
+<span class="nc" id="L1089">        String parentAccountName = getFullyQualifiedAccountName(parentAccountUID);</span>
+
+<span class="nc" id="L1091">        return parentAccountName + ACCOUNT_NAME_SEPARATOR + accountName;</span>
+    }
+
+    /**
+     * get account's full name directly from DB
+     * @param accountUID the account to retrieve full name
+     * @return full name registered in DB
+     */
+    public String getAccountFullName(String accountUID) {
+<span class="nc" id="L1100">        Cursor cursor = mDb.query(AccountEntry.TABLE_NAME, new String[]{AccountEntry.COLUMN_FULL_NAME},</span>
+                AccountEntry.COLUMN_UID + &quot; = ?&quot;, new String[]{accountUID},
+                null, null, null);
+        try {
+<span class="nc bnc" id="L1104" title="All 2 branches missed.">            if (cursor.moveToFirst()) {</span>
+<span class="nc" id="L1105">                return cursor.getString(cursor.getColumnIndexOrThrow(AccountEntry.COLUMN_FULL_NAME));</span>
+            }
+        }
+        finally {
+<span class="nc" id="L1109">            cursor.close();</span>
+<span class="nc" id="L1110">        }</span>
+<span class="nc" id="L1111">        throw new IllegalArgumentException(&quot;account UID: &quot; + accountUID + &quot; does not exist&quot;);</span>
+    }
+
+
+    /**
+     * Returns &lt;code&gt;true&lt;/code&gt; if the account with unique ID &lt;code&gt;accountUID&lt;/code&gt; is a placeholder account.
+     * @param accountUID Unique identifier of the account
+     * @return &lt;code&gt;true&lt;/code&gt; if the account is a placeholder account, &lt;code&gt;false&lt;/code&gt; otherwise
+     */
+    public boolean isPlaceholderAccount(String accountUID) {
+<span class="nc" id="L1121">        String isPlaceholder = getAttribute(accountUID, AccountEntry.COLUMN_PLACEHOLDER);</span>
+<span class="nc bnc" id="L1122" title="All 2 branches missed.">        return Integer.parseInt(isPlaceholder) == 1;</span>
+    }
+
+    /**
+     * Convenience method, resolves the account unique ID and calls {@link #isPlaceholderAccount(String)}
+     * @param accountUID GUID of the account
+     * @return &lt;code&gt;true&lt;/code&gt; if the account is hidden, &lt;code&gt;false&lt;/code&gt; otherwise
+     */
+    public boolean isHiddenAccount(String accountUID){
+<span class="nc" id="L1131">        String isHidden = getAttribute(accountUID, AccountEntry.COLUMN_HIDDEN);</span>
+<span class="nc bnc" id="L1132" title="All 2 branches missed.">        return Integer.parseInt(isHidden) == 1;</span>
+    }
+
+    /**
+     * Returns true if the account is a favorite account, false otherwise
+     * @param accountUID GUID of the account
+     * @return &lt;code&gt;true&lt;/code&gt; if the account is a favorite account, &lt;code&gt;false&lt;/code&gt; otherwise
+     */
+    public boolean isFavoriteAccount(String accountUID){
+<span class="nc" id="L1141">        String isFavorite = getAttribute(accountUID, AccountEntry.COLUMN_FAVORITE);</span>
+<span class="nc bnc" id="L1142" title="All 2 branches missed.">        return Integer.parseInt(isFavorite) == 1;</span>
+    }
+
+    /**
+     * Updates all opening balances to the current account balances
+     */
+    public List&lt;Transaction&gt; getAllOpeningBalanceTransactions(){
+<span class="nc" id="L1149">        Cursor cursor = fetchAccounts(null, null, null);</span>
+<span class="nc" id="L1150">        List&lt;Transaction&gt; openingTransactions = new ArrayList&lt;&gt;();</span>
+        try {
+<span class="nc" id="L1152">            SplitsDbAdapter splitsDbAdapter = mTransactionsAdapter.getSplitDbAdapter();</span>
+<span class="nc bnc" id="L1153" title="All 2 branches missed.">            while (cursor.moveToNext()) {</span>
+<span class="nc" id="L1154">                long id = cursor.getLong(cursor.getColumnIndexOrThrow(AccountEntry._ID));</span>
+<span class="nc" id="L1155">                String accountUID = getUID(id);</span>
+<span class="nc" id="L1156">                String currencyCode = getCurrencyCode(accountUID);</span>
+<span class="nc" id="L1157">                ArrayList&lt;String&gt; accountList = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L1158">                accountList.add(accountUID);</span>
+<span class="nc" id="L1159">                Money balance = splitsDbAdapter.computeSplitBalance(accountList,</span>
+<span class="nc" id="L1160">                        currencyCode, getAccountType(accountUID).hasDebitNormalBalance());</span>
+<span class="nc bnc" id="L1161" title="All 2 branches missed.">                if (balance.asBigDecimal().compareTo(new BigDecimal(0)) == 0)</span>
+<span class="nc" id="L1162">                    continue;</span>
+
+<span class="nc" id="L1164">                Transaction transaction = new Transaction(GnuCashApplication.getAppContext().getString(R.string.account_name_opening_balances));</span>
+<span class="nc" id="L1165">                transaction.setNote(getAccountName(accountUID));</span>
+<span class="nc" id="L1166">                transaction.setCommodity(Commodity.getInstance(currencyCode));</span>
+<span class="nc" id="L1167">                TransactionType transactionType = Transaction.getTypeForBalance(getAccountType(accountUID),</span>
+<span class="nc" id="L1168">                        balance.isNegative());</span>
+<span class="nc" id="L1169">                Split split = new Split(balance.abs(), accountUID);</span>
+<span class="nc" id="L1170">                split.setType(transactionType);</span>
+<span class="nc" id="L1171">                transaction.addSplit(split);</span>
+<span class="nc" id="L1172">                transaction.addSplit(split.createPair(getOrCreateOpeningBalanceAccountUID()));</span>
+<span class="nc" id="L1173">                transaction.setExported(true);</span>
+<span class="nc" id="L1174">                openingTransactions.add(transaction);</span>
+<span class="nc" id="L1175">            }</span>
+        } finally {
+<span class="nc" id="L1177">            cursor.close();</span>
+<span class="nc" id="L1178">        }</span>
+<span class="nc" id="L1179">        return openingTransactions;</span>
+    }
+
+    public static String getImbalanceAccountPrefix() {
+<span class="nc" id="L1183">         return GnuCashApplication.getAppContext().getString(R.string.imbalance_account_name) + &quot;-&quot;;</span>
+    }
+
+    /**
+     * Returns the imbalance account where to store transactions which are not double entry.
+     *
+     * @param commodity Commodity of the transaction
+     * @return Imbalance account name
+     */
+    public static String getImbalanceAccountName(Commodity commodity){
+<span class="nc" id="L1193">        return getImbalanceAccountPrefix() + commodity.getCurrencyCode();</span>
+    }
+
+    /**
+     * Get the name of the default account for opening balances for the current locale.
+     * For the English locale, it will be &quot;Equity:Opening Balances&quot;
+     * @return Fully qualified account name of the opening balances account
+     */
+    public static String getOpeningBalanceAccountFullName(){
+<span class="nc" id="L1202">        Context context = GnuCashApplication.getAppContext();</span>
+<span class="nc" id="L1203">        String parentEquity = context.getString(R.string.account_name_equity).trim();</span>
+        //German locale has no parent Equity account
+<span class="nc bnc" id="L1205" title="All 2 branches missed.">        if (parentEquity.length() &gt; 0) {</span>
+<span class="nc" id="L1206">            return parentEquity + ACCOUNT_NAME_SEPARATOR</span>
+<span class="nc" id="L1207">                    + context.getString(R.string.account_name_opening_balances);</span>
+        } else
+<span class="nc" id="L1209">            return context.getString(R.string.account_name_opening_balances);</span>
+    }
+
+    /**
+     * Returns the account color for the active account as an Android resource ID.
+     * &lt;p&gt;
+     * Basically, if we are in a top level account, use the default title color.
+     * but propagate a parent account's title color to children who don't have own color
+     * &lt;/p&gt;
+     * @param accountUID GUID of the account
+     * @return Android resource ID representing the color which can be directly set to a view
+     */
+    public static int getActiveAccountColorResource(@NonNull String accountUID) {
+<span class="nc" id="L1222">        AccountsDbAdapter accountsDbAdapter = getInstance();</span>
+
+<span class="nc" id="L1224">        String colorCode = null;</span>
+<span class="nc" id="L1225">        int iColor = -1;</span>
+<span class="nc" id="L1226">        String parentAccountUID = accountUID;</span>
+<span class="nc bnc" id="L1227" title="All 2 branches missed.">        while (parentAccountUID != null ) {</span>
+<span class="nc" id="L1228">            colorCode = accountsDbAdapter.getAccountColorCode(accountsDbAdapter.getID(parentAccountUID));</span>
+<span class="nc bnc" id="L1229" title="All 2 branches missed.">            if (colorCode != null) {</span>
+<span class="nc" id="L1230">                iColor = Color.parseColor(colorCode);</span>
+<span class="nc" id="L1231">                break;</span>
+            }
+<span class="nc" id="L1233">            parentAccountUID = accountsDbAdapter.getParentAccountUID(parentAccountUID);</span>
+        }
+
+<span class="nc bnc" id="L1236" title="All 2 branches missed.">        if (colorCode == null) {</span>
+<span class="nc" id="L1237">            iColor = GnuCashApplication.getAppContext().getResources().getColor(R.color.theme_primary);</span>
+        }
+
+<span class="nc" id="L1240">        return iColor;</span>
+    }
+
+    /**
+     * Returns the list of commodities in use in the database.
+     *
+     * &lt;p&gt;This is not the same as the list of all available commodities.&lt;/p&gt;
+     *
+     * @return List of commodities in use
+     */
+    public List&lt;Commodity&gt; getCommoditiesInUse() {
+<span class="nc" id="L1251">        Cursor cursor = mDb.query(true, AccountEntry.TABLE_NAME, new String[]{AccountEntry.COLUMN_CURRENCY},</span>
+                null, null, null, null, null, null);
+<span class="nc" id="L1253">        List&lt;Commodity&gt; commodityList = new ArrayList&lt;&gt;();</span>
+        try {
+<span class="nc bnc" id="L1255" title="All 2 branches missed.">            while (cursor.moveToNext()) {</span>
+<span class="nc" id="L1256">                String currencyCode =</span>
+<span class="nc" id="L1257">                    cursor.getString(cursor.getColumnIndexOrThrow(AccountEntry.COLUMN_CURRENCY));</span>
+<span class="nc" id="L1258">                commodityList.add(mCommoditiesDbAdapter.getCommodity(currencyCode));</span>
+<span class="nc" id="L1259">            }</span>
+        } finally {
+<span class="nc" id="L1261">            cursor.close();</span>
+<span class="nc" id="L1262">        }</span>
+<span class="nc" id="L1263">        return commodityList;</span>
+    }
+    /**
+	 * Deletes all accounts, transactions (and their splits) from the database.
+     * Basically empties all 3 tables, so use with care ;)
+	 */
+    @Override
+	public int deleteAllRecords() {
+        // Relies &quot;ON DELETE CASCADE&quot; takes too much time
+        // It take more than 300s to complete the deletion on my dataset without
+        // clearing the split table first, but only needs a little more that 1s
+        // if the split table is cleared first.
+<span class="nc" id="L1275">        mDb.delete(DatabaseSchema.PriceEntry.TABLE_NAME, null, null);</span>
+<span class="nc" id="L1276">        mDb.delete(SplitEntry.TABLE_NAME, null, null);</span>
+<span class="nc" id="L1277">        mDb.delete(TransactionEntry.TABLE_NAME, null, null);</span>
+<span class="nc" id="L1278">        mDb.delete(DatabaseSchema.ScheduledActionEntry.TABLE_NAME, null, null);</span>
+<span class="nc" id="L1279">        mDb.delete(DatabaseSchema.BudgetAmountEntry.TABLE_NAME, null, null);</span>
+<span class="nc" id="L1280">        mDb.delete(DatabaseSchema.BudgetEntry.TABLE_NAME, null, null);</span>
+<span class="nc" id="L1281">        mDb.delete(DatabaseSchema.RecurrenceEntry.TABLE_NAME, null, null);</span>
+
+<span class="nc" id="L1283">        return mDb.delete(AccountEntry.TABLE_NAME, null, null);</span>
+    }
+
+    @Override
+    public boolean deleteRecord(@NonNull String uid) {
+<span class="nc" id="L1288">        boolean result = super.deleteRecord(uid);</span>
+<span class="nc bnc" id="L1289" title="All 2 branches missed.">        if (result){</span>
+<span class="nc" id="L1290">            ContentValues contentValues = new ContentValues();</span>
+<span class="nc" id="L1291">            contentValues.putNull(AccountEntry.COLUMN_DEFAULT_TRANSFER_ACCOUNT_UID);</span>
+<span class="nc" id="L1292">            mDb.update(mTableName, contentValues,</span>
+                    AccountEntry.COLUMN_DEFAULT_TRANSFER_ACCOUNT_UID + &quot;=?&quot;,
+                    new String[]{uid});
+        }
+<span class="nc" id="L1296">        return result;</span>
+    }
+
+    public int getTransactionMaxSplitNum(@NonNull String accountUID) {
+<span class="nc" id="L1300">        Cursor cursor = mDb.query(&quot;trans_extra_info&quot;,</span>
+                new String[]{&quot;MAX(trans_split_count)&quot;},
+                &quot;trans_acct_t_uid IN ( SELECT DISTINCT &quot; + TransactionEntry.TABLE_NAME + &quot;_&quot; + TransactionEntry.COLUMN_UID +
+                        &quot; FROM trans_split_acct WHERE &quot; + AccountEntry.TABLE_NAME + &quot;_&quot; + AccountEntry.COLUMN_UID +
+                        &quot; = ? )&quot;,
+                new String[]{accountUID},
+                null,
+                null,
+                null
+                );
+        try {
+<span class="nc bnc" id="L1311" title="All 2 branches missed.">            if (cursor.moveToFirst()) {</span>
+<span class="nc" id="L1312">                return (int)cursor.getLong(0);</span>
+            } else {
+<span class="nc" id="L1314">                return 0;</span>
+            }
+        }
+        finally {
+<span class="nc" id="L1318">            cursor.close();</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

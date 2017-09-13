@@ -1,0 +1,391 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StackedBarChartFragment.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.ui.report.barchart</a> &gt; <span class="el_source">StackedBarChartFragment.java</span></div><h1>StackedBarChartFragment.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2015 Oleksandr Tyshkovets &lt;olexandr.tyshkovets@gmail.com&gt;
+ * Copyright (c) 2015 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.ui.report.barchart;
+
+import android.os.Bundle;
+import android.preference.PreferenceManager;
+import android.support.annotation.Nullable;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.widget.Toast;
+
+import com.github.mikephil.charting.charts.BarChart;
+import com.github.mikephil.charting.components.Legend;
+import com.github.mikephil.charting.data.BarData;
+import com.github.mikephil.charting.data.BarDataSet;
+import com.github.mikephil.charting.data.BarEntry;
+import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.highlight.Highlight;
+import com.github.mikephil.charting.utils.LargeValueFormatter;
+
+import org.gnucash.android.R;
+import org.gnucash.android.db.adapter.AccountsDbAdapter;
+import org.gnucash.android.db.adapter.TransactionsDbAdapter;
+import org.gnucash.android.model.Account;
+import org.gnucash.android.model.AccountType;
+import org.gnucash.android.ui.report.BaseReportFragment;
+import org.gnucash.android.ui.report.ReportType;
+import org.joda.time.LocalDate;
+import org.joda.time.LocalDateTime;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+
+import butterknife.BindView;
+
+import static org.gnucash.android.ui.report.ReportsActivity.COLORS;
+
+/**
+ * Activity used for drawing a bar chart
+ *
+ * @author Oleksandr Tyshkovets &lt;olexandr.tyshkovets@gmail.com&gt;
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ */
+<span class="nc" id="L65">public class StackedBarChartFragment extends BaseReportFragment {</span>
+
+    private static final String X_AXIS_MONTH_PATTERN = &quot;MMM YY&quot;;
+    private static final String X_AXIS_QUARTER_PATTERN = &quot;Q%d %s&quot;;
+    private static final String X_AXIS_YEAR_PATTERN = &quot;YYYY&quot;;
+
+    private static final int ANIMATION_DURATION = 2000;
+    private static final int NO_DATA_BAR_COUNTS = 3;
+
+<span class="nc" id="L74">    private AccountsDbAdapter mAccountsDbAdapter = AccountsDbAdapter.getInstance();</span>
+
+    @BindView(R.id.bar_chart) BarChart mChart;
+
+<span class="nc" id="L78">    private boolean mUseAccountColor = true;</span>
+<span class="nc" id="L79">    private boolean mTotalPercentageMode = true;</span>
+<span class="nc" id="L80">    private boolean mChartDataPresent = true;</span>
+
+    @Override
+    public int getTitle() {
+<span class="nc" id="L84">        return R.string.title_cash_flow_report;</span>
+    }
+
+    @Override
+    public int getLayoutResource() {
+<span class="nc" id="L89">        return R.layout.fragment_bar_chart;</span>
+    }
+
+    @Override
+    public ReportType getReportType() {
+<span class="nc" id="L94">        return ReportType.BAR_CHART;</span>
+    }
+
+    @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+<span class="nc" id="L99">        super.onActivityCreated(savedInstanceState);</span>
+
+<span class="nc" id="L101">        mUseAccountColor = PreferenceManager.getDefaultSharedPreferences(getActivity())</span>
+<span class="nc" id="L102">                .getBoolean(getString(R.string.key_use_account_color), false);</span>
+
+<span class="nc" id="L104">        mChart.setOnChartValueSelectedListener(this);</span>
+<span class="nc" id="L105">        mChart.setDescription(&quot;&quot;);</span>
+//        mChart.setDrawValuesForWholeStack(false);
+<span class="nc" id="L107">        mChart.getXAxis().setDrawGridLines(false);</span>
+<span class="nc" id="L108">        mChart.getAxisRight().setEnabled(false);</span>
+<span class="nc" id="L109">        mChart.getAxisLeft().setStartAtZero(false);</span>
+<span class="nc" id="L110">        mChart.getAxisLeft().enableGridDashedLine(4.0f, 4.0f, 0);</span>
+<span class="nc" id="L111">        mChart.getAxisLeft().setValueFormatter(new LargeValueFormatter(mCommodity.getSymbol()));</span>
+<span class="nc" id="L112">        Legend chartLegend = mChart.getLegend();</span>
+<span class="nc" id="L113">        chartLegend.setForm(Legend.LegendForm.CIRCLE);</span>
+<span class="nc" id="L114">        chartLegend.setPosition(Legend.LegendPosition.BELOW_CHART_CENTER);</span>
+<span class="nc" id="L115">        chartLegend.setWordWrapEnabled(true);</span>
+
+<span class="nc" id="L117">    }</span>
+
+
+    /**
+     * Returns a data object that represents a user data of the specified account types
+     * @return a {@code BarData} instance that represents a user data
+     */
+    protected BarData getData() {
+<span class="nc" id="L125">        List&lt;BarEntry&gt; values = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L126">        List&lt;String&gt; labels = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L127">        List&lt;Integer&gt; colors = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L128">        Map&lt;String, Integer&gt; accountToColorMap = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc" id="L129">        List&lt;String&gt; xValues = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L130">        LocalDateTime tmpDate = new LocalDateTime(getStartDate(mAccountType).toDate().getTime());</span>
+<span class="nc" id="L131">        int count = getDateDiff(new LocalDateTime(getStartDate(mAccountType).toDate().getTime()),</span>
+<span class="nc" id="L132">                new LocalDateTime(getEndDate(mAccountType).toDate().getTime()));</span>
+<span class="nc bnc" id="L133" title="All 2 branches missed.">        for (int i = 0; i &lt;= count; i++) {</span>
+<span class="nc" id="L134">            long start = 0;</span>
+<span class="nc" id="L135">            long end = 0;</span>
+<span class="nc bnc" id="L136" title="All 4 branches missed.">            switch (mGroupInterval) {</span>
+                case MONTH:
+<span class="nc" id="L138">                    start = tmpDate.dayOfMonth().withMinimumValue().millisOfDay().withMinimumValue().toDate().getTime();</span>
+<span class="nc" id="L139">                    end = tmpDate.dayOfMonth().withMaximumValue().millisOfDay().withMaximumValue().toDate().getTime();</span>
+
+<span class="nc" id="L141">                    xValues.add(tmpDate.toString(X_AXIS_MONTH_PATTERN));</span>
+<span class="nc" id="L142">                    tmpDate = tmpDate.plusMonths(1);</span>
+<span class="nc" id="L143">                    break;</span>
+                case QUARTER:
+<span class="nc" id="L145">                    int quarter = getQuarter(tmpDate);</span>
+<span class="nc" id="L146">                    start = tmpDate.withMonthOfYear(quarter * 3 - 2).dayOfMonth().withMinimumValue().millisOfDay().withMinimumValue().toDate().getTime();</span>
+<span class="nc" id="L147">                    end = tmpDate.withMonthOfYear(quarter * 3).dayOfMonth().withMaximumValue().millisOfDay().withMaximumValue().toDate().getTime();</span>
+
+<span class="nc" id="L149">                    xValues.add(String.format(X_AXIS_QUARTER_PATTERN, quarter, tmpDate.toString(&quot; YY&quot;)));</span>
+<span class="nc" id="L150">                    tmpDate = tmpDate.plusMonths(3);</span>
+<span class="nc" id="L151">                    break;</span>
+                case YEAR:
+<span class="nc" id="L153">                    start = tmpDate.dayOfYear().withMinimumValue().millisOfDay().withMinimumValue().toDate().getTime();</span>
+<span class="nc" id="L154">                    end = tmpDate.dayOfYear().withMaximumValue().millisOfDay().withMaximumValue().toDate().getTime();</span>
+
+<span class="nc" id="L156">                    xValues.add(tmpDate.toString(X_AXIS_YEAR_PATTERN));</span>
+<span class="nc" id="L157">                    tmpDate = tmpDate.plusYears(1);</span>
+                    break;
+            }
+<span class="nc" id="L160">            List&lt;Float&gt; stack = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L161" title="All 2 branches missed.">            for (Account account : mAccountsDbAdapter.getSimpleAccountList()) {</span>
+<span class="nc bnc" id="L162" title="All 2 branches missed.">                if (account.getAccountType() == mAccountType</span>
+<span class="nc bnc" id="L163" title="All 2 branches missed.">                        &amp;&amp; !account.isPlaceholderAccount()</span>
+<span class="nc bnc" id="L164" title="All 2 branches missed.">                        &amp;&amp; account.getCommodity().equals(mCommodity)) {</span>
+
+<span class="nc" id="L166">                    double balance = mAccountsDbAdapter.getAccountsBalance(</span>
+<span class="nc" id="L167">                            Collections.singletonList(account.getUID()), start, end).asDouble();</span>
+<span class="nc bnc" id="L168" title="All 2 branches missed.">                    if (balance != 0) {</span>
+<span class="nc" id="L169">                        stack.add((float) balance);</span>
+
+<span class="nc" id="L171">                        String accountName = account.getName();</span>
+<span class="nc bnc" id="L172" title="All 2 branches missed.">                        while (labels.contains(accountName)) {</span>
+<span class="nc bnc" id="L173" title="All 2 branches missed.">                            if (!accountToColorMap.containsKey(account.getUID())) {</span>
+<span class="nc bnc" id="L174" title="All 2 branches missed.">                                for (String label : labels) {</span>
+<span class="nc bnc" id="L175" title="All 2 branches missed.">                                    if (label.equals(accountName)) {</span>
+<span class="nc" id="L176">                                        accountName += &quot; &quot;;</span>
+                                    }
+<span class="nc" id="L178">                                }</span>
+                            } else {
+                                break;
+                            }
+                        }
+<span class="nc" id="L183">                        labels.add(accountName);</span>
+
+<span class="nc bnc" id="L185" title="All 2 branches missed.">                        if (!accountToColorMap.containsKey(account.getUID())) {</span>
+                            Integer color;
+<span class="nc bnc" id="L187" title="All 2 branches missed.">                            if (mUseAccountColor) {</span>
+<span class="nc bnc" id="L188" title="All 2 branches missed.">                                color = (account.getColor() != Account.DEFAULT_COLOR)</span>
+<span class="nc" id="L189">                                        ? account.getColor()</span>
+<span class="nc" id="L190">                                        : COLORS[accountToColorMap.size() % COLORS.length];</span>
+                            } else {
+<span class="nc" id="L192">                                color = COLORS[accountToColorMap.size() % COLORS.length];</span>
+                            }
+<span class="nc" id="L194">                            accountToColorMap.put(account.getUID(), color);</span>
+                        }
+<span class="nc" id="L196">                        colors.add(accountToColorMap.get(account.getUID()));</span>
+
+<span class="nc" id="L198">                        Log.d(TAG, mAccountType + tmpDate.toString(&quot; MMMM yyyy &quot;) + account.getName() + &quot; = &quot; + stack.get(stack.size() - 1));</span>
+                    }
+                }
+<span class="nc" id="L201">            }</span>
+
+<span class="nc" id="L203">            String stackLabels = labels.subList(labels.size() - stack.size(), labels.size()).toString();</span>
+<span class="nc" id="L204">            values.add(new BarEntry(floatListToArray(stack), i, stackLabels));</span>
+        }
+
+<span class="nc" id="L207">        BarDataSet set = new BarDataSet(values, &quot;&quot;);</span>
+<span class="nc" id="L208">        set.setDrawValues(false);</span>
+<span class="nc" id="L209">        set.setStackLabels(labels.toArray(new String[labels.size()]));</span>
+<span class="nc" id="L210">        set.setColors(colors);</span>
+
+<span class="nc bnc" id="L212" title="All 2 branches missed.">        if (set.getYValueSum() == 0) {</span>
+<span class="nc" id="L213">            mChartDataPresent = false;</span>
+<span class="nc" id="L214">            return getEmptyData();</span>
+        }
+<span class="nc" id="L216">        mChartDataPresent = true;</span>
+<span class="nc" id="L217">        return new BarData(xValues, set);</span>
+    }
+
+    /**
+     * Returns a data object that represents situation when no user data available
+     * @return a {@code BarData} instance for situation when no user data available
+     */
+    private BarData getEmptyData() {
+<span class="nc" id="L225">        List&lt;String&gt; xValues = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L226">        List&lt;BarEntry&gt; yValues = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L227" title="All 2 branches missed.">        for (int i = 0; i &lt; NO_DATA_BAR_COUNTS; i++) {</span>
+<span class="nc" id="L228">            xValues.add(&quot;&quot;);</span>
+<span class="nc" id="L229">            yValues.add(new BarEntry(i + 1, i));</span>
+        }
+<span class="nc" id="L231">        BarDataSet set = new BarDataSet(yValues, getResources().getString(R.string.label_chart_no_data));</span>
+<span class="nc" id="L232">        set.setDrawValues(false);</span>
+<span class="nc" id="L233">        set.setColor(NO_DATA_COLOR);</span>
+
+<span class="nc" id="L235">        return new BarData(xValues, set);</span>
+    }
+
+    /**
+     * Returns the start data of x-axis for the specified account type
+     * @param accountType account type
+     * @return the start data
+     */
+    private LocalDate getStartDate(AccountType accountType) {
+<span class="nc" id="L244">        TransactionsDbAdapter adapter = TransactionsDbAdapter.getInstance();</span>
+<span class="nc" id="L245">        String code = mCommodity.getCurrencyCode();</span>
+        LocalDate startDate;
+<span class="nc bnc" id="L247" title="All 2 branches missed.">        if (mReportPeriodStart == -1) {</span>
+<span class="nc" id="L248">            startDate = new LocalDate(adapter.getTimestampOfEarliestTransaction(accountType, code));</span>
+        } else {
+<span class="nc" id="L250">            startDate = new LocalDate(mReportPeriodStart);</span>
+        }
+<span class="nc" id="L252">        startDate = startDate.withDayOfMonth(1);</span>
+<span class="nc" id="L253">        Log.d(TAG, accountType + &quot; X-axis star date: &quot; + startDate.toString(&quot;dd MM yyyy&quot;));</span>
+<span class="nc" id="L254">        return startDate;</span>
+    }
+
+    /**
+     * Returns the end data of x-axis for the specified account type
+     * @param accountType account type
+     * @return the end data
+     */
+    private LocalDate getEndDate(AccountType accountType) {
+<span class="nc" id="L263">        TransactionsDbAdapter adapter = TransactionsDbAdapter.getInstance();</span>
+<span class="nc" id="L264">        String code = mCommodity.getCurrencyCode();</span>
+        LocalDate endDate;
+<span class="nc bnc" id="L266" title="All 2 branches missed.">        if (mReportPeriodEnd == -1) {</span>
+<span class="nc" id="L267">            endDate = new LocalDate(adapter.getTimestampOfLatestTransaction(accountType, code));</span>
+        } else {
+<span class="nc" id="L269">            endDate = new LocalDate(mReportPeriodEnd);</span>
+        }
+<span class="nc" id="L271">        endDate = endDate.withDayOfMonth(1);</span>
+<span class="nc" id="L272">        Log.d(TAG, accountType + &quot; X-axis end date: &quot; + endDate.toString(&quot;dd MM yyyy&quot;));</span>
+<span class="nc" id="L273">        return endDate;</span>
+    }
+
+    /**
+     * Converts the specified list of floats to an array
+     * @param list a list of floats
+     * @return a float array
+     */
+    private float[] floatListToArray(List&lt;Float&gt; list) {
+<span class="nc" id="L282">        float array[] = new float[list.size()];</span>
+<span class="nc bnc" id="L283" title="All 2 branches missed.">        for (int i = 0;  i &lt; list.size(); i++) {</span>
+<span class="nc" id="L284">            array[i] = list.get(i);</span>
+        }
+<span class="nc" id="L286">        return array;</span>
+    }
+
+
+    @Override
+    public void generateReport() {
+<span class="nc" id="L292">        mChart.setData(getData());</span>
+<span class="nc" id="L293">        setCustomLegend();</span>
+
+<span class="nc" id="L295">        mChart.getAxisLeft().setDrawLabels(mChartDataPresent);</span>
+<span class="nc" id="L296">        mChart.getXAxis().setDrawLabels(mChartDataPresent);</span>
+<span class="nc" id="L297">        mChart.setTouchEnabled(mChartDataPresent);</span>
+<span class="nc" id="L298">    }</span>
+
+    @Override
+    protected void displayReport() {
+<span class="nc" id="L302">        mChart.notifyDataSetChanged();</span>
+<span class="nc" id="L303">        mChart.highlightValues(null);</span>
+<span class="nc bnc" id="L304" title="All 2 branches missed.">        if (mChartDataPresent) {</span>
+<span class="nc" id="L305">            mChart.animateY(ANIMATION_DURATION);</span>
+        } else {
+<span class="nc" id="L307">            mChart.clearAnimation();</span>
+<span class="nc" id="L308">            mSelectedValueTextView.setText(R.string.label_chart_no_data);</span>
+        }
+
+<span class="nc" id="L311">        mChart.invalidate();</span>
+<span class="nc" id="L312">    }</span>
+
+    /**
+     * Sets custom legend. Disable legend if its items count greater than {@code COLORS} array size.
+     */
+    private void setCustomLegend() {
+<span class="nc" id="L318">        Legend legend = mChart.getLegend();</span>
+<span class="nc" id="L319">        BarDataSet dataSet = mChart.getData().getDataSetByIndex(0);</span>
+
+<span class="nc" id="L321">        LinkedHashSet&lt;String&gt; labels = new LinkedHashSet&lt;&gt;(Arrays.asList(dataSet.getStackLabels()));</span>
+<span class="nc" id="L322">        LinkedHashSet&lt;Integer&gt; colors = new LinkedHashSet&lt;&gt;(dataSet.getColors());</span>
+
+<span class="nc bnc" id="L324" title="All 2 branches missed.">        if (COLORS.length &gt;= labels.size()) {</span>
+<span class="nc" id="L325">            legend.setCustom(new ArrayList&lt;&gt;(colors), new ArrayList&lt;&gt;(labels));</span>
+<span class="nc" id="L326">            return;</span>
+        }
+<span class="nc" id="L328">        legend.setEnabled(false);</span>
+<span class="nc" id="L329">    }</span>
+
+    @Override
+    public void onPrepareOptionsMenu(Menu menu) {
+<span class="nc" id="L333">        menu.findItem(R.id.menu_percentage_mode).setVisible(mChartDataPresent);</span>
+        // hide pie/line chart specific menu items
+<span class="nc" id="L335">        menu.findItem(R.id.menu_order_by_size).setVisible(false);</span>
+<span class="nc" id="L336">        menu.findItem(R.id.menu_toggle_labels).setVisible(false);</span>
+<span class="nc" id="L337">        menu.findItem(R.id.menu_toggle_average_lines).setVisible(false);</span>
+<span class="nc" id="L338">        menu.findItem(R.id.menu_group_other_slice).setVisible(false);</span>
+<span class="nc" id="L339">    }</span>
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+<span class="nc bnc" id="L343" title="All 2 branches missed.">        if (item.isCheckable())</span>
+<span class="nc bnc" id="L344" title="All 2 branches missed.">            item.setChecked(!item.isChecked());</span>
+<span class="nc bnc" id="L345" title="All 3 branches missed.">        switch (item.getItemId()) {</span>
+            case R.id.menu_toggle_legend:
+<span class="nc" id="L347">                Legend legend = mChart.getLegend();</span>
+<span class="nc bnc" id="L348" title="All 2 branches missed.">                if (!legend.isLegendCustom()) {</span>
+<span class="nc" id="L349">                    Toast.makeText(getActivity(), R.string.toast_legend_too_long, Toast.LENGTH_LONG).show();</span>
+<span class="nc" id="L350">                    item.setChecked(false);</span>
+                } else {
+<span class="nc bnc" id="L352" title="All 2 branches missed.">                    item.setChecked(!mChart.getLegend().isEnabled());</span>
+<span class="nc bnc" id="L353" title="All 2 branches missed.">                    legend.setEnabled(!mChart.getLegend().isEnabled());</span>
+<span class="nc" id="L354">                    mChart.invalidate();</span>
+                }
+<span class="nc" id="L356">                return true;</span>
+
+            case R.id.menu_percentage_mode:
+<span class="nc bnc" id="L359" title="All 2 branches missed.">                mTotalPercentageMode = !mTotalPercentageMode;</span>
+<span class="nc bnc" id="L360" title="All 2 branches missed.">                int msgId = mTotalPercentageMode ? R.string.toast_chart_percentage_mode_total</span>
+                        : R.string.toast_chart_percentage_mode_current_bar;
+<span class="nc" id="L362">                Toast.makeText(getActivity(), msgId, Toast.LENGTH_LONG).show();</span>
+<span class="nc" id="L363">                return true;</span>
+
+            default:
+<span class="nc" id="L366">                return super.onOptionsItemSelected(item);</span>
+        }
+    }
+
+    @Override
+    public void onValueSelected(Entry e, int dataSetIndex, Highlight h) {
+<span class="nc bnc" id="L372" title="All 4 branches missed.">        if (e == null || ((BarEntry) e).getVals().length == 0) return;</span>
+<span class="nc" id="L373">        BarEntry entry = (BarEntry) e;</span>
+<span class="nc bnc" id="L374" title="All 2 branches missed.">        int index = h.getStackIndex() == -1 ? 0 : h.getStackIndex();</span>
+<span class="nc" id="L375">        String stackLabels = entry.getData().toString();</span>
+<span class="nc" id="L376">        String label = mChart.getData().getXVals().get(entry.getXIndex()) + &quot;, &quot;</span>
+<span class="nc" id="L377">                + stackLabels.substring(1, stackLabels.length() - 1).split(&quot;,&quot;)[index];</span>
+<span class="nc" id="L378">        double value = Math.abs(entry.getVals()[index]);</span>
+<span class="nc" id="L379">        double sum = 0;</span>
+<span class="nc bnc" id="L380" title="All 2 branches missed.">        if (mTotalPercentageMode) {</span>
+<span class="nc bnc" id="L381" title="All 2 branches missed.">            for (BarEntry barEntry : mChart.getData().getDataSetByIndex(dataSetIndex).getYVals()) {</span>
+<span class="nc" id="L382">                sum += barEntry.getNegativeSum() + barEntry.getPositiveSum();</span>
+<span class="nc" id="L383">            }</span>
+        } else {
+<span class="nc" id="L385">            sum = entry.getNegativeSum() + entry.getPositiveSum();</span>
+        }
+<span class="nc" id="L387">        mSelectedValueTextView.setText(String.format(SELECTED_VALUE_PATTERN, label.trim(), value, value / sum * 100));</span>
+<span class="nc" id="L388">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

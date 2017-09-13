@@ -1,0 +1,490 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BackupPreferenceFragment.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.ui.settings</a> &gt; <span class="el_source">BackupPreferenceFragment.java</span></div><h1>BackupPreferenceFragment.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2012 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.ui.settings;
+
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.IntentSender;
+import android.content.SharedPreferences;
+import android.net.Uri;
+import android.os.Bundle;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.preference.CheckBoxPreference;
+import android.support.v7.preference.Preference;
+import android.support.v7.preference.PreferenceFragmentCompat;
+import android.support.v7.preference.PreferenceManager;
+import android.util.Log;
+import android.widget.ArrayAdapter;
+import android.widget.Toast;
+
+import com.dropbox.core.android.Auth;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesUtil;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.drive.Drive;
+import com.google.android.gms.drive.DriveFolder;
+import com.google.android.gms.drive.MetadataChangeSet;
+
+import org.gnucash.android.R;
+import org.gnucash.android.app.GnuCashApplication;
+import org.gnucash.android.db.adapter.BooksDbAdapter;
+import org.gnucash.android.export.Exporter;
+import org.gnucash.android.export.xml.GncXmlExporter;
+import org.gnucash.android.importer.ImportAsyncTask;
+import org.gnucash.android.ui.settings.dialog.OwnCloudDialogFragment;
+import org.gnucash.android.util.BookUtils;
+
+import java.io.File;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+
+
+/**
+ * Fragment for displaying general preferences
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ */
+<span class="nc" id="L70">public class BackupPreferenceFragment extends PreferenceFragmentCompat implements</span>
+		Preference.OnPreferenceClickListener, Preference.OnPreferenceChangeListener {
+
+	/**
+	 * Collects references to the UI elements and binds click listeners
+	 */
+	private static final int REQUEST_LINK_TO_DBX = 0x11;
+	public static final int REQUEST_RESOLVE_CONNECTION = 0x12;
+
+	/**
+	 * Request code for the backup file where to save backups
+	 */
+	private static final int REQUEST_BACKUP_FILE = 0x13;
+
+	/**
+	 * Testing app key for DropBox API
+	 */
+	final static public String DROPBOX_APP_KEY      = &quot;dhjh8ke9wf05948&quot;;
+
+	/**
+	 * Testing app secret for DropBox API
+	 */
+	final static public String DROPBOX_APP_SECRET   = &quot;h2t9fphj3nr4wkw&quot;;
+
+	/**
+	 * String for tagging log statements
+	 */
+	public static final String LOG_TAG = &quot;BackupPrefFragment&quot;;
+
+	/**
+	 * Client for Google Drive Sync
+	 */
+	public static GoogleApiClient mGoogleApiClient;
+
+
+	@Override
+	public void onCreatePreferences(Bundle bundle, String s) {
+<span class="nc" id="L107">		addPreferencesFromResource(R.xml.fragment_backup_preferences);</span>
+<span class="nc" id="L108">	}</span>
+
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
+<span class="nc" id="L112">		super.onCreate(savedInstanceState);</span>
+
+<span class="nc" id="L114">		ActionBar actionBar = ((AppCompatActivity)getActivity()).getSupportActionBar();</span>
+<span class="nc" id="L115">		actionBar.setHomeButtonEnabled(true);</span>
+<span class="nc" id="L116">		actionBar.setDisplayHomeAsUpEnabled(true);</span>
+<span class="nc" id="L117">		actionBar.setTitle(R.string.title_backup_prefs);</span>
+
+<span class="nc" id="L119">		mGoogleApiClient = getGoogleApiClient(getActivity());</span>
+		
+<span class="nc" id="L121">	}	</span>
+	
+	@Override
+	public void onResume() {
+<span class="nc" id="L125">		super.onResume();</span>
+<span class="nc" id="L126">		SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(getActivity());</span>
+
+		//if we are returning from DropBox authentication, save the key which was generated
+
+<span class="nc" id="L130">		String keyDefaultEmail = getString(R.string.key_default_export_email);		</span>
+<span class="nc" id="L131">		Preference pref = findPreference(keyDefaultEmail);</span>
+<span class="nc" id="L132">		String defaultEmail = sharedPrefs.getString(keyDefaultEmail, null);</span>
+<span class="nc bnc" id="L133" title="All 4 branches missed.">		if (defaultEmail != null &amp;&amp; !defaultEmail.trim().isEmpty()){</span>
+<span class="nc" id="L134">			pref.setSummary(defaultEmail);			</span>
+		}
+<span class="nc" id="L136">		pref.setOnPreferenceChangeListener(this);</span>
+
+<span class="nc" id="L138">        String keyDefaultExportFormat = getString(R.string.key_default_export_format);</span>
+<span class="nc" id="L139">        pref = findPreference(keyDefaultExportFormat);</span>
+<span class="nc" id="L140">        String defaultExportFormat = sharedPrefs.getString(keyDefaultExportFormat, null);</span>
+<span class="nc bnc" id="L141" title="All 4 branches missed.">        if (defaultExportFormat != null &amp;&amp; !defaultExportFormat.trim().isEmpty()){</span>
+<span class="nc" id="L142">            pref.setSummary(defaultExportFormat);</span>
+        }
+<span class="nc" id="L144">        pref.setOnPreferenceChangeListener(this);</span>
+
+<span class="nc" id="L146">		pref = findPreference(getString(R.string.key_restore_backup));</span>
+<span class="nc" id="L147">		pref.setOnPreferenceClickListener(this);</span>
+
+<span class="nc" id="L149">		pref = findPreference(getString(R.string.key_create_backup));</span>
+<span class="nc" id="L150">		pref.setOnPreferenceClickListener(this);</span>
+
+<span class="nc" id="L152">		pref = findPreference(getString(R.string.key_backup_location));</span>
+<span class="nc" id="L153">		pref.setOnPreferenceClickListener(this);</span>
+<span class="nc" id="L154">		String defaultBackupLocation = BookUtils.getBookBackupFileUri(BooksDbAdapter.getInstance().getActiveBookUID());</span>
+<span class="nc bnc" id="L155" title="All 2 branches missed.">		if (defaultBackupLocation != null){</span>
+<span class="nc" id="L156">			pref.setSummary(Uri.parse(defaultBackupLocation).getAuthority());</span>
+		}
+
+<span class="nc" id="L159">		pref = findPreference(getString(R.string.key_dropbox_sync));</span>
+<span class="nc" id="L160">		pref.setOnPreferenceClickListener(this);</span>
+<span class="nc" id="L161">		toggleDropboxPreference(pref);</span>
+
+<span class="nc" id="L163">		pref = findPreference(getString(R.string.key_owncloud_sync));</span>
+<span class="nc" id="L164">		pref.setOnPreferenceClickListener(this);</span>
+<span class="nc" id="L165">		toggleOwnCloudPreference(pref);</span>
+<span class="nc" id="L166">	}</span>
+
+	@Override
+	public boolean onPreferenceClick(Preference preference) {
+<span class="nc" id="L170">		String key = preference.getKey();</span>
+
+<span class="nc bnc" id="L172" title="All 2 branches missed.">		if (key.equals(getString(R.string.key_restore_backup))){</span>
+<span class="nc" id="L173">			restoreBackup();</span>
+		}
+
+<span class="nc bnc" id="L176" title="All 2 branches missed.">		if (key.equals(getString(R.string.key_backup_location))){</span>
+<span class="nc" id="L177">			Intent createIntent = new Intent(Intent.ACTION_CREATE_DOCUMENT);</span>
+<span class="nc" id="L178">			createIntent.setType(&quot;application/zip&quot;);</span>
+<span class="nc" id="L179">			createIntent.addCategory(Intent.CATEGORY_OPENABLE);</span>
+<span class="nc" id="L180">			String bookName = BooksDbAdapter.getInstance().getActiveBookDisplayName();</span>
+<span class="nc" id="L181">			createIntent.putExtra(Intent.EXTRA_TITLE, Exporter.sanitizeFilename(bookName)+ &quot;_&quot; + getString(R.string.label_backup_filename));</span>
+<span class="nc" id="L182">			startActivityForResult(createIntent, REQUEST_BACKUP_FILE);</span>
+		}
+
+<span class="nc bnc" id="L185" title="All 2 branches missed.">		if (key.equals(getString(R.string.key_dropbox_sync))){</span>
+<span class="nc" id="L186">			toggleDropboxSync();</span>
+<span class="nc" id="L187">			toggleDropboxPreference(preference);</span>
+		}
+
+<span class="nc bnc" id="L190" title="All 2 branches missed.">		if (key.equals(getString(R.string.key_owncloud_sync))){</span>
+<span class="nc" id="L191">			toggleOwnCloudSync(preference);</span>
+<span class="nc" id="L192">			toggleOwnCloudPreference(preference);</span>
+		}
+
+<span class="nc bnc" id="L195" title="All 2 branches missed.">		if (key.equals(getString(R.string.key_create_backup))){</span>
+<span class="nc" id="L196">			boolean result = GncXmlExporter.createBackup();</span>
+<span class="nc bnc" id="L197" title="All 2 branches missed.">			int msg = result ? R.string.toast_backup_successful : R.string.toast_backup_failed;</span>
+<span class="nc" id="L198">			Toast.makeText(getActivity(), msg, Toast.LENGTH_SHORT).show();</span>
+		}
+
+<span class="nc" id="L201">		return false;</span>
+	}
+
+	/**
+     * Listens for changes to the preference and sets the preference summary to the new value
+     * @param preference Preference which has been changed
+     * @param newValue New value for the changed preference
+     * @return &lt;code&gt;true&lt;/code&gt; if handled, &lt;code&gt;false&lt;/code&gt; otherwise
+     */
+	@Override
+	public boolean onPreferenceChange(Preference preference, Object newValue) {
+<span class="nc" id="L212">		preference.setSummary(newValue.toString());</span>
+<span class="nc bnc" id="L213" title="All 2 branches missed.">		if (preference.getKey().equals(getString(R.string.key_default_currency))){</span>
+<span class="nc" id="L214">			GnuCashApplication.setDefaultCurrencyCode(newValue.toString());</span>
+		}
+		
+<span class="nc bnc" id="L217" title="All 2 branches missed.">		if (preference.getKey().equals(getString(R.string.key_default_export_email))){</span>
+<span class="nc" id="L218">			String emailSetting = newValue.toString();</span>
+<span class="nc bnc" id="L219" title="All 4 branches missed.">			if (emailSetting == null || emailSetting.trim().isEmpty()){</span>
+<span class="nc" id="L220">				preference.setSummary(R.string.summary_default_export_email);</span>
+			}					
+		}
+
+<span class="nc bnc" id="L224" title="All 2 branches missed.">        if (preference.getKey().equals(getString(R.string.key_default_export_format))){</span>
+<span class="nc" id="L225">            String exportFormat = newValue.toString();</span>
+<span class="nc bnc" id="L226" title="All 4 branches missed.">            if (exportFormat == null || exportFormat.trim().isEmpty()){</span>
+<span class="nc" id="L227">                preference.setSummary(R.string.summary_default_export_format);</span>
+            }
+        }
+<span class="nc" id="L230">		return true;</span>
+	}
+
+
+
+	/**
+	 * Toggles the checkbox of the DropBox Sync preference if a DropBox account is linked
+	 * @param pref DropBox Sync preference
+	 */
+	public void toggleDropboxPreference(Preference pref) {
+<span class="nc" id="L240">		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());</span>
+<span class="nc" id="L241">		String accessToken = prefs.getString(getString(R.string.key_dropbox_access_token), null);</span>
+<span class="nc bnc" id="L242" title="All 2 branches missed.">		((CheckBoxPreference)pref).setChecked(accessToken != null);</span>
+<span class="nc" id="L243">	}</span>
+
+	/**
+	 * Toggles the checkbox of the ownCloud Sync preference if an ownCloud account is linked
+	 * @param pref ownCloud Sync preference
+	 */
+	public void toggleOwnCloudPreference(Preference pref) {
+<span class="nc" id="L250">		SharedPreferences mPrefs = getActivity().getSharedPreferences(getString(R.string.owncloud_pref), Context.MODE_PRIVATE);</span>
+<span class="nc" id="L251">		((CheckBoxPreference)pref).setChecked(mPrefs.getBoolean(getString(R.string.owncloud_sync), false));</span>
+<span class="nc" id="L252">	}</span>
+
+	/**
+	 * Toggles the checkbox of the GoogleDrive Sync preference if a Google Drive account is linked
+	 * @param pref Google Drive Sync preference
+	 */
+	public void toggleGoogleDrivePreference(Preference pref){
+<span class="nc" id="L259">		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());</span>
+<span class="nc" id="L260">		String appFolderId = sharedPreferences.getString(getString(R.string.key_google_drive_app_folder_id),null);</span>
+<span class="nc bnc" id="L261" title="All 2 branches missed.">		((CheckBoxPreference)pref).setChecked(appFolderId != null);</span>
+<span class="nc" id="L262">	}</span>
+
+
+	/**
+	 * Toggles the authorization state of a DropBox account.
+	 * If a link exists, it is removed else DropBox authorization is started
+	 */
+	private void toggleDropboxSync() {
+<span class="nc" id="L270">		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());</span>
+<span class="nc" id="L271">		String accessToken = prefs.getString(getString(R.string.key_dropbox_access_token), null);</span>
+<span class="nc bnc" id="L272" title="All 2 branches missed.">		if (accessToken == null){</span>
+<span class="nc" id="L273">			Auth.startOAuth2Authentication(getActivity(), getString(R.string.dropbox_app_key));</span>
+		} else {
+<span class="nc" id="L275">			prefs.edit().remove(getString(R.string.key_dropbox_access_token)).apply();</span>
+		}
+<span class="nc" id="L277">	}</span>
+
+	/**
+	 * Toggles synchronization with Google Drive on or off
+	 */
+	private void toggleGoogleDriveSync(){
+<span class="nc" id="L283">		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());</span>
+<span class="nc" id="L284">		final String appFolderId = sharedPreferences.getString(getString(R.string.key_google_drive_app_folder_id), null);</span>
+<span class="nc bnc" id="L285" title="All 2 branches missed.">		if (appFolderId != null){</span>
+<span class="nc" id="L286">			sharedPreferences.edit().remove(getString(R.string.key_google_drive_app_folder_id)).commit(); //commit (not apply) because we need it to be saved *now*</span>
+<span class="nc" id="L287">			mGoogleApiClient.disconnect();</span>
+		} else {
+<span class="nc" id="L289">			mGoogleApiClient.connect();</span>
+		}
+<span class="nc" id="L291">	}</span>
+
+	/**
+	 * Toggles synchronization with ownCloud on or off
+	 */
+	private void toggleOwnCloudSync(Preference pref){
+<span class="nc" id="L297">		SharedPreferences mPrefs = getActivity().getSharedPreferences(getString(R.string.owncloud_pref), Context.MODE_PRIVATE);</span>
+
+<span class="nc bnc" id="L299" title="All 2 branches missed.">		if (mPrefs.getBoolean(getString(R.string.owncloud_sync), false))</span>
+<span class="nc" id="L300">			mPrefs.edit().putBoolean(getString(R.string.owncloud_sync), false).apply();</span>
+		else {
+<span class="nc" id="L302">			OwnCloudDialogFragment ocDialog = OwnCloudDialogFragment.newInstance(pref);</span>
+<span class="nc" id="L303">            ocDialog.show(getActivity().getSupportFragmentManager(), &quot;owncloud_dialog&quot;);</span>
+		}
+<span class="nc" id="L305">	}</span>
+
+
+	public static GoogleApiClient getGoogleApiClient(final Context context) {
+<span class="nc" id="L309">		return new GoogleApiClient.Builder(context)</span>
+<span class="nc" id="L310">				.addApi(Drive.API)</span>
+<span class="nc" id="L311">				.addScope(Drive.SCOPE_APPFOLDER)</span>
+<span class="nc" id="L312">				.addScope(Drive.SCOPE_FILE)</span>
+<span class="nc" id="L313">				.addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {</span>
+					@Override
+					public void onConnected(Bundle bundle) {
+<span class="nc" id="L316">						SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);</span>
+<span class="nc" id="L317">						String appFolderId = sharedPreferences.getString(context.getString(R.string.key_google_drive_app_folder_id), null);</span>
+<span class="nc bnc" id="L318" title="All 2 branches missed.">						if (appFolderId == null) {</span>
+<span class="nc" id="L319">							MetadataChangeSet changeSet = new MetadataChangeSet.Builder()</span>
+<span class="nc" id="L320">									.setTitle(context.getString(R.string.app_name)).build();</span>
+<span class="nc" id="L321">							Drive.DriveApi.getRootFolder(mGoogleApiClient).createFolder(</span>
+<span class="nc" id="L322">									mGoogleApiClient, changeSet).setResultCallback(new ResultCallback&lt;DriveFolder.DriveFolderResult&gt;() {</span>
+								@Override
+								public void onResult(DriveFolder.DriveFolderResult result) {
+<span class="nc bnc" id="L325" title="All 2 branches missed.">									if (!result.getStatus().isSuccess()) {</span>
+<span class="nc" id="L326">										Log.e(LOG_TAG, &quot;Error creating the application folder&quot;);</span>
+<span class="nc" id="L327">										return;</span>
+									}
+
+<span class="nc" id="L330">									String folderId = result.getDriveFolder().getDriveId().toString();</span>
+<span class="nc" id="L331">									PreferenceManager.getDefaultSharedPreferences(context)</span>
+<span class="nc" id="L332">											.edit().putString(context.getString(R.string.key_google_drive_app_folder_id),</span>
+<span class="nc" id="L333">											folderId).commit(); //commit because we need it to be saved *now*</span>
+<span class="nc" id="L334">								}</span>
+							});
+
+						}
+<span class="nc" id="L338">						Toast.makeText(context, R.string.toast_connected_to_google_drive, Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L339">					}</span>
+
+					@Override
+					public void onConnectionSuspended(int i) {
+<span class="nc" id="L343">						Toast.makeText(context, &quot;Connection to Google Drive suspended!&quot;, Toast.LENGTH_LONG).show();</span>
+<span class="nc" id="L344">					}</span>
+				})
+<span class="nc" id="L346">				.addOnConnectionFailedListener(new GoogleApiClient.OnConnectionFailedListener() {</span>
+					@Override
+					public void onConnectionFailed(ConnectionResult connectionResult) {
+<span class="nc" id="L349">						Log.e(PreferenceActivity.class.getName(), &quot;Connection to Google Drive failed&quot;);</span>
+<span class="nc bnc" id="L350" title="All 4 branches missed.">						if (connectionResult.hasResolution() &amp;&amp; context instanceof Activity) {</span>
+							try {
+<span class="nc" id="L352">								Log.e(BackupPreferenceFragment.class.getName(), &quot;Trying resolution of Google API connection failure&quot;);</span>
+<span class="nc" id="L353">								connectionResult.startResolutionForResult((Activity) context, REQUEST_RESOLVE_CONNECTION);</span>
+<span class="nc" id="L354">							} catch (IntentSender.SendIntentException e) {</span>
+<span class="nc" id="L355">								Log.e(BackupPreferenceFragment.class.getName(), e.getMessage());</span>
+<span class="nc" id="L356">								Toast.makeText(context, R.string.toast_unable_to_connect_to_google_drive, Toast.LENGTH_LONG).show();</span>
+<span class="nc" id="L357">							}</span>
+						} else {
+<span class="nc bnc" id="L359" title="All 2 branches missed.">							if (context instanceof Activity)</span>
+<span class="nc" id="L360">								GooglePlayServicesUtil.getErrorDialog(connectionResult.getErrorCode(), (Activity) context, 0).show();</span>
+						}
+<span class="nc" id="L362">					}</span>
+				})
+<span class="nc" id="L364">				.build();</span>
+	}
+
+	/**
+	 * Opens a dialog for a user to select a backup to restore and then restores the backup
+	 */
+	private void restoreBackup() {
+<span class="nc" id="L371">		Log.i(&quot;Settings&quot;, &quot;Opening GnuCash XML backups for restore&quot;);</span>
+<span class="nc" id="L372">		String bookUID = BooksDbAdapter.getInstance().getActiveBookUID();</span>
+
+<span class="nc" id="L374">		final String defaultBackupFile = BookUtils.getBookBackupFileUri(bookUID);</span>
+<span class="nc bnc" id="L375" title="All 2 branches missed.">		if (defaultBackupFile != null){</span>
+<span class="nc" id="L376">			android.support.v7.app.AlertDialog.Builder builder = new android.support.v7.app.AlertDialog.Builder(getActivity())</span>
+<span class="nc" id="L377">					.setTitle(R.string.title_confirm_restore_backup)</span>
+<span class="nc" id="L378">					.setMessage(R.string.msg_confirm_restore_backup_into_new_book)</span>
+<span class="nc" id="L379">					.setNegativeButton(R.string.btn_cancel, new DialogInterface.OnClickListener() {</span>
+						@Override
+						public void onClick(DialogInterface dialog, int which) {
+<span class="nc" id="L382">							dialog.dismiss();</span>
+<span class="nc" id="L383">						}</span>
+					})
+<span class="nc" id="L385">					.setPositiveButton(R.string.btn_restore, new DialogInterface.OnClickListener() {</span>
+						@Override
+						public void onClick(DialogInterface dialogInterface, int i) {
+<span class="nc" id="L388">							new ImportAsyncTask(getActivity()).execute(Uri.parse(defaultBackupFile));</span>
+<span class="nc" id="L389">						}</span>
+					});
+<span class="nc" id="L391">			builder.create().show();</span>
+<span class="nc" id="L392">			return; //stop here if the default backup file exists</span>
+		}
+
+		//If no default location was set, look in the internal SD card location
+<span class="nc" id="L396">		File[] backupFiles = new File(Exporter.getBackupFolderPath(bookUID)).listFiles();</span>
+<span class="nc bnc" id="L397" title="All 4 branches missed.">		if (backupFiles == null || backupFiles.length == 0){</span>
+<span class="nc" id="L398">			android.support.v7.app.AlertDialog.Builder builder = new android.support.v7.app.AlertDialog.Builder(getActivity())</span>
+<span class="nc" id="L399">					.setTitle(R.string.title_no_backups_found)</span>
+<span class="nc" id="L400">					.setMessage(R.string.msg_no_backups_to_restore_from)</span>
+<span class="nc" id="L401">					.setNegativeButton(R.string.label_dismiss, new DialogInterface.OnClickListener() {</span>
+						@Override
+						public void onClick(DialogInterface dialog, int which) {
+<span class="nc" id="L404">							dialog.dismiss();</span>
+<span class="nc" id="L405">						}</span>
+					});
+<span class="nc" id="L407">			builder.create().show();</span>
+<span class="nc" id="L408">			return;</span>
+		}
+
+<span class="nc" id="L411">		Arrays.sort(backupFiles);</span>
+<span class="nc" id="L412">		List&lt;File&gt; backupFilesList = Arrays.asList(backupFiles);</span>
+<span class="nc" id="L413">		Collections.reverse(backupFilesList);</span>
+<span class="nc" id="L414">		final File[] sortedBackupFiles = (File[]) backupFilesList.toArray();</span>
+
+<span class="nc" id="L416">		final ArrayAdapter&lt;String&gt; arrayAdapter = new ArrayAdapter&lt;&gt;(getActivity(), android.R.layout.select_dialog_singlechoice);</span>
+<span class="nc" id="L417">		final DateFormat dateFormatter = SimpleDateFormat.getDateTimeInstance();</span>
+<span class="nc bnc" id="L418" title="All 2 branches missed.">		for (File backupFile : sortedBackupFiles) {</span>
+<span class="nc" id="L419">			long time = Exporter.getExportTime(backupFile.getName());</span>
+<span class="nc bnc" id="L420" title="All 2 branches missed.">			if (time &gt; 0)</span>
+<span class="nc" id="L421">				arrayAdapter.add(dateFormatter.format(new Date(time)));</span>
+			else //if no timestamp was found in the filename, just use the name
+<span class="nc" id="L423">				arrayAdapter.add(backupFile.getName());</span>
+		}
+
+<span class="nc" id="L426">		AlertDialog.Builder restoreDialogBuilder =  new AlertDialog.Builder(getActivity());</span>
+<span class="nc" id="L427">		restoreDialogBuilder.setTitle(R.string.title_select_backup_to_restore);</span>
+<span class="nc" id="L428">		restoreDialogBuilder.setNegativeButton(R.string.alert_dialog_cancel,</span>
+<span class="nc" id="L429">				new DialogInterface.OnClickListener() {</span>
+					@Override
+					public void onClick(DialogInterface dialog, int which) {
+<span class="nc" id="L432">						dialog.dismiss();</span>
+<span class="nc" id="L433">					}</span>
+				});
+<span class="nc" id="L435">		restoreDialogBuilder.setAdapter(arrayAdapter, new DialogInterface.OnClickListener() {</span>
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+<span class="nc" id="L438">				File backupFile = sortedBackupFiles[which];</span>
+<span class="nc" id="L439">				new ImportAsyncTask(getActivity()).execute(Uri.fromFile(backupFile));</span>
+<span class="nc" id="L440">			}</span>
+		});
+
+<span class="nc" id="L443">		restoreDialogBuilder.create().show();</span>
+<span class="nc" id="L444">	}</span>
+
+	@Override
+	public void onActivityResult(int requestCode, int resultCode, Intent data) {
+<span class="nc bnc" id="L448" title="All 4 branches missed.">		switch (requestCode){</span>
+
+			case REQUEST_LINK_TO_DBX:
+<span class="nc" id="L451">				Preference preference = findPreference(getString(R.string.key_dropbox_sync));</span>
+<span class="nc bnc" id="L452" title="All 2 branches missed.">				if (preference == null) //if we are in a preference header fragment, this may return null</span>
+<span class="nc" id="L453">					break;</span>
+<span class="nc" id="L454">				toggleDropboxPreference(preference);</span>
+<span class="nc" id="L455">				break;</span>
+
+			case REQUEST_RESOLVE_CONNECTION:
+<span class="nc bnc" id="L458" title="All 2 branches missed.">				if (resultCode == Activity.RESULT_OK) {</span>
+<span class="nc" id="L459">					mGoogleApiClient.connect();</span>
+<span class="nc" id="L460">					Preference pref = findPreference(getString(R.string.key_dropbox_sync));</span>
+<span class="nc bnc" id="L461" title="All 2 branches missed.">					if (pref == null) //if we are in a preference header fragment, this may return null</span>
+<span class="nc" id="L462">						break;</span>
+<span class="nc" id="L463">					toggleDropboxPreference(pref);</span>
+<span class="nc" id="L464">				}</span>
+				break;
+
+			case REQUEST_BACKUP_FILE:
+<span class="nc bnc" id="L468" title="All 2 branches missed.">				if (resultCode == Activity.RESULT_OK){</span>
+<span class="nc" id="L469">					Uri backupFileUri = null;</span>
+<span class="nc bnc" id="L470" title="All 2 branches missed.">					if (data != null){</span>
+<span class="nc" id="L471">						backupFileUri = data.getData();</span>
+					}
+
+<span class="nc" id="L474">					final int takeFlags = data.getFlags()</span>
+							&amp; (Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+<span class="nc" id="L476">					getActivity().getContentResolver().takePersistableUriPermission(backupFileUri, takeFlags);</span>
+
+<span class="nc" id="L478">					PreferenceActivity.getActiveBookSharedPreferences()</span>
+<span class="nc" id="L479">							.edit()</span>
+<span class="nc" id="L480">							.putString(BookUtils.KEY_BACKUP_FILE, backupFileUri.toString())</span>
+<span class="nc" id="L481">							.apply();</span>
+
+<span class="nc" id="L483">					Preference pref = findPreference(getString(R.string.key_backup_location));</span>
+<span class="nc" id="L484">					pref.setSummary(backupFileUri.getAuthority());</span>
+				}
+				break;
+		}
+<span class="nc" id="L488">	}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

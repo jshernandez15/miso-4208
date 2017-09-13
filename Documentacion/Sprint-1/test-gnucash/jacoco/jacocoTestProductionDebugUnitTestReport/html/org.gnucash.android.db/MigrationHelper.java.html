@@ -1,0 +1,1632 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MigrationHelper.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.db</a> &gt; <span class="el_source">MigrationHelper.java</span></div><h1>MigrationHelper.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2014 - 2015 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.db;
+
+import android.app.AlarmManager;
+import android.app.PendingIntent;
+import android.content.ContentValues;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.os.Environment;
+import android.support.v7.preference.PreferenceManager;
+import android.text.TextUtils;
+import android.util.Log;
+
+import com.crashlytics.android.Crashlytics;
+
+import org.gnucash.android.R;
+import org.gnucash.android.app.GnuCashApplication;
+import org.gnucash.android.db.adapter.AccountsDbAdapter;
+import org.gnucash.android.export.ExportFormat;
+import org.gnucash.android.export.ExportParams;
+import org.gnucash.android.export.Exporter;
+import org.gnucash.android.importer.CommoditiesXmlHandler;
+import org.gnucash.android.model.AccountType;
+import org.gnucash.android.model.BaseModel;
+import org.gnucash.android.model.Commodity;
+import org.gnucash.android.model.Money;
+import org.gnucash.android.model.Recurrence;
+import org.gnucash.android.model.ScheduledAction;
+import org.gnucash.android.model.Transaction;
+import org.gnucash.android.service.ScheduledActionService;
+import org.gnucash.android.util.PreferencesHelper;
+import org.gnucash.android.util.TimestampHelper;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.XMLReader;
+
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.math.BigDecimal;
+import java.nio.channels.FileChannel;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.TimeZone;
+
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+
+import static org.gnucash.android.db.DatabaseSchema.AccountEntry;
+import static org.gnucash.android.db.DatabaseSchema.BudgetAmountEntry;
+import static org.gnucash.android.db.DatabaseSchema.BudgetEntry;
+import static org.gnucash.android.db.DatabaseSchema.CommodityEntry;
+import static org.gnucash.android.db.DatabaseSchema.CommonColumns;
+import static org.gnucash.android.db.DatabaseSchema.PriceEntry;
+import static org.gnucash.android.db.DatabaseSchema.RecurrenceEntry;
+import static org.gnucash.android.db.DatabaseSchema.ScheduledActionEntry;
+import static org.gnucash.android.db.DatabaseSchema.SplitEntry;
+import static org.gnucash.android.db.DatabaseSchema.TransactionEntry;
+
+/**
+ * Collection of helper methods which are used during database migrations
+ *
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ */
+@SuppressWarnings(&quot;unused&quot;)
+<span class="nc" id="L93">public class MigrationHelper {</span>
+    public static final String LOG_TAG = &quot;MigrationHelper&quot;;
+
+    /**
+     * Performs same function as {@link AccountsDbAdapter#getFullyQualifiedAccountName(String)}
+     * &lt;p&gt;This method is only necessary because we cannot open the database again (by instantiating {@link AccountsDbAdapter}
+     * while it is locked for upgrades. So we re-implement the method here.&lt;/p&gt;
+     * @param db SQLite database
+     * @param accountUID Unique ID of account whose fully qualified name is to be determined
+     * @return Fully qualified (colon-separated) account name
+     * @see AccountsDbAdapter#getFullyQualifiedAccountName(String)
+     */
+    static String getFullyQualifiedAccountName(SQLiteDatabase db, String accountUID){
+        //get the parent account UID of the account
+<span class="nc" id="L107">        Cursor cursor = db.query(AccountEntry.TABLE_NAME,</span>
+                new String[] {AccountEntry.COLUMN_PARENT_ACCOUNT_UID},
+                AccountEntry.COLUMN_UID + &quot; = ?&quot;,
+                new String[]{accountUID},
+                null, null, null, null);
+
+<span class="nc" id="L113">        String parentAccountUID = null;</span>
+<span class="nc bnc" id="L114" title="All 4 branches missed.">        if (cursor != null &amp;&amp; cursor.moveToFirst()){</span>
+<span class="nc" id="L115">            parentAccountUID = cursor.getString(cursor.getColumnIndexOrThrow(AccountEntry.COLUMN_PARENT_ACCOUNT_UID));</span>
+<span class="nc" id="L116">            cursor.close();</span>
+        }
+
+        //get the name of the account
+<span class="nc" id="L120">        cursor = db.query(AccountEntry.TABLE_NAME,</span>
+                new String[]{AccountEntry.COLUMN_NAME},
+                AccountEntry.COLUMN_UID + &quot; = ?&quot;,
+                new String[]{accountUID}, null, null, null);
+
+<span class="nc" id="L125">        String accountName = null;</span>
+<span class="nc bnc" id="L126" title="All 4 branches missed.">        if (cursor != null &amp;&amp; cursor.moveToFirst()){</span>
+<span class="nc" id="L127">            accountName = cursor.getString(cursor.getColumnIndexOrThrow(AccountEntry.COLUMN_NAME));</span>
+<span class="nc" id="L128">            cursor.close();</span>
+        }
+
+<span class="nc" id="L131">        String gnucashRootAccountUID = getGnuCashRootAccountUID(db);</span>
+<span class="nc bnc" id="L132" title="All 4 branches missed.">        if (parentAccountUID == null || accountName == null</span>
+<span class="nc bnc" id="L133" title="All 2 branches missed.">            || parentAccountUID.equalsIgnoreCase(gnucashRootAccountUID)){</span>
+<span class="nc" id="L134">            return accountName;</span>
+        }
+
+<span class="nc" id="L137">        String parentAccountName = getFullyQualifiedAccountName(db, parentAccountUID);</span>
+
+<span class="nc" id="L139">        return parentAccountName + AccountsDbAdapter.ACCOUNT_NAME_SEPARATOR + accountName;</span>
+    }
+
+    /**
+     * Returns the GnuCash ROOT account UID.
+     * &lt;p&gt;In GnuCash desktop account structure, there is a root account (which is not visible in the UI) from which
+     * other top level accounts derive. GnuCash Android does not have this ROOT account by default unless the account
+     * structure was imported from GnuCash for desktop. Hence this method also returns &lt;code&gt;null&lt;/code&gt; as an
+     * acceptable result.&lt;/p&gt;
+     * &lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; NULL is an acceptable response, be sure to check for it&lt;/p&gt;
+     * @return Unique ID of the GnuCash root account.
+     */
+    private static String getGnuCashRootAccountUID(SQLiteDatabase db){
+<span class="nc" id="L152">        String condition = AccountEntry.COLUMN_TYPE + &quot;= '&quot; + AccountType.ROOT.name() + &quot;'&quot;;</span>
+<span class="nc" id="L153">        Cursor cursor =  db.query(AccountEntry.TABLE_NAME,</span>
+                null, condition, null, null, null,
+                AccountEntry.COLUMN_NAME + &quot; ASC&quot;);
+<span class="nc" id="L156">        String rootUID = null;</span>
+<span class="nc bnc" id="L157" title="All 4 branches missed.">        if (cursor != null &amp;&amp; cursor.moveToFirst()){</span>
+<span class="nc" id="L158">            rootUID = cursor.getString(cursor.getColumnIndexOrThrow(AccountEntry.COLUMN_UID));</span>
+<span class="nc" id="L159">            cursor.close();</span>
+        }
+<span class="nc" id="L161">        return rootUID;</span>
+    }
+
+    /**
+     * Copies the contents of the file in {@code src} to {@code dst} and then deletes the {@code src} if copy was successful.
+     * If the file copy was unsuccessful, the src file will not be deleted.
+     * @param src Source file
+     * @param dst Destination file
+     * @throws IOException if an error occurred during the file copy
+     */
+    static void moveFile(File src, File dst) throws IOException {
+<span class="nc" id="L172">        Log.d(LOG_TAG, String.format(Locale.US, &quot;Moving %s from %s to %s&quot;,</span>
+<span class="nc" id="L173">                src.getName(), src.getParent(), dst.getParent()));</span>
+<span class="nc" id="L174">        FileChannel inChannel = new FileInputStream(src).getChannel();</span>
+<span class="nc" id="L175">        FileChannel outChannel = new FileOutputStream(dst).getChannel();</span>
+        try {
+<span class="nc" id="L177">            long bytesCopied = inChannel.transferTo(0, inChannel.size(), outChannel);</span>
+<span class="nc bnc" id="L178" title="All 2 branches missed.">            if(bytesCopied &gt;= src.length()) {</span>
+<span class="nc" id="L179">                boolean result = src.delete();</span>
+<span class="nc bnc" id="L180" title="All 2 branches missed.">                String msg = result ? &quot;Deleted src file: &quot; : &quot;Could not delete src: &quot;;</span>
+<span class="nc" id="L181">                Log.d(LOG_TAG, msg + src.getPath());</span>
+            }
+        } finally {
+<span class="nc bnc" id="L184" title="All 4 branches missed.">            if (inChannel != null)</span>
+<span class="nc" id="L185">                inChannel.close();</span>
+<span class="nc" id="L186">            outChannel.close();</span>
+<span class="nc" id="L187">        }</span>
+<span class="nc" id="L188">    }</span>
+
+    /**
+     * Runnable which moves all exported files (exports and backups) from the old SD card location which
+     * was generic to the new folder structure which uses the application ID as folder name.
+     * &lt;p&gt;The new folder structure also futher enables parallel installation of multiple flavours of
+     * the program (like development and production) on the same device.&lt;/p&gt;
+     */
+<span class="nc" id="L196">    static final Runnable moveExportedFilesToNewDefaultLocation = new Runnable() {</span>
+        @Override
+        public void run() {
+<span class="nc" id="L199">            File oldExportFolder = new File(Environment.getExternalStorageDirectory() + &quot;/gnucash&quot;);</span>
+<span class="nc bnc" id="L200" title="All 2 branches missed.">            if (oldExportFolder.exists()){</span>
+<span class="nc bnc" id="L201" title="All 2 branches missed.">                for (File src : oldExportFolder.listFiles()) {</span>
+<span class="nc bnc" id="L202" title="All 2 branches missed.">                    if (src.isDirectory())</span>
+<span class="nc" id="L203">                        continue;</span>
+<span class="nc" id="L204">                    File dst = new File(Exporter.LEGACY_BASE_FOLDER_PATH + &quot;/exports/&quot; + src.getName());</span>
+                    try {
+<span class="nc" id="L206">                        MigrationHelper.moveFile(src, dst);</span>
+<span class="nc" id="L207">                    } catch (IOException e) {</span>
+<span class="nc" id="L208">                        Log.e(LOG_TAG, &quot;Error migrating &quot; + src.getName());</span>
+<span class="nc" id="L209">                        Crashlytics.logException(e);</span>
+<span class="nc" id="L210">                    }</span>
+                }
+            } else {
+                //if the base folder does not exist, no point going one level deeper
+<span class="nc" id="L214">                return;</span>
+            }
+
+<span class="nc" id="L217">            File oldBackupFolder = new File(oldExportFolder, &quot;backup&quot;);</span>
+<span class="nc bnc" id="L218" title="All 2 branches missed.">            if (oldBackupFolder.exists()){</span>
+<span class="nc bnc" id="L219" title="All 2 branches missed.">                for (File src : new File(oldExportFolder, &quot;backup&quot;).listFiles()) {</span>
+<span class="nc" id="L220">                    File dst = new File(Exporter.LEGACY_BASE_FOLDER_PATH + &quot;/backups/&quot; + src.getName());</span>
+                    try {
+<span class="nc" id="L222">                        MigrationHelper.moveFile(src, dst);</span>
+<span class="nc" id="L223">                    } catch (IOException e) {</span>
+<span class="nc" id="L224">                        Log.e(LOG_TAG, &quot;Error migrating backup: &quot; + src.getName());</span>
+<span class="nc" id="L225">                        Crashlytics.logException(e);</span>
+<span class="nc" id="L226">                    }</span>
+                }
+            }
+
+<span class="nc bnc" id="L230" title="All 2 branches missed.">            if (oldBackupFolder.delete())</span>
+<span class="nc" id="L231">                oldExportFolder.delete();</span>
+<span class="nc" id="L232">        }</span>
+    };
+
+    /**
+     * Imports commodities into the database from XML resource file
+     */
+    static void importCommodities(SQLiteDatabase db) throws SAXException, ParserConfigurationException, IOException {
+<span class="nc" id="L239">        SAXParserFactory spf = SAXParserFactory.newInstance();</span>
+<span class="nc" id="L240">        SAXParser sp = spf.newSAXParser();</span>
+<span class="nc" id="L241">        XMLReader xr = sp.getXMLReader();</span>
+
+<span class="nc" id="L243">        InputStream commoditiesInputStream = GnuCashApplication.getAppContext().getResources()</span>
+<span class="nc" id="L244">                .openRawResource(R.raw.iso_4217_currencies);</span>
+<span class="nc" id="L245">        BufferedInputStream bos = new BufferedInputStream(commoditiesInputStream);</span>
+
+        /** Create handler to handle XML Tags ( extends DefaultHandler ) */
+
+<span class="nc" id="L249">        CommoditiesXmlHandler handler = new CommoditiesXmlHandler(db);</span>
+
+<span class="nc" id="L251">        xr.setContentHandler(handler);</span>
+<span class="nc" id="L252">        xr.parse(new InputSource(bos));</span>
+<span class="nc" id="L253">    }</span>
+
+
+    /**
+     * Upgrades the database from version 1 to 2
+     * @param db SQLiteDatabase
+     * @return Version number: 2 if upgrade successful, 1 otherwise
+     */
+    public static int upgradeDbToVersion2(SQLiteDatabase db) {
+        int oldVersion;
+<span class="nc" id="L263">        String addColumnSql = &quot;ALTER TABLE &quot; + TransactionEntry.TABLE_NAME +</span>
+                            &quot; ADD COLUMN double_account_uid varchar(255)&quot;;
+
+        //introducing sub accounts
+<span class="nc" id="L267">        Log.i(DatabaseHelper.LOG_TAG, &quot;Adding column for parent accounts&quot;);</span>
+<span class="nc" id="L268">        String addParentAccountSql = &quot;ALTER TABLE &quot; + AccountEntry.TABLE_NAME +</span>
+                &quot; ADD COLUMN &quot; + AccountEntry.COLUMN_PARENT_ACCOUNT_UID + &quot; varchar(255)&quot;;
+
+<span class="nc" id="L271">        db.execSQL(addColumnSql);</span>
+<span class="nc" id="L272">        db.execSQL(addParentAccountSql);</span>
+
+        //update account types to GnuCash account types
+        //since all were previously CHECKING, now all will be CASH
+<span class="nc" id="L276">        Log.i(DatabaseHelper.LOG_TAG, &quot;Converting account types to GnuCash compatible types&quot;);</span>
+<span class="nc" id="L277">        ContentValues cv = new ContentValues();</span>
+<span class="nc" id="L278">        cv.put(SplitEntry.COLUMN_TYPE, AccountType.CASH.toString());</span>
+<span class="nc" id="L279">        db.update(AccountEntry.TABLE_NAME, cv, null, null);</span>
+
+<span class="nc" id="L281">        oldVersion = 2;</span>
+<span class="nc" id="L282">        return oldVersion;</span>
+    }
+
+    /**
+     * Upgrades the database from version 2 to 3
+     * @param db SQLiteDatabase to upgrade
+     * @return Version number: 3 if upgrade successful, 2 otherwise
+     */
+    static int upgradeDbToVersion3(SQLiteDatabase db) {
+        int oldVersion;
+<span class="nc" id="L292">        String addPlaceHolderAccountFlagSql = &quot;ALTER TABLE &quot; + AccountEntry.TABLE_NAME +</span>
+                &quot; ADD COLUMN &quot; + AccountEntry.COLUMN_PLACEHOLDER + &quot; tinyint default 0&quot;;
+
+<span class="nc" id="L295">        db.execSQL(addPlaceHolderAccountFlagSql);</span>
+<span class="nc" id="L296">        oldVersion = 3;</span>
+<span class="nc" id="L297">        return oldVersion;</span>
+    }
+
+    /**
+     * Upgrades the database from version 3 to 4
+     * @param db SQLiteDatabase
+     * @return Version number: 4 if upgrade successful, 3 otherwise
+     */
+    static int upgradeDbToVersion4(SQLiteDatabase db) {
+        int oldVersion;
+<span class="nc" id="L307">        String addRecurrencePeriod = &quot;ALTER TABLE &quot; + TransactionEntry.TABLE_NAME +</span>
+                &quot; ADD COLUMN recurrence_period integer default 0&quot;;
+
+<span class="nc" id="L310">        String addDefaultTransferAccount = &quot;ALTER TABLE &quot; + AccountEntry.TABLE_NAME</span>
+                + &quot; ADD COLUMN &quot; + AccountEntry.COLUMN_DEFAULT_TRANSFER_ACCOUNT_UID + &quot; varchar(255)&quot;;
+
+<span class="nc" id="L313">        String addAccountColor = &quot; ALTER TABLE &quot; + AccountEntry.TABLE_NAME</span>
+                + &quot; ADD COLUMN &quot; + AccountEntry.COLUMN_COLOR_CODE + &quot; varchar(255)&quot;;
+
+<span class="nc" id="L316">        db.execSQL(addRecurrencePeriod);</span>
+<span class="nc" id="L317">        db.execSQL(addDefaultTransferAccount);</span>
+<span class="nc" id="L318">        db.execSQL(addAccountColor);</span>
+
+<span class="nc" id="L320">        oldVersion = 4;</span>
+<span class="nc" id="L321">        return oldVersion;</span>
+    }
+
+    /**
+     * Upgrades the database from version 4 to 5
+     * &lt;p&gt;Adds favorites column to accounts&lt;/p&gt;
+     * @param db SQLiteDatabase
+     * @return Version number: 5 if upgrade successful, 4 otherwise
+     */
+    static int upgradeDbToVersion5(SQLiteDatabase db) {
+        int oldVersion;
+<span class="nc" id="L332">        String addAccountFavorite = &quot; ALTER TABLE &quot; + AccountEntry.TABLE_NAME</span>
+                + &quot; ADD COLUMN &quot; + AccountEntry.COLUMN_FAVORITE + &quot; tinyint default 0&quot;;
+<span class="nc" id="L334">        db.execSQL(addAccountFavorite);</span>
+
+<span class="nc" id="L336">        oldVersion = 5;</span>
+<span class="nc" id="L337">        return oldVersion;</span>
+    }
+
+    /**
+     * Upgrades the database from version 5 to version 6.&lt;br&gt;
+     * This migration adds support for fully qualified account names and updates existing accounts.
+     * @param db SQLite Database to be upgraded
+     * @return New database version (6) if upgrade successful, old version (5) if unsuccessful
+     */
+    static int upgradeDbToVersion6(SQLiteDatabase db) {
+<span class="nc" id="L347">        int oldVersion = 5;</span>
+<span class="nc" id="L348">        String addFullAccountNameQuery = &quot; ALTER TABLE &quot; + AccountEntry.TABLE_NAME</span>
+                + &quot; ADD COLUMN &quot; + AccountEntry.COLUMN_FULL_NAME + &quot; varchar(255) &quot;;
+<span class="nc" id="L350">        db.execSQL(addFullAccountNameQuery);</span>
+
+        //update all existing accounts with their fully qualified name
+<span class="nc" id="L353">        Cursor cursor = db.query(AccountEntry.TABLE_NAME,</span>
+                new String[]{AccountEntry._ID, AccountEntry.COLUMN_UID},
+                null, null, null, null, null);
+<span class="nc bnc" id="L356" title="All 4 branches missed.">        while(cursor != null &amp;&amp; cursor.moveToNext()){</span>
+<span class="nc" id="L357">            String uid = cursor.getString(cursor.getColumnIndexOrThrow(AccountEntry.COLUMN_UID));</span>
+<span class="nc" id="L358">            String fullName = getFullyQualifiedAccountName(db, uid);</span>
+
+<span class="nc bnc" id="L360" title="All 2 branches missed.">            if (fullName == null)</span>
+<span class="nc" id="L361">                continue;</span>
+
+<span class="nc" id="L363">            ContentValues contentValues = new ContentValues();</span>
+<span class="nc" id="L364">            contentValues.put(AccountEntry.COLUMN_FULL_NAME, fullName);</span>
+
+<span class="nc" id="L366">            long id = cursor.getLong(cursor.getColumnIndexOrThrow(AccountEntry._ID));</span>
+<span class="nc" id="L367">            db.update(AccountEntry.TABLE_NAME, contentValues, AccountEntry._ID + &quot; = &quot; + id, null);</span>
+<span class="nc" id="L368">        }</span>
+
+<span class="nc bnc" id="L370" title="All 2 branches missed.">        if (cursor != null) {</span>
+<span class="nc" id="L371">            cursor.close();</span>
+        }
+
+<span class="nc" id="L374">        oldVersion = 6;</span>
+<span class="nc" id="L375">        return oldVersion;</span>
+    }
+
+
+    /**
+     * Code for upgrading the database to version 7 from version 6.&lt;br&gt;
+     * Tasks accomplished in migration:
+     *  &lt;ul&gt;
+     *      &lt;li&gt;Added new splits table for transaction splits&lt;/li&gt;
+     *      &lt;li&gt;Extract existing info from transactions table to populate split table&lt;/li&gt;
+     *  &lt;/ul&gt;
+     * @param db SQLite Database
+     * @return The new database version if upgrade was successful, or the old db version if it failed
+     */
+    static int upgradeDbToVersion7(SQLiteDatabase db) {
+<span class="nc" id="L390">        int oldVersion = 6;</span>
+<span class="nc" id="L391">        db.beginTransaction();</span>
+        try {
+            // backup transaction table
+<span class="nc" id="L394">            db.execSQL(&quot;ALTER TABLE &quot; + TransactionEntry.TABLE_NAME + &quot; RENAME TO &quot; + TransactionEntry.TABLE_NAME + &quot;_bak&quot;);</span>
+            // create new transaction table
+<span class="nc" id="L396">            db.execSQL(&quot;create table &quot; + TransactionEntry.TABLE_NAME + &quot; (&quot;</span>
+                    + TransactionEntry._ID + &quot; integer primary key autoincrement, &quot;
+                    + TransactionEntry.COLUMN_UID + &quot; varchar(255) not null, &quot;
+                    + TransactionEntry.COLUMN_DESCRIPTION + &quot; varchar(255), &quot;
+                    + TransactionEntry.COLUMN_NOTES + &quot; text, &quot;
+                    + TransactionEntry.COLUMN_TIMESTAMP + &quot; integer not null, &quot;
+                    + TransactionEntry.COLUMN_EXPORTED + &quot; tinyint default 0, &quot;
+                    + TransactionEntry.COLUMN_CURRENCY + &quot; varchar(255) not null, &quot;
+                    + &quot;recurrence_period integer default 0, &quot;
+                    + &quot;UNIQUE (&quot; + TransactionEntry.COLUMN_UID + &quot;) &quot;
+                    + &quot;);&quot;);
+            // initialize new transaction table wiht data from old table
+<span class="nc" id="L408">            db.execSQL(&quot;INSERT INTO &quot; + TransactionEntry.TABLE_NAME + &quot; ( &quot;</span>
+                            + TransactionEntry._ID + &quot; , &quot;
+                            + TransactionEntry.COLUMN_UID + &quot; , &quot;
+                            + TransactionEntry.COLUMN_DESCRIPTION + &quot; , &quot;
+                            + TransactionEntry.COLUMN_NOTES + &quot; , &quot;
+                            + TransactionEntry.COLUMN_TIMESTAMP + &quot; , &quot;
+                            + TransactionEntry.COLUMN_EXPORTED + &quot; , &quot;
+                            + TransactionEntry.COLUMN_CURRENCY + &quot; , &quot;
+                            + &quot;recurrence_period )  SELECT &quot;
+                            + TransactionEntry.TABLE_NAME + &quot;_bak.&quot; + TransactionEntry._ID + &quot; , &quot;
+                            + TransactionEntry.TABLE_NAME + &quot;_bak.&quot; + TransactionEntry.COLUMN_UID + &quot; , &quot;
+                            + TransactionEntry.TABLE_NAME + &quot;_bak.&quot; + TransactionEntry.COLUMN_DESCRIPTION + &quot; , &quot;
+                            + TransactionEntry.TABLE_NAME + &quot;_bak.&quot; + TransactionEntry.COLUMN_NOTES + &quot; , &quot;
+                            + TransactionEntry.TABLE_NAME + &quot;_bak.&quot; + TransactionEntry.COLUMN_TIMESTAMP + &quot; , &quot;
+                            + TransactionEntry.TABLE_NAME + &quot;_bak.&quot; + TransactionEntry.COLUMN_EXPORTED + &quot; , &quot;
+                            + AccountEntry.TABLE_NAME + &quot;.&quot; + AccountEntry.COLUMN_CURRENCY + &quot; , &quot;
+                            + TransactionEntry.TABLE_NAME + &quot;_bak.recurrence_period&quot;
+                            + &quot; FROM &quot; + TransactionEntry.TABLE_NAME + &quot;_bak , &quot; + AccountEntry.TABLE_NAME
+                            + &quot; ON &quot; + TransactionEntry.TABLE_NAME + &quot;_bak.account_uid == &quot; + AccountEntry.TABLE_NAME + &quot;.&quot; + AccountEntry.COLUMN_UID
+            );
+            // create split table
+<span class="nc" id="L429">            db.execSQL(&quot;CREATE TABLE &quot; + SplitEntry.TABLE_NAME + &quot; (&quot;</span>
+                    + SplitEntry._ID + &quot; integer primary key autoincrement, &quot;
+                    + SplitEntry.COLUMN_UID + &quot; varchar(255) not null, &quot;
+                    + SplitEntry.COLUMN_MEMO + &quot; text, &quot;
+                    + SplitEntry.COLUMN_TYPE + &quot; varchar(255) not null, &quot;
+                    + &quot;amount&quot; + &quot; varchar(255) not null, &quot;
+                    + SplitEntry.COLUMN_ACCOUNT_UID + &quot; varchar(255) not null, &quot;
+                    + SplitEntry.COLUMN_TRANSACTION_UID + &quot; varchar(255) not null, &quot;
+                    + &quot;FOREIGN KEY (&quot; + SplitEntry.COLUMN_ACCOUNT_UID + &quot;) REFERENCES &quot; + AccountEntry.TABLE_NAME + &quot; (&quot; + AccountEntry.COLUMN_UID + &quot;), &quot;
+                    + &quot;FOREIGN KEY (&quot; + SplitEntry.COLUMN_TRANSACTION_UID + &quot;) REFERENCES &quot; + TransactionEntry.TABLE_NAME + &quot; (&quot; + TransactionEntry.COLUMN_UID + &quot;), &quot;
+                    + &quot;UNIQUE (&quot; + SplitEntry.COLUMN_UID + &quot;) &quot;
+                    + &quot;);&quot;);
+            // Initialize split table with data from backup transaction table
+            // New split table is initialized after the new transaction table as the
+            // foreign key constraint will stop any data from being inserted
+            // If new split table is created before the backup is made, the foreign key
+            // constraint will be rewritten to refer to the backup transaction table
+<span class="nc" id="L446">            db.execSQL(&quot;INSERT INTO &quot; + SplitEntry.TABLE_NAME + &quot; ( &quot;</span>
+                            + SplitEntry.COLUMN_UID + &quot; , &quot;
+                            + SplitEntry.COLUMN_TYPE + &quot; , &quot;
+                            + &quot;amount&quot; + &quot; , &quot;
+                            + SplitEntry.COLUMN_ACCOUNT_UID + &quot; , &quot;
+                            + SplitEntry.COLUMN_TRANSACTION_UID + &quot; ) SELECT &quot;
+                            + &quot;LOWER(HEX(RANDOMBLOB(16))) , &quot;
+                            + &quot;CASE WHEN &quot; + AccountEntry.TABLE_NAME + &quot;.&quot; + AccountEntry.COLUMN_TYPE + &quot; IN ( 'CASH' , 'BANK', 'ASSET', 'EXPENSE', 'RECEIVABLE', 'STOCK', 'MUTUAL' ) THEN CASE WHEN &quot;
+                            + &quot;amount&quot; + &quot; &lt; 0 THEN 'CREDIT' ELSE 'DEBIT' END ELSE CASE WHEN &quot;
+                            + &quot;amount&quot; + &quot; &lt; 0 THEN 'DEBIT' ELSE 'CREDIT' END END , &quot;
+                            + &quot;ABS ( &quot; + TransactionEntry.TABLE_NAME + &quot;_bak.amount ) , &quot;
+                            + TransactionEntry.TABLE_NAME + &quot;_bak.account_uid , &quot;
+                            + TransactionEntry.TABLE_NAME + &quot;_bak.&quot; + TransactionEntry.COLUMN_UID
+                            + &quot; FROM &quot; + TransactionEntry.TABLE_NAME + &quot;_bak , &quot; + AccountEntry.TABLE_NAME
+                            + &quot; ON &quot; + TransactionEntry.TABLE_NAME + &quot;_bak.account_uid = &quot; + AccountEntry.TABLE_NAME + &quot;.&quot; + AccountEntry.COLUMN_UID
+                            + &quot; UNION SELECT &quot;
+                            + &quot;LOWER(HEX(RANDOMBLOB(16))) AS &quot; + SplitEntry.COLUMN_UID + &quot; , &quot;
+                            + &quot;CASE WHEN &quot; + AccountEntry.TABLE_NAME + &quot;.&quot; + AccountEntry.COLUMN_TYPE + &quot; IN ( 'CASH' , 'BANK', 'ASSET', 'EXPENSE', 'RECEIVABLE', 'STOCK', 'MUTUAL' ) THEN CASE WHEN &quot;
+                            + &quot;amount&quot; + &quot; &lt; 0 THEN 'DEBIT' ELSE 'CREDIT' END ELSE CASE WHEN &quot;
+                            + &quot;amount&quot; + &quot; &lt; 0 THEN 'CREDIT' ELSE 'DEBIT' END END , &quot;
+                            + &quot;ABS ( &quot; + TransactionEntry.TABLE_NAME + &quot;_bak.amount ) , &quot;
+                            + TransactionEntry.TABLE_NAME + &quot;_bak.double_account_uid , &quot;
+                            + TransactionEntry.TABLE_NAME + &quot;_baK.&quot; + TransactionEntry.COLUMN_UID
+                            + &quot; FROM &quot; + TransactionEntry.TABLE_NAME + &quot;_bak , &quot; + AccountEntry.TABLE_NAME
+                            + &quot; ON &quot; + TransactionEntry.TABLE_NAME + &quot;_bak.account_uid = &quot; + AccountEntry.TABLE_NAME + &quot;.&quot; + AccountEntry.COLUMN_UID
+                            + &quot; WHERE &quot; + TransactionEntry.TABLE_NAME + &quot;_bak.double_account_uid IS NOT NULL&quot;
+            );
+            // drop backup transaction table
+<span class="nc" id="L474">            db.execSQL(&quot;DROP TABLE &quot; + TransactionEntry.TABLE_NAME + &quot;_bak&quot;);</span>
+<span class="nc" id="L475">            db.setTransactionSuccessful();</span>
+<span class="nc" id="L476">            oldVersion = 7;</span>
+        } finally {
+<span class="nc" id="L478">            db.endTransaction();</span>
+<span class="nc" id="L479">        }</span>
+<span class="nc" id="L480">        return oldVersion;</span>
+    }
+
+    /**
+     * Upgrades the database from version 7 to version 8.
+     * &lt;p&gt;This migration accomplishes the following:
+     *      &lt;ul&gt;
+     *          &lt;li&gt;Added created_at and modified_at columns to all tables (including triggers for updating the columns).&lt;/li&gt;
+     *          &lt;li&gt;New table for scheduled actions and migrate all existing recurring transactions&lt;/li&gt;
+     *          &lt;li&gt;Auto-balancing of all existing splits&lt;/li&gt;
+     *          &lt;li&gt;Added &quot;hidden&quot; flag to accounts table&lt;/li&gt;
+     *          &lt;li&gt;Add flag for transaction templates&lt;/li&gt;
+     *      &lt;/ul&gt;
+     * &lt;/p&gt;
+     * @param db SQLite Database to be upgraded
+     * @return New database version (8) if upgrade successful, old version (7) if unsuccessful
+     */
+    static int upgradeDbToVersion8(SQLiteDatabase db) {
+<span class="nc" id="L498">        Log.i(DatabaseHelper.LOG_TAG, &quot;Upgrading database to version 8&quot;);</span>
+<span class="nc" id="L499">        int oldVersion = 7;</span>
+<span class="nc" id="L500">        new File(Exporter.LEGACY_BASE_FOLDER_PATH + &quot;/backups/&quot;).mkdirs();</span>
+<span class="nc" id="L501">        new File(Exporter.LEGACY_BASE_FOLDER_PATH + &quot;/exports/&quot;).mkdirs();</span>
+        //start moving the files in background thread before we do the database stuff
+<span class="nc" id="L503">        new Thread(moveExportedFilesToNewDefaultLocation).start();</span>
+
+<span class="nc" id="L505">        db.beginTransaction();</span>
+        try {
+
+<span class="nc" id="L508">            Log.i(DatabaseHelper.LOG_TAG, &quot;Creating scheduled actions table&quot;);</span>
+<span class="nc" id="L509">            db.execSQL(&quot;CREATE TABLE &quot; + ScheduledActionEntry.TABLE_NAME + &quot; (&quot;</span>
+                    + ScheduledActionEntry._ID                   + &quot; integer primary key autoincrement, &quot;
+                    + ScheduledActionEntry.COLUMN_UID            + &quot; varchar(255) not null UNIQUE, &quot;
+                    + ScheduledActionEntry.COLUMN_ACTION_UID    + &quot; varchar(255) not null, &quot;
+                    + ScheduledActionEntry.COLUMN_TYPE           + &quot; varchar(255) not null, &quot;
+                    + &quot;period &quot;                                 + &quot; integer not null, &quot;
+                    + ScheduledActionEntry.COLUMN_LAST_RUN       + &quot; integer default 0, &quot;
+                    + ScheduledActionEntry.COLUMN_START_TIME     + &quot; integer not null, &quot;
+                    + ScheduledActionEntry.COLUMN_END_TIME       + &quot; integer default 0, &quot;
+                    + ScheduledActionEntry.COLUMN_TAG            + &quot; text, &quot;
+                    + ScheduledActionEntry.COLUMN_ENABLED        + &quot; tinyint default 1, &quot; //enabled by default
+                    + ScheduledActionEntry.COLUMN_TOTAL_FREQUENCY + &quot; integer default 0, &quot;
+                    + ScheduledActionEntry.COLUMN_EXECUTION_COUNT+ &quot; integer default 0, &quot;
+                    + ScheduledActionEntry.COLUMN_CREATED_AT     + &quot; TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, &quot;
+                    + ScheduledActionEntry.COLUMN_MODIFIED_AT    + &quot; TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP &quot;
+<span class="nc" id="L524">                    + &quot;);&quot; + DatabaseHelper.createUpdatedAtTrigger(ScheduledActionEntry.TABLE_NAME));</span>
+
+
+            //==============================BEGIN TABLE MIGRATIONS ========================================
+<span class="nc" id="L528">            Log.i(DatabaseHelper.LOG_TAG, &quot;Migrating accounts table&quot;);</span>
+            // backup transaction table
+<span class="nc" id="L530">            db.execSQL(&quot;ALTER TABLE &quot; + AccountEntry.TABLE_NAME + &quot; RENAME TO &quot; + AccountEntry.TABLE_NAME + &quot;_bak&quot;);</span>
+            // create new transaction table
+<span class="nc" id="L532">            db.execSQL(&quot;CREATE TABLE &quot; + AccountEntry.TABLE_NAME + &quot; (&quot;</span>
+                    + AccountEntry._ID + &quot; integer primary key autoincrement, &quot;
+                    + AccountEntry.COLUMN_UID + &quot; varchar(255) not null UNIQUE, &quot;
+                    + AccountEntry.COLUMN_NAME + &quot; varchar(255) not null, &quot;
+                    + AccountEntry.COLUMN_TYPE + &quot; varchar(255) not null, &quot;
+                    + AccountEntry.COLUMN_CURRENCY + &quot; varchar(255) not null, &quot;
+                    + AccountEntry.COLUMN_DESCRIPTION + &quot; varchar(255), &quot;
+                    + AccountEntry.COLUMN_COLOR_CODE + &quot; varchar(255), &quot;
+                    + AccountEntry.COLUMN_FAVORITE + &quot; tinyint default 0, &quot;
+                    + AccountEntry.COLUMN_HIDDEN + &quot; tinyint default 0, &quot;
+                    + AccountEntry.COLUMN_FULL_NAME + &quot; varchar(255), &quot;
+                    + AccountEntry.COLUMN_PLACEHOLDER + &quot; tinyint default 0, &quot;
+                    + AccountEntry.COLUMN_PARENT_ACCOUNT_UID + &quot; varchar(255), &quot;
+                    + AccountEntry.COLUMN_DEFAULT_TRANSFER_ACCOUNT_UID + &quot; varchar(255), &quot;
+                    + AccountEntry.COLUMN_CREATED_AT + &quot; TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, &quot;
+                    + AccountEntry.COLUMN_MODIFIED_AT + &quot; TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP &quot;
+<span class="nc" id="L548">                    + &quot;);&quot; + DatabaseHelper.createUpdatedAtTrigger(AccountEntry.TABLE_NAME));</span>
+
+            // initialize new account table with data from old table
+<span class="nc" id="L551">            db.execSQL(&quot;INSERT INTO &quot; + AccountEntry.TABLE_NAME + &quot; ( &quot;</span>
+                            + AccountEntry._ID + &quot;,&quot;
+                            + AccountEntry.COLUMN_UID + &quot; , &quot;
+                            + AccountEntry.COLUMN_NAME + &quot; , &quot;
+                            + AccountEntry.COLUMN_TYPE + &quot; , &quot;
+                            + AccountEntry.COLUMN_CURRENCY + &quot; , &quot;
+                            + AccountEntry.COLUMN_COLOR_CODE + &quot; , &quot;
+                            + AccountEntry.COLUMN_FAVORITE + &quot; , &quot;
+                            + AccountEntry.COLUMN_FULL_NAME + &quot; , &quot;
+                            + AccountEntry.COLUMN_PLACEHOLDER + &quot; , &quot;
+                            + AccountEntry.COLUMN_HIDDEN + &quot; , &quot;
+                            + AccountEntry.COLUMN_PARENT_ACCOUNT_UID + &quot; , &quot;
+                            + AccountEntry.COLUMN_DEFAULT_TRANSFER_ACCOUNT_UID
+                            + &quot;) SELECT &quot;
+                            + AccountEntry.TABLE_NAME + &quot;_bak.&quot; + AccountEntry._ID + &quot; , &quot;
+                            + AccountEntry.TABLE_NAME + &quot;_bak.&quot; + AccountEntry.COLUMN_UID + &quot; , &quot;
+                            + AccountEntry.TABLE_NAME + &quot;_bak.&quot; + AccountEntry.COLUMN_NAME + &quot; , &quot;
+                            + AccountEntry.TABLE_NAME + &quot;_bak.&quot; + AccountEntry.COLUMN_TYPE + &quot; , &quot;
+                            + AccountEntry.TABLE_NAME + &quot;_bak.&quot; + AccountEntry.COLUMN_CURRENCY + &quot; , &quot;
+                            + AccountEntry.TABLE_NAME + &quot;_bak.&quot; + AccountEntry.COLUMN_COLOR_CODE + &quot; , &quot;
+                            + AccountEntry.TABLE_NAME + &quot;_bak.&quot; + AccountEntry.COLUMN_FAVORITE + &quot; , &quot;
+                            + AccountEntry.TABLE_NAME + &quot;_bak.&quot; + AccountEntry.COLUMN_FULL_NAME + &quot; , &quot;
+                            + AccountEntry.TABLE_NAME + &quot;_bak.&quot; + AccountEntry.COLUMN_PLACEHOLDER + &quot; , &quot;
+                            + &quot; CASE WHEN &quot; + AccountEntry.TABLE_NAME + &quot;_bak.type = 'ROOT' THEN 1 ELSE 0 END, &quot;
+                            + AccountEntry.TABLE_NAME + &quot;_bak.&quot; + AccountEntry.COLUMN_PARENT_ACCOUNT_UID + &quot; , &quot;
+                            + AccountEntry.TABLE_NAME + &quot;_bak.&quot; + AccountEntry.COLUMN_DEFAULT_TRANSFER_ACCOUNT_UID
+                            + &quot; FROM &quot; + AccountEntry.TABLE_NAME + &quot;_bak;&quot;
+            );
+
+<span class="nc" id="L580">            Log.i(DatabaseHelper.LOG_TAG, &quot;Migrating transactions table&quot;);</span>
+            // backup transaction table
+<span class="nc" id="L582">            db.execSQL(&quot;ALTER TABLE &quot; + TransactionEntry.TABLE_NAME + &quot; RENAME TO &quot; + TransactionEntry.TABLE_NAME + &quot;_bak&quot;);</span>
+            // create new transaction table
+<span class="nc" id="L584">            db.execSQL(&quot;CREATE TABLE &quot; + TransactionEntry.TABLE_NAME + &quot; (&quot;</span>
+                    + TransactionEntry._ID + &quot; integer primary key autoincrement, &quot;
+                    + TransactionEntry.COLUMN_UID + &quot; varchar(255) not null UNIQUE, &quot;
+                    + TransactionEntry.COLUMN_DESCRIPTION + &quot; varchar(255), &quot;
+                    + TransactionEntry.COLUMN_NOTES + &quot; text, &quot;
+                    + TransactionEntry.COLUMN_TIMESTAMP + &quot; integer not null, &quot;
+                    + TransactionEntry.COLUMN_EXPORTED + &quot; tinyint default 0, &quot;
+                    + TransactionEntry.COLUMN_TEMPLATE + &quot; tinyint default 0, &quot;
+                    + TransactionEntry.COLUMN_CURRENCY + &quot; varchar(255) not null, &quot;
+                    + TransactionEntry.COLUMN_SCHEDX_ACTION_UID + &quot; varchar(255), &quot;
+                    + TransactionEntry.COLUMN_CREATED_AT + &quot; TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, &quot;
+                    + TransactionEntry.COLUMN_MODIFIED_AT + &quot; TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, &quot;
+                    + &quot;FOREIGN KEY (&quot; + TransactionEntry.COLUMN_SCHEDX_ACTION_UID + &quot;) REFERENCES &quot; + ScheduledActionEntry.TABLE_NAME + &quot; (&quot; + ScheduledActionEntry.COLUMN_UID + &quot;) ON DELETE SET NULL &quot;
+<span class="nc" id="L597">                    + &quot;);&quot; + DatabaseHelper.createUpdatedAtTrigger(TransactionEntry.TABLE_NAME));</span>
+
+            // initialize new transaction table with data from old table
+<span class="nc" id="L600">            db.execSQL(&quot;INSERT INTO &quot; + TransactionEntry.TABLE_NAME + &quot; ( &quot;</span>
+                            + TransactionEntry._ID + &quot; , &quot;
+                            + TransactionEntry.COLUMN_UID + &quot; , &quot;
+                            + TransactionEntry.COLUMN_DESCRIPTION + &quot; , &quot;
+                            + TransactionEntry.COLUMN_NOTES + &quot; , &quot;
+                            + TransactionEntry.COLUMN_TIMESTAMP + &quot; , &quot;
+                            + TransactionEntry.COLUMN_EXPORTED + &quot; , &quot;
+                            + TransactionEntry.COLUMN_CURRENCY + &quot; , &quot;
+                            + TransactionEntry.COLUMN_TEMPLATE
+                            + &quot;)  SELECT &quot;
+                            + TransactionEntry.TABLE_NAME + &quot;_bak.&quot; + TransactionEntry._ID + &quot; , &quot;
+                            + TransactionEntry.TABLE_NAME + &quot;_bak.&quot; + TransactionEntry.COLUMN_UID + &quot; , &quot;
+                            + TransactionEntry.TABLE_NAME + &quot;_bak.&quot; + TransactionEntry.COLUMN_DESCRIPTION + &quot; , &quot;
+                            + TransactionEntry.TABLE_NAME + &quot;_bak.&quot; + TransactionEntry.COLUMN_NOTES + &quot; , &quot;
+                            + TransactionEntry.TABLE_NAME + &quot;_bak.&quot; + TransactionEntry.COLUMN_TIMESTAMP + &quot; , &quot;
+                            + TransactionEntry.TABLE_NAME + &quot;_bak.&quot; + TransactionEntry.COLUMN_EXPORTED + &quot; , &quot;
+                            + TransactionEntry.TABLE_NAME + &quot;_bak.&quot; + TransactionEntry.COLUMN_CURRENCY + &quot; , &quot;
+                            + &quot; CASE WHEN &quot; + TransactionEntry.TABLE_NAME + &quot;_bak.recurrence_period &gt; 0 THEN 1 ELSE 0 END &quot;
+                            + &quot; FROM &quot; + TransactionEntry.TABLE_NAME + &quot;_bak;&quot;
+            );
+
+<span class="nc" id="L621">            Log.i(DatabaseHelper.LOG_TAG, &quot;Migrating splits table&quot;);</span>
+            // backup split table
+<span class="nc" id="L623">            db.execSQL(&quot;ALTER TABLE &quot; + SplitEntry.TABLE_NAME + &quot; RENAME TO &quot; + SplitEntry.TABLE_NAME + &quot;_bak&quot;);</span>
+            // create new split table
+<span class="nc" id="L625">            db.execSQL(&quot;CREATE TABLE &quot; + SplitEntry.TABLE_NAME + &quot; (&quot;</span>
+                    + SplitEntry._ID + &quot; integer primary key autoincrement, &quot;
+                    + SplitEntry.COLUMN_UID + &quot; varchar(255) not null UNIQUE, &quot;
+                    + SplitEntry.COLUMN_MEMO + &quot; text, &quot;
+                    + SplitEntry.COLUMN_TYPE + &quot; varchar(255) not null, &quot;
+                    + &quot;amount&quot; + &quot; varchar(255) not null, &quot;
+                    + SplitEntry.COLUMN_ACCOUNT_UID + &quot; varchar(255) not null, &quot;
+                    + SplitEntry.COLUMN_TRANSACTION_UID + &quot; varchar(255) not null, &quot;
+                    + SplitEntry.COLUMN_CREATED_AT + &quot; TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, &quot;
+                    + SplitEntry.COLUMN_MODIFIED_AT + &quot; TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, &quot;
+                    + &quot;FOREIGN KEY (&quot; + SplitEntry.COLUMN_ACCOUNT_UID + &quot;) REFERENCES &quot; + AccountEntry.TABLE_NAME + &quot; (&quot; + AccountEntry.COLUMN_UID + &quot;) ON DELETE CASCADE, &quot;
+                    + &quot;FOREIGN KEY (&quot; + SplitEntry.COLUMN_TRANSACTION_UID + &quot;) REFERENCES &quot; + TransactionEntry.TABLE_NAME + &quot; (&quot; + TransactionEntry.COLUMN_UID + &quot;) ON DELETE CASCADE &quot;
+<span class="nc" id="L637">                    + &quot;);&quot; + DatabaseHelper.createUpdatedAtTrigger(SplitEntry.TABLE_NAME));</span>
+
+            // initialize new split table with data from old table
+<span class="nc" id="L640">            db.execSQL(&quot;INSERT INTO &quot; + SplitEntry.TABLE_NAME + &quot; ( &quot;</span>
+                            + SplitEntry._ID + &quot; , &quot;
+                            + SplitEntry.COLUMN_UID + &quot; , &quot;
+                            + SplitEntry.COLUMN_MEMO + &quot; , &quot;
+                            + SplitEntry.COLUMN_TYPE + &quot; , &quot;
+                            + &quot;amount&quot; + &quot; , &quot;
+                            + SplitEntry.COLUMN_ACCOUNT_UID + &quot; , &quot;
+                            + SplitEntry.COLUMN_TRANSACTION_UID
+                            + &quot;)  SELECT &quot;
+                            + SplitEntry.TABLE_NAME + &quot;_bak.&quot; + SplitEntry._ID + &quot; , &quot;
+                            + SplitEntry.TABLE_NAME + &quot;_bak.&quot; + SplitEntry.COLUMN_UID + &quot; , &quot;
+                            + SplitEntry.TABLE_NAME + &quot;_bak.&quot; + SplitEntry.COLUMN_MEMO + &quot; , &quot;
+                            + SplitEntry.TABLE_NAME + &quot;_bak.&quot; + SplitEntry.COLUMN_TYPE + &quot; , &quot;
+                            + SplitEntry.TABLE_NAME + &quot;_bak.&quot; + &quot;amount&quot; + &quot; , &quot;
+                            + SplitEntry.TABLE_NAME + &quot;_bak.&quot; + SplitEntry.COLUMN_ACCOUNT_UID + &quot; , &quot;
+                            + SplitEntry.TABLE_NAME + &quot;_bak.&quot; + SplitEntry.COLUMN_TRANSACTION_UID
+                            + &quot; FROM &quot; + SplitEntry.TABLE_NAME + &quot;_bak;&quot;
+            );
+
+
+
+            //================================ END TABLE MIGRATIONS ================================
+
+            // String timestamp to be used for all new created entities in migration
+<span class="nc" id="L664">            String timestamp = TimestampHelper.getUtcStringFromTimestamp(TimestampHelper.getTimestampFromNow());</span>
+
+            //ScheduledActionDbAdapter scheduledActionDbAdapter = new ScheduledActionDbAdapter(db);
+            //SplitsDbAdapter splitsDbAdapter = new SplitsDbAdapter(db);
+            //TransactionsDbAdapter transactionsDbAdapter = new TransactionsDbAdapter(db, splitsDbAdapter);
+            //AccountsDbAdapter accountsDbAdapter = new AccountsDbAdapter(db,transactionsDbAdapter);
+
+<span class="nc" id="L671">            Log.i(DatabaseHelper.LOG_TAG, &quot;Creating default root account if none exists&quot;);</span>
+<span class="nc" id="L672">            ContentValues contentValues = new ContentValues();</span>
+            //assign a root account to all accounts which had null as parent except ROOT (top-level accounts)
+            String rootAccountUID;
+<span class="nc" id="L675">            Cursor cursor = db.query(AccountEntry.TABLE_NAME,</span>
+                    new String[]{AccountEntry.COLUMN_UID},
+                    AccountEntry.COLUMN_TYPE + &quot;= ?&quot;,
+<span class="nc" id="L678">                    new String[]{AccountType.ROOT.name()}, null, null, null);</span>
+            try {
+<span class="nc bnc" id="L680" title="All 2 branches missed.">                if (cursor.moveToFirst()) {</span>
+<span class="nc" id="L681">                    rootAccountUID = cursor.getString(cursor.getColumnIndexOrThrow(AccountEntry.COLUMN_UID));</span>
+                }
+                else
+                {
+<span class="nc" id="L685">                    rootAccountUID = BaseModel.generateUID();</span>
+<span class="nc" id="L686">                    contentValues.clear();</span>
+<span class="nc" id="L687">                    contentValues.put(CommonColumns.COLUMN_UID, rootAccountUID);</span>
+<span class="nc" id="L688">                    contentValues.put(CommonColumns.COLUMN_CREATED_AT, timestamp);</span>
+<span class="nc" id="L689">                    contentValues.put(AccountEntry.COLUMN_NAME,         &quot;ROOT&quot;);</span>
+<span class="nc" id="L690">                    contentValues.put(AccountEntry.COLUMN_TYPE,         &quot;ROOT&quot;);</span>
+<span class="nc" id="L691">                    contentValues.put(AccountEntry.COLUMN_CURRENCY,     Money.DEFAULT_CURRENCY_CODE);</span>
+<span class="nc" id="L692">                    contentValues.put(AccountEntry.COLUMN_PLACEHOLDER,  0);</span>
+<span class="nc" id="L693">                    contentValues.put(AccountEntry.COLUMN_HIDDEN,       1);</span>
+<span class="nc" id="L694">                    contentValues.putNull(AccountEntry.COLUMN_COLOR_CODE);</span>
+<span class="nc" id="L695">                    contentValues.put(AccountEntry.COLUMN_FAVORITE, 0);</span>
+<span class="nc" id="L696">                    contentValues.put(AccountEntry.COLUMN_FULL_NAME,    &quot; &quot;);</span>
+<span class="nc" id="L697">                    contentValues.putNull(AccountEntry.COLUMN_PARENT_ACCOUNT_UID);</span>
+<span class="nc" id="L698">                    contentValues.putNull(AccountEntry.COLUMN_DEFAULT_TRANSFER_ACCOUNT_UID);</span>
+<span class="nc" id="L699">                    db.insert(AccountEntry.TABLE_NAME, null, contentValues);</span>
+                }
+            } finally {
+<span class="nc" id="L702">                cursor.close();</span>
+<span class="nc" id="L703">            }</span>
+            //String rootAccountUID = accountsDbAdapter.getOrCreateGnuCashRootAccountUID();
+<span class="nc" id="L705">            contentValues.clear();</span>
+<span class="nc" id="L706">            contentValues.put(AccountEntry.COLUMN_PARENT_ACCOUNT_UID, rootAccountUID);</span>
+<span class="nc" id="L707">            db.update(AccountEntry.TABLE_NAME, contentValues, AccountEntry.COLUMN_PARENT_ACCOUNT_UID + &quot; IS NULL AND &quot; + AccountEntry.COLUMN_TYPE + &quot; != ?&quot;, new String[]{&quot;ROOT&quot;});</span>
+
+<span class="nc" id="L709">            Log.i(DatabaseHelper.LOG_TAG, &quot;Migrating existing recurring transactions&quot;);</span>
+<span class="nc" id="L710">            cursor = db.query(TransactionEntry.TABLE_NAME + &quot;_bak&quot;, null, &quot;recurrence_period &gt; 0&quot;, null, null, null, null);</span>
+<span class="nc" id="L711">            long lastRun = System.currentTimeMillis();</span>
+<span class="nc bnc" id="L712" title="All 2 branches missed.">            while (cursor.moveToNext()){</span>
+<span class="nc" id="L713">                contentValues.clear();</span>
+<span class="nc" id="L714">                Timestamp timestampT = new Timestamp(cursor.getLong(cursor.getColumnIndexOrThrow(TransactionEntry.COLUMN_TIMESTAMP)));</span>
+<span class="nc" id="L715">                contentValues.put(TransactionEntry.COLUMN_CREATED_AT, TimestampHelper.getUtcStringFromTimestamp(timestampT));</span>
+<span class="nc" id="L716">                long transactionId = cursor.getLong(cursor.getColumnIndexOrThrow(TransactionEntry._ID));</span>
+<span class="nc" id="L717">                db.update(TransactionEntry.TABLE_NAME, contentValues, TransactionEntry._ID + &quot;=&quot; + transactionId, null);</span>
+
+                //ScheduledAction scheduledAction = new ScheduledAction(ScheduledAction.ActionType.TRANSACTION);
+                //scheduledAction.setActionUID(cursor.getString(cursor.getColumnIndexOrThrow(TransactionEntry.COLUMN_UID)));
+                //long period = cursor.getLong(cursor.getColumnIndexOrThrow(&quot;recurrence_period&quot;));
+                //scheduledAction.setPeriod(period);
+                //scheduledAction.setStartTime(timestampT.getTime()); //the start time is when the transaction was created
+                //scheduledAction.setLastRun(System.currentTimeMillis()); //prevent this from being executed at the end of migration
+
+<span class="nc" id="L726">                contentValues.clear();</span>
+<span class="nc" id="L727">                contentValues.put(CommonColumns.COLUMN_UID, BaseModel.generateUID());</span>
+<span class="nc" id="L728">                contentValues.put(CommonColumns.COLUMN_CREATED_AT, timestamp);</span>
+<span class="nc" id="L729">                contentValues.put(ScheduledActionEntry.COLUMN_ACTION_UID, cursor.getString(cursor.getColumnIndexOrThrow(TransactionEntry.COLUMN_UID)));</span>
+<span class="nc" id="L730">                contentValues.put(&quot;period&quot;, cursor.getLong(cursor.getColumnIndexOrThrow(&quot;recurrence_period&quot;)));</span>
+<span class="nc" id="L731">                contentValues.put(ScheduledActionEntry.COLUMN_START_TIME, timestampT.getTime());</span>
+<span class="nc" id="L732">                contentValues.put(ScheduledActionEntry.COLUMN_END_TIME, 0);</span>
+<span class="nc" id="L733">                contentValues.put(ScheduledActionEntry.COLUMN_LAST_RUN, lastRun);</span>
+<span class="nc" id="L734">                contentValues.put(ScheduledActionEntry.COLUMN_TYPE, &quot;TRANSACTION&quot;);</span>
+<span class="nc" id="L735">                contentValues.put(ScheduledActionEntry.COLUMN_TAG, &quot;&quot;);</span>
+<span class="nc" id="L736">                contentValues.put(ScheduledActionEntry.COLUMN_ENABLED, 1);</span>
+<span class="nc" id="L737">                contentValues.put(ScheduledActionEntry.COLUMN_TOTAL_FREQUENCY, 0);</span>
+<span class="nc" id="L738">                contentValues.put(ScheduledActionEntry.COLUMN_EXECUTION_COUNT, 0);</span>
+                //scheduledActionDbAdapter.addRecord(scheduledAction);
+<span class="nc" id="L740">                db.insert(ScheduledActionEntry.TABLE_NAME, null, contentValues);</span>
+
+                //build intent for recurring transactions in the database
+<span class="nc" id="L743">                Intent intent = new Intent(Intent.ACTION_INSERT);</span>
+<span class="nc" id="L744">                intent.setType(Transaction.MIME_TYPE);</span>
+
+                //cancel existing pending intent
+<span class="nc" id="L747">                Context context = GnuCashApplication.getAppContext();</span>
+<span class="nc" id="L748">                PendingIntent recurringPendingIntent = PendingIntent.getBroadcast(context,</span>
+                        (int)transactionId, intent, PendingIntent.FLAG_CANCEL_CURRENT);
+<span class="nc" id="L750">                AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);</span>
+<span class="nc" id="L751">                alarmManager.cancel(recurringPendingIntent);</span>
+<span class="nc" id="L752">            }</span>
+<span class="nc" id="L753">            cursor.close();</span>
+
+            //auto-balance existing splits
+<span class="nc" id="L756">            Log.i(DatabaseHelper.LOG_TAG, &quot;Auto-balancing existing transaction splits&quot;);</span>
+<span class="nc" id="L757">            cursor = db.query(</span>
+                    TransactionEntry.TABLE_NAME + &quot; , &quot; + SplitEntry.TABLE_NAME + &quot; ON &quot;
+                            + TransactionEntry.TABLE_NAME + &quot;.&quot; + TransactionEntry.COLUMN_UID + &quot;=&quot; + SplitEntry.TABLE_NAME + &quot;.&quot; + SplitEntry.COLUMN_TRANSACTION_UID
+                            + &quot; , &quot; + AccountEntry.TABLE_NAME + &quot; ON &quot;
+                            + SplitEntry.TABLE_NAME + &quot;.&quot; + SplitEntry.COLUMN_ACCOUNT_UID + &quot;=&quot; + AccountEntry.TABLE_NAME + &quot;.&quot; + AccountEntry.COLUMN_UID,
+                    new String[]{
+                            TransactionEntry.TABLE_NAME + &quot;.&quot; + TransactionEntry.COLUMN_UID + &quot; AS trans_uid&quot;,
+                            TransactionEntry.TABLE_NAME + &quot;.&quot; + TransactionEntry.COLUMN_CURRENCY + &quot; AS trans_currency&quot;,
+                            &quot;TOTAL ( CASE WHEN &quot; +
+                                    SplitEntry.TABLE_NAME + &quot;.&quot; + SplitEntry.COLUMN_TYPE + &quot; = 'DEBIT' THEN &quot; +
+                                    SplitEntry.TABLE_NAME + &quot;.&quot; + &quot;amount&quot; + &quot; ELSE - &quot; +
+                                    SplitEntry.TABLE_NAME + &quot;.&quot; + &quot;amount&quot; + &quot; END ) AS trans_acct_balance&quot;,
+                            &quot;COUNT ( DISTINCT &quot; +
+                                    AccountEntry.TABLE_NAME + &quot;.&quot; + AccountEntry.COLUMN_CURRENCY +
+                                    &quot; ) AS trans_currency_count&quot;
+                    },
+                    TransactionEntry.TABLE_NAME + &quot;.&quot; + TransactionEntry.COLUMN_TEMPLATE + &quot; == 0&quot;,
+                    null,
+                    TransactionEntry.TABLE_NAME + &quot;.&quot; + TransactionEntry.COLUMN_UID,
+                    &quot;trans_acct_balance != 0 AND trans_currency_count = 1&quot;,
+                    null);
+            try {
+<span class="nc bnc" id="L779" title="All 2 branches missed.">                while (cursor.moveToNext()){</span>
+<span class="nc" id="L780">                    double imbalance = cursor.getDouble(cursor.getColumnIndexOrThrow(&quot;trans_acct_balance&quot;));</span>
+<span class="nc" id="L781">                    BigDecimal decimalImbalance = BigDecimal.valueOf(imbalance).setScale(2, BigDecimal.ROUND_HALF_UP);</span>
+<span class="nc bnc" id="L782" title="All 2 branches missed.">                    if (decimalImbalance.compareTo(BigDecimal.ZERO) != 0) {</span>
+<span class="nc" id="L783">                        String currencyCode = cursor.getString(cursor.getColumnIndexOrThrow(&quot;trans_currency&quot;));</span>
+<span class="nc" id="L784">                        String imbalanceAccountName = GnuCashApplication.getAppContext().getString(R.string.imbalance_account_name) + &quot;-&quot; + currencyCode;</span>
+                        String imbalanceAccountUID;
+<span class="nc" id="L786">                        Cursor c = db.query(AccountEntry.TABLE_NAME, new String[]{AccountEntry.COLUMN_UID},</span>
+                                AccountEntry.COLUMN_FULL_NAME + &quot;= ?&quot;, new String[]{imbalanceAccountName},
+                                null, null, null);
+                        try {
+<span class="nc bnc" id="L790" title="All 2 branches missed.">                            if (c.moveToFirst()) {</span>
+<span class="nc" id="L791">                                imbalanceAccountUID = c.getString(c.getColumnIndexOrThrow(AccountEntry.COLUMN_UID));</span>
+                            }
+                            else {
+<span class="nc" id="L794">                                imbalanceAccountUID = BaseModel.generateUID();</span>
+<span class="nc" id="L795">                                contentValues.clear();</span>
+<span class="nc" id="L796">                                contentValues.put(CommonColumns.COLUMN_UID, imbalanceAccountUID);</span>
+<span class="nc" id="L797">                                contentValues.put(CommonColumns.COLUMN_CREATED_AT, timestamp);</span>
+<span class="nc" id="L798">                                contentValues.put(AccountEntry.COLUMN_NAME,         imbalanceAccountName);</span>
+<span class="nc" id="L799">                                contentValues.put(AccountEntry.COLUMN_TYPE,         &quot;BANK&quot;);</span>
+<span class="nc" id="L800">                                contentValues.put(AccountEntry.COLUMN_CURRENCY,     currencyCode);</span>
+<span class="nc" id="L801">                                contentValues.put(AccountEntry.COLUMN_PLACEHOLDER,  0);</span>
+<span class="nc bnc" id="L802" title="All 2 branches missed.">                                contentValues.put(AccountEntry.COLUMN_HIDDEN,       GnuCashApplication.isDoubleEntryEnabled() ? 0 : 1);</span>
+<span class="nc" id="L803">                                contentValues.putNull(AccountEntry.COLUMN_COLOR_CODE);</span>
+<span class="nc" id="L804">                                contentValues.put(AccountEntry.COLUMN_FAVORITE, 0);</span>
+<span class="nc" id="L805">                                contentValues.put(AccountEntry.COLUMN_FULL_NAME,    imbalanceAccountName);</span>
+<span class="nc" id="L806">                                contentValues.put(AccountEntry.COLUMN_PARENT_ACCOUNT_UID, rootAccountUID);</span>
+<span class="nc" id="L807">                                contentValues.putNull(AccountEntry.COLUMN_DEFAULT_TRANSFER_ACCOUNT_UID);</span>
+<span class="nc" id="L808">                                db.insert(AccountEntry.TABLE_NAME, null, contentValues);</span>
+                            }
+                        } finally {
+<span class="nc" id="L811">                            c.close();</span>
+<span class="nc" id="L812">                        }</span>
+<span class="nc" id="L813">                        String TransactionUID = cursor.getString(cursor.getColumnIndexOrThrow(&quot;trans_uid&quot;));</span>
+<span class="nc" id="L814">                        contentValues.clear();</span>
+<span class="nc" id="L815">                        contentValues.put(CommonColumns.COLUMN_UID, BaseModel.generateUID());</span>
+<span class="nc" id="L816">                        contentValues.put(CommonColumns.COLUMN_CREATED_AT, timestamp);</span>
+<span class="nc" id="L817">                        contentValues.put(&quot;amount&quot;,     decimalImbalance.abs().toPlainString());</span>
+<span class="nc bnc" id="L818" title="All 2 branches missed.">                        contentValues.put(SplitEntry.COLUMN_TYPE,       decimalImbalance.compareTo(BigDecimal.ZERO) &lt; 0 ? &quot;DEBIT&quot; : &quot;CREDIT&quot;);</span>
+<span class="nc" id="L819">                        contentValues.put(SplitEntry.COLUMN_MEMO,       &quot;&quot;);</span>
+<span class="nc" id="L820">                        contentValues.put(SplitEntry.COLUMN_ACCOUNT_UID, imbalanceAccountUID);</span>
+<span class="nc" id="L821">                        contentValues.put(SplitEntry.COLUMN_TRANSACTION_UID, TransactionUID);</span>
+<span class="nc" id="L822">                        db.insert(SplitEntry.TABLE_NAME, null, contentValues);</span>
+<span class="nc" id="L823">                        contentValues.clear();</span>
+<span class="nc" id="L824">                        contentValues.put(TransactionEntry.COLUMN_MODIFIED_AT, timestamp);</span>
+<span class="nc" id="L825">                        db.update(TransactionEntry.TABLE_NAME, contentValues, TransactionEntry.COLUMN_UID + &quot; == ?&quot;,</span>
+                                new String[]{TransactionUID});
+                    }
+<span class="nc" id="L828">                }</span>
+            } finally {
+<span class="nc" id="L830">                cursor.close();</span>
+<span class="nc" id="L831">            }</span>
+
+<span class="nc" id="L833">            Log.i(DatabaseHelper.LOG_TAG, &quot;Dropping temporary migration tables&quot;);</span>
+<span class="nc" id="L834">            db.execSQL(&quot;DROP TABLE &quot; + SplitEntry.TABLE_NAME + &quot;_bak&quot;);</span>
+<span class="nc" id="L835">            db.execSQL(&quot;DROP TABLE &quot; + AccountEntry.TABLE_NAME + &quot;_bak&quot;);</span>
+<span class="nc" id="L836">            db.execSQL(&quot;DROP TABLE &quot; + TransactionEntry.TABLE_NAME + &quot;_bak&quot;);</span>
+
+<span class="nc" id="L838">            db.setTransactionSuccessful();</span>
+<span class="nc" id="L839">            oldVersion = 8;</span>
+        } finally {
+<span class="nc" id="L841">            db.endTransaction();</span>
+<span class="nc" id="L842">        }</span>
+
+<span class="nc" id="L844">        GnuCashApplication.startScheduledActionExecutionService(GnuCashApplication.getAppContext());</span>
+
+<span class="nc" id="L846">        return oldVersion;</span>
+    }
+
+    /**
+     * Upgrades the database from version 8 to version 9.
+     * &lt;p&gt;This migration accomplishes the following:
+     *  &lt;ul&gt;
+     *      &lt;li&gt;Adds a commodities table to the database&lt;/li&gt;
+     *      &lt;li&gt;Adds prices table to the database&lt;/li&gt;
+     *      &lt;li&gt;Add separate columns for split value and quantity&lt;/li&gt;
+     *      &lt;li&gt;Migrate amounts to use the correct denominations for the currency&lt;/li&gt;
+     *  &lt;/ul&gt;
+     * &lt;/p&gt;
+     * @param db SQLite Database to be upgraded
+     * @return New database version (9) if upgrade successful, old version (8) if unsuccessful
+     * @throws RuntimeException if the default commodities could not be imported
+     */
+    static int upgradeDbToVersion9(SQLiteDatabase db){
+<span class="nc" id="L864">        Log.i(DatabaseHelper.LOG_TAG, &quot;Upgrading database to version 9&quot;);</span>
+<span class="nc" id="L865">        int oldVersion = 8;</span>
+
+<span class="nc" id="L867">        db.beginTransaction();</span>
+        try {
+<span class="nc" id="L869">            db.execSQL(&quot;CREATE TABLE &quot; + CommodityEntry.TABLE_NAME + &quot; (&quot;</span>
+                    + CommodityEntry._ID                + &quot; integer primary key autoincrement, &quot;
+                    + CommodityEntry.COLUMN_UID         + &quot; varchar(255) not null UNIQUE, &quot;
+<span class="nc" id="L872">                    + CommodityEntry.COLUMN_NAMESPACE   + &quot; varchar(255) not null default &quot; + Commodity.Namespace.ISO4217.name() + &quot;, &quot;</span>
+                    + CommodityEntry.COLUMN_FULLNAME    + &quot; varchar(255) not null, &quot;
+                    + CommodityEntry.COLUMN_MNEMONIC    + &quot; varchar(255) not null, &quot;
+                    + CommodityEntry.COLUMN_LOCAL_SYMBOL+ &quot; varchar(255) not null default '', &quot;
+                    + CommodityEntry.COLUMN_CUSIP       + &quot; varchar(255), &quot;
+                    + CommodityEntry.COLUMN_SMALLEST_FRACTION + &quot; integer not null, &quot;
+                    + CommodityEntry.COLUMN_QUOTE_FLAG  + &quot; integer not null, &quot;
+                    + CommodityEntry.COLUMN_CREATED_AT  + &quot; TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, &quot;
+                    + CommodityEntry.COLUMN_MODIFIED_AT + &quot; TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP &quot;
+<span class="nc" id="L881">                    + &quot;);&quot; + DatabaseHelper.createUpdatedAtTrigger(CommodityEntry.TABLE_NAME));</span>
+<span class="nc" id="L882">            db.execSQL(&quot;CREATE UNIQUE INDEX '&quot; + CommodityEntry.INDEX_UID</span>
+                    + &quot;' ON &quot; + CommodityEntry.TABLE_NAME + &quot;(&quot; + CommodityEntry.COLUMN_UID + &quot;)&quot;);
+
+            try {
+<span class="nc" id="L886">                importCommodities(db);</span>
+<span class="nc" id="L887">            } catch (SAXException | ParserConfigurationException | IOException e) {</span>
+<span class="nc" id="L888">                Log.e(DatabaseHelper.LOG_TAG, &quot;Error loading currencies into the database&quot;, e);</span>
+<span class="nc" id="L889">                Crashlytics.logException(e);</span>
+<span class="nc" id="L890">                throw new RuntimeException(e);</span>
+<span class="nc" id="L891">            }</span>
+
+<span class="nc" id="L893">            db.execSQL(&quot; ALTER TABLE &quot; + AccountEntry.TABLE_NAME</span>
+                    + &quot; ADD COLUMN &quot; + AccountEntry.COLUMN_COMMODITY_UID + &quot; varchar(255) &quot;
+                    + &quot; REFERENCES &quot; + CommodityEntry.TABLE_NAME + &quot; (&quot; + CommodityEntry.COLUMN_UID + &quot;) &quot;);
+
+<span class="nc" id="L897">            db.execSQL(&quot; ALTER TABLE &quot; + TransactionEntry.TABLE_NAME</span>
+                    + &quot; ADD COLUMN &quot; + TransactionEntry.COLUMN_COMMODITY_UID + &quot; varchar(255) &quot;
+                    + &quot; REFERENCES &quot; + CommodityEntry.TABLE_NAME + &quot; (&quot; + CommodityEntry.COLUMN_UID + &quot;) &quot;);
+
+<span class="nc" id="L901">            db.execSQL(&quot;UPDATE &quot; + AccountEntry.TABLE_NAME + &quot; SET &quot; + AccountEntry.COLUMN_COMMODITY_UID + &quot; = &quot;</span>
+                    + &quot; (SELECT &quot; + CommodityEntry.COLUMN_UID
+                    + &quot; FROM &quot; + CommodityEntry.TABLE_NAME
+                    + &quot; WHERE &quot; + AccountEntry.TABLE_NAME + &quot;.&quot; + AccountEntry.COLUMN_COMMODITY_UID + &quot; = &quot; + CommodityEntry.TABLE_NAME + &quot;.&quot; + CommodityEntry.COLUMN_UID
+                    + &quot;)&quot;);
+
+<span class="nc" id="L907">            db.execSQL(&quot;UPDATE &quot; + TransactionEntry.TABLE_NAME + &quot; SET &quot; + TransactionEntry.COLUMN_COMMODITY_UID + &quot; = &quot;</span>
+                    + &quot; (SELECT &quot; + CommodityEntry.COLUMN_UID
+                    + &quot; FROM &quot; + CommodityEntry.TABLE_NAME
+                    + &quot; WHERE &quot; + TransactionEntry.TABLE_NAME + &quot;.&quot; + TransactionEntry.COLUMN_COMMODITY_UID + &quot; = &quot; + CommodityEntry.TABLE_NAME + &quot;.&quot; + CommodityEntry.COLUMN_UID
+                    + &quot;)&quot;);
+
+<span class="nc" id="L913">            db.execSQL(&quot;CREATE TABLE &quot; + PriceEntry.TABLE_NAME + &quot; (&quot;</span>
+                    + PriceEntry._ID                    + &quot; integer primary key autoincrement, &quot;
+                    + PriceEntry.COLUMN_UID             + &quot; varchar(255) not null UNIQUE, &quot;
+                    + PriceEntry.COLUMN_COMMODITY_UID 	+ &quot; varchar(255) not null, &quot;
+                    + PriceEntry.COLUMN_CURRENCY_UID    + &quot; varchar(255) not null, &quot;
+                    + PriceEntry.COLUMN_TYPE            + &quot; varchar(255), &quot;
+                    + PriceEntry.COLUMN_DATE 	        + &quot; TIMESTAMP not null, &quot;
+                    + PriceEntry.COLUMN_SOURCE          + &quot; text, &quot;
+                    + PriceEntry.COLUMN_VALUE_NUM       + &quot; integer not null, &quot;
+                    + PriceEntry.COLUMN_VALUE_DENOM     + &quot; integer not null, &quot;
+                    + PriceEntry.COLUMN_CREATED_AT      + &quot; TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, &quot;
+                    + PriceEntry.COLUMN_MODIFIED_AT     + &quot; TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, &quot;
+                    + &quot;UNIQUE (&quot; + PriceEntry.COLUMN_COMMODITY_UID + &quot;, &quot; + PriceEntry.COLUMN_CURRENCY_UID + &quot;) ON CONFLICT REPLACE, &quot;
+                    + &quot;FOREIGN KEY (&quot; 	+ PriceEntry.COLUMN_COMMODITY_UID + &quot;) REFERENCES &quot; + CommodityEntry.TABLE_NAME + &quot; (&quot; + CommodityEntry.COLUMN_UID + &quot;) ON DELETE CASCADE, &quot;
+                    + &quot;FOREIGN KEY (&quot; 	+ PriceEntry.COLUMN_CURRENCY_UID + &quot;) REFERENCES &quot; + CommodityEntry.TABLE_NAME + &quot; (&quot; + CommodityEntry.COLUMN_UID + &quot;) ON DELETE CASCADE &quot;
+<span class="nc" id="L928">                    + &quot;);&quot; + DatabaseHelper.createUpdatedAtTrigger(PriceEntry.TABLE_NAME));</span>
+<span class="nc" id="L929">            db.execSQL(&quot;CREATE UNIQUE INDEX '&quot; + PriceEntry.INDEX_UID</span>
+                    + &quot;' ON &quot; + PriceEntry.TABLE_NAME + &quot;(&quot; + PriceEntry.COLUMN_UID + &quot;)&quot;);
+
+
+            //store split amounts as integer components numerator and denominator
+
+<span class="nc" id="L935">            db.execSQL(&quot;ALTER TABLE &quot; + SplitEntry.TABLE_NAME + &quot; RENAME TO &quot; + SplitEntry.TABLE_NAME + &quot;_bak&quot;);</span>
+            // create new split table
+<span class="nc" id="L937">            db.execSQL(&quot;CREATE TABLE &quot; + SplitEntry.TABLE_NAME + &quot; (&quot;</span>
+                    + SplitEntry._ID                    + &quot; integer primary key autoincrement, &quot;
+                    + SplitEntry.COLUMN_UID             + &quot; varchar(255) not null UNIQUE, &quot;
+                    + SplitEntry.COLUMN_MEMO 	        + &quot; text, &quot;
+                    + SplitEntry.COLUMN_TYPE            + &quot; varchar(255) not null, &quot;
+                    + SplitEntry.COLUMN_VALUE_NUM       + &quot; integer not null, &quot;
+                    + SplitEntry.COLUMN_VALUE_DENOM     + &quot; integer not null, &quot;
+                    + SplitEntry.COLUMN_QUANTITY_NUM    + &quot; integer not null, &quot;
+                    + SplitEntry.COLUMN_QUANTITY_DENOM  + &quot; integer not null, &quot;
+                    + SplitEntry.COLUMN_ACCOUNT_UID 	+ &quot; varchar(255) not null, &quot;
+                    + SplitEntry.COLUMN_TRANSACTION_UID + &quot; varchar(255) not null, &quot;
+                    + SplitEntry.COLUMN_CREATED_AT       + &quot; TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, &quot;
+                    + SplitEntry.COLUMN_MODIFIED_AT      + &quot; TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, &quot;
+                    + &quot;FOREIGN KEY (&quot; 	+ SplitEntry.COLUMN_ACCOUNT_UID + &quot;) REFERENCES &quot; + AccountEntry.TABLE_NAME + &quot; (&quot; + AccountEntry.COLUMN_UID + &quot;) ON DELETE CASCADE, &quot;
+                    + &quot;FOREIGN KEY (&quot; 	+ SplitEntry.COLUMN_TRANSACTION_UID + &quot;) REFERENCES &quot; + TransactionEntry.TABLE_NAME + &quot; (&quot; + TransactionEntry.COLUMN_UID + &quot;) ON DELETE CASCADE &quot;
+<span class="nc" id="L952">                    + &quot;);&quot; + DatabaseHelper.createUpdatedAtTrigger(SplitEntry.TABLE_NAME));</span>
+
+            // initialize new split table with data from old table
+<span class="nc" id="L955">            db.execSQL(&quot;INSERT INTO &quot; + SplitEntry.TABLE_NAME + &quot; ( &quot;</span>
+                    + SplitEntry._ID                    + &quot; , &quot;
+                    + SplitEntry.COLUMN_UID             + &quot; , &quot;
+                    + SplitEntry.COLUMN_MEMO            + &quot; , &quot;
+                    + SplitEntry.COLUMN_TYPE            + &quot; , &quot;
+                    + SplitEntry.COLUMN_VALUE_NUM       + &quot; , &quot;
+                    + SplitEntry.COLUMN_VALUE_DENOM     + &quot; , &quot;
+                    + SplitEntry.COLUMN_QUANTITY_NUM    + &quot; , &quot;
+                    + SplitEntry.COLUMN_QUANTITY_DENOM  + &quot; , &quot;
+                    + SplitEntry.COLUMN_ACCOUNT_UID     + &quot; , &quot;
+                    + SplitEntry.COLUMN_TRANSACTION_UID
+                    + &quot;)  SELECT &quot;
+                    + SplitEntry.TABLE_NAME + &quot;_bak.&quot; + SplitEntry._ID + &quot; , &quot;
+                    + SplitEntry.TABLE_NAME + &quot;_bak.&quot; + SplitEntry.COLUMN_UID + &quot; , &quot;
+                    + SplitEntry.TABLE_NAME + &quot;_bak.&quot; + SplitEntry.COLUMN_MEMO + &quot; , &quot;
+                    + SplitEntry.TABLE_NAME + &quot;_bak.&quot; + SplitEntry.COLUMN_TYPE + &quot; , &quot;
+                    + SplitEntry.TABLE_NAME + &quot;_bak.amount * 100, &quot; //we will update this value in the next steps
+                    + &quot;100, &quot;
+                    + SplitEntry.TABLE_NAME + &quot;_bak.amount * 100, &quot; //default units of 2 decimal places were assumed until now
+                    + &quot;100, &quot;
+                    + SplitEntry.TABLE_NAME + &quot;_bak.&quot; + SplitEntry.COLUMN_ACCOUNT_UID + &quot; , &quot;
+                    + SplitEntry.TABLE_NAME + &quot;_bak.&quot; + SplitEntry.COLUMN_TRANSACTION_UID
+                    + &quot; FROM &quot; + SplitEntry.TABLE_NAME + &quot;_bak;&quot;);
+
+
+            //************** UPDATE SPLITS WHOSE CURRENCIES HAVE NO DECIMAL PLACES *****************
+            //get all account UIDs which have currencies with fraction digits of 0
+<span class="nc" id="L982">            String query = &quot;SELECT &quot; + &quot;A.&quot; + AccountEntry.COLUMN_UID + &quot; AS account_uid &quot;</span>
+                    + &quot; FROM &quot; + AccountEntry.TABLE_NAME + &quot; AS A, &quot; + CommodityEntry.TABLE_NAME + &quot; AS C &quot;
+                    + &quot; WHERE A.&quot; + AccountEntry.COLUMN_CURRENCY + &quot; = C.&quot; + CommodityEntry.COLUMN_MNEMONIC
+                    + &quot; AND C.&quot; + CommodityEntry.COLUMN_SMALLEST_FRACTION + &quot;= 1&quot;;
+
+<span class="nc" id="L987">            Cursor cursor = db.rawQuery(query, null);</span>
+
+<span class="nc" id="L989">            List&lt;String&gt; accountUIDs = new ArrayList&lt;&gt;();</span>
+            try {
+<span class="nc bnc" id="L991" title="All 2 branches missed.">                while (cursor.moveToNext()) {</span>
+<span class="nc" id="L992">                    String accountUID = cursor.getString(cursor.getColumnIndexOrThrow(&quot;account_uid&quot;));</span>
+<span class="nc" id="L993">                    accountUIDs.add(accountUID);</span>
+<span class="nc" id="L994">                }</span>
+            } finally {
+<span class="nc" id="L996">                cursor.close();</span>
+<span class="nc" id="L997">            }</span>
+
+<span class="nc" id="L999">            String accounts = TextUtils.join(&quot;' , '&quot;, accountUIDs);</span>
+<span class="nc" id="L1000">            db.execSQL(&quot;REPLACE INTO &quot; + SplitEntry.TABLE_NAME + &quot; ( &quot;</span>
+                    + SplitEntry.COLUMN_UID + &quot; , &quot;
+                    + SplitEntry.COLUMN_MEMO + &quot; , &quot;
+                    + SplitEntry.COLUMN_TYPE + &quot; , &quot;
+                    + SplitEntry.COLUMN_ACCOUNT_UID + &quot; , &quot;
+                    + SplitEntry.COLUMN_TRANSACTION_UID + &quot; , &quot;
+                    + SplitEntry.COLUMN_CREATED_AT + &quot; , &quot;
+                    + SplitEntry.COLUMN_MODIFIED_AT + &quot; , &quot;
+                    + SplitEntry.COLUMN_VALUE_NUM + &quot; , &quot;
+                    + SplitEntry.COLUMN_VALUE_DENOM + &quot; , &quot;
+                    + SplitEntry.COLUMN_QUANTITY_NUM + &quot; , &quot;
+                    + SplitEntry.COLUMN_QUANTITY_DENOM
+                    + &quot;)  SELECT &quot;
+                    + SplitEntry.COLUMN_UID + &quot; , &quot;
+                    + SplitEntry.COLUMN_MEMO + &quot; , &quot;
+                    + SplitEntry.COLUMN_TYPE + &quot; , &quot;
+                    + SplitEntry.COLUMN_ACCOUNT_UID + &quot; , &quot;
+                    + SplitEntry.COLUMN_TRANSACTION_UID + &quot; , &quot;
+                    + SplitEntry.COLUMN_CREATED_AT + &quot; , &quot;
+                    + SplitEntry.COLUMN_MODIFIED_AT + &quot; , &quot;
+                    + &quot; ROUND (&quot; + SplitEntry.COLUMN_VALUE_NUM + &quot;/ 100), &quot;
+                    + &quot;1, &quot;
+                    + &quot; ROUND (&quot; + SplitEntry.COLUMN_QUANTITY_NUM + &quot;/ 100), &quot;
+                    + &quot;1 &quot;
+                    + &quot; FROM &quot; + SplitEntry.TABLE_NAME
+                    + &quot; WHERE &quot; + SplitEntry.COLUMN_ACCOUNT_UID + &quot; IN ('&quot; + accounts + &quot;')&quot;
+                    + &quot;;&quot;);
+
+
+
+            //************ UPDATE SPLITS WITH CURRENCIES HAVING 3 DECIMAL PLACES *******************
+<span class="nc" id="L1031">            query = &quot;SELECT &quot; + &quot;A.&quot; + AccountEntry.COLUMN_UID + &quot; AS account_uid &quot;</span>
+                    + &quot; FROM &quot; + AccountEntry.TABLE_NAME + &quot; AS A, &quot; + CommodityEntry.TABLE_NAME + &quot; AS C &quot;
+                    + &quot; WHERE A.&quot; + AccountEntry.COLUMN_CURRENCY + &quot; = C.&quot; + CommodityEntry.COLUMN_MNEMONIC
+                    + &quot; AND C.&quot; + CommodityEntry.COLUMN_SMALLEST_FRACTION + &quot;= 1000&quot;;
+
+<span class="nc" id="L1036">            cursor = db.rawQuery(query, null);</span>
+
+<span class="nc" id="L1038">            accountUIDs.clear();</span>
+            try {
+<span class="nc bnc" id="L1040" title="All 2 branches missed.">                while (cursor.moveToNext()) {</span>
+<span class="nc" id="L1041">                    String accountUID = cursor.getString(cursor.getColumnIndexOrThrow(&quot;account_uid&quot;));</span>
+<span class="nc" id="L1042">                    accountUIDs.add(accountUID);</span>
+<span class="nc" id="L1043">                }</span>
+            } finally {
+<span class="nc" id="L1045">                cursor.close();</span>
+<span class="nc" id="L1046">            }</span>
+
+<span class="nc" id="L1048">            accounts = TextUtils.join(&quot;' , '&quot;, accountUIDs);</span>
+<span class="nc" id="L1049">            db.execSQL(&quot;REPLACE INTO &quot; + SplitEntry.TABLE_NAME + &quot; ( &quot;</span>
+                    + SplitEntry.COLUMN_UID             + &quot; , &quot;
+                    + SplitEntry.COLUMN_MEMO            + &quot; , &quot;
+                    + SplitEntry.COLUMN_TYPE            + &quot; , &quot;
+                    + SplitEntry.COLUMN_ACCOUNT_UID     + &quot; , &quot;
+                    + SplitEntry.COLUMN_TRANSACTION_UID + &quot; , &quot;
+                    + SplitEntry.COLUMN_CREATED_AT      + &quot; , &quot;
+                    + SplitEntry.COLUMN_MODIFIED_AT     + &quot; , &quot;
+                    + SplitEntry.COLUMN_VALUE_NUM       + &quot; , &quot;
+                    + SplitEntry.COLUMN_VALUE_DENOM     + &quot; , &quot;
+                    + SplitEntry.COLUMN_QUANTITY_NUM    + &quot; , &quot;
+                    + SplitEntry.COLUMN_QUANTITY_DENOM
+                    + &quot;)  SELECT &quot;
+                    + SplitEntry.COLUMN_UID + &quot; , &quot;
+                    + SplitEntry.COLUMN_MEMO + &quot; , &quot;
+                    + SplitEntry.COLUMN_TYPE + &quot; , &quot;
+                    + SplitEntry.COLUMN_ACCOUNT_UID + &quot; , &quot;
+                    + SplitEntry.COLUMN_TRANSACTION_UID + &quot; , &quot;
+                    + SplitEntry.COLUMN_CREATED_AT  + &quot; , &quot;
+                    + SplitEntry.COLUMN_MODIFIED_AT + &quot; , &quot;
+                    + SplitEntry.COLUMN_VALUE_NUM + &quot;* 10, &quot; //add an extra zero because we used only 2 digits before
+                    + &quot;1000, &quot;
+                    + SplitEntry.COLUMN_QUANTITY_NUM + &quot;* 10, &quot;
+                    + &quot;1000 &quot;
+                    + &quot; FROM &quot; + SplitEntry.TABLE_NAME
+                    + &quot; WHERE &quot; + SplitEntry.COLUMN_ACCOUNT_UID + &quot; IN ('&quot; + accounts + &quot;')&quot;
+                    + &quot;;&quot;);
+
+<span class="nc" id="L1077">            db.execSQL(&quot;DROP TABLE &quot; + SplitEntry.TABLE_NAME + &quot;_bak&quot;);</span>
+
+<span class="nc" id="L1079">            db.setTransactionSuccessful();</span>
+<span class="nc" id="L1080">            oldVersion = 9;</span>
+        } finally {
+<span class="nc" id="L1082">            db.endTransaction();</span>
+<span class="nc" id="L1083">        }</span>
+<span class="nc" id="L1084">        return oldVersion;</span>
+    }
+
+    /**
+     * Upgrades the database to version 10
+     * &lt;p&gt;This method converts all saved scheduled export parameters to the new format using the
+     * timestamp of last export&lt;/p&gt;
+     * @param db SQLite database
+     * @return 10 if upgrade was successful, 9 otherwise
+     */
+    static int upgradeDbToVersion10(SQLiteDatabase db){
+<span class="nc" id="L1095">        Log.i(DatabaseHelper.LOG_TAG, &quot;Upgrading database to version 9&quot;);</span>
+<span class="nc" id="L1096">        int oldVersion = 9;</span>
+
+<span class="nc" id="L1098">        db.beginTransaction();</span>
+        try {
+<span class="nc" id="L1100">            Cursor cursor = db.query(ScheduledActionEntry.TABLE_NAME,</span>
+                    new String[]{ScheduledActionEntry.COLUMN_UID, ScheduledActionEntry.COLUMN_TAG},
+                    ScheduledActionEntry.COLUMN_TYPE + &quot; = ?&quot;,
+<span class="nc" id="L1103">                    new String[]{ScheduledAction.ActionType.BACKUP.name()},</span>
+                    null, null, null);
+
+<span class="nc" id="L1106">            ContentValues contentValues = new ContentValues();</span>
+<span class="nc bnc" id="L1107" title="All 2 branches missed.">            while (cursor.moveToNext()){</span>
+<span class="nc" id="L1108">                String paramString = cursor.getString(cursor.getColumnIndexOrThrow(ScheduledActionEntry.COLUMN_TAG));</span>
+<span class="nc" id="L1109">                String[] tokens = paramString.split(&quot;;&quot;);</span>
+<span class="nc" id="L1110">                ExportParams params = new ExportParams(ExportFormat.valueOf(tokens[0]));</span>
+<span class="nc" id="L1111">                params.setExportTarget(ExportParams.ExportTarget.valueOf(tokens[1]));</span>
+<span class="nc" id="L1112">                params.setDeleteTransactionsAfterExport(Boolean.parseBoolean(tokens[3]));</span>
+
+<span class="nc" id="L1114">                boolean exportAll = Boolean.parseBoolean(tokens[2]);</span>
+<span class="nc bnc" id="L1115" title="All 2 branches missed.">                if (exportAll){</span>
+<span class="nc" id="L1116">                    params.setExportStartTime(TimestampHelper.getTimestampFromEpochZero());</span>
+                } else {
+<span class="nc" id="L1118">                    Timestamp timestamp = PreferencesHelper.getLastExportTime();</span>
+<span class="nc" id="L1119">                    params.setExportStartTime(timestamp);</span>
+                }
+
+<span class="nc" id="L1122">                String uid = cursor.getString(cursor.getColumnIndexOrThrow(ScheduledActionEntry.COLUMN_UID));</span>
+<span class="nc" id="L1123">                contentValues.clear();</span>
+<span class="nc" id="L1124">                contentValues.put(ScheduledActionEntry.COLUMN_UID, uid);</span>
+<span class="nc" id="L1125">                contentValues.put(ScheduledActionEntry.COLUMN_TAG, params.toCsv());</span>
+<span class="nc" id="L1126">                db.insert(ScheduledActionEntry.TABLE_NAME, null, contentValues);</span>
+<span class="nc" id="L1127">            }</span>
+
+<span class="nc" id="L1129">            cursor.close();</span>
+
+<span class="nc" id="L1131">            db.setTransactionSuccessful();</span>
+<span class="nc" id="L1132">            oldVersion = 10;</span>
+        } finally {
+<span class="nc" id="L1134">            db.endTransaction();</span>
+<span class="nc" id="L1135">        }</span>
+<span class="nc" id="L1136">        return oldVersion;</span>
+    }
+
+    /**
+     * Upgrade database to version 11
+     * &lt;p&gt;
+     *     Migrate scheduled backups and update export parameters to the new format
+     * &lt;/p&gt;
+     * @param db SQLite database
+     * @return 11 if upgrade was successful, 10 otherwise
+     */
+    static int upgradeDbToVersion11(SQLiteDatabase db){
+<span class="nc" id="L1148">        Log.i(DatabaseHelper.LOG_TAG, &quot;Upgrading database to version 9&quot;);</span>
+<span class="nc" id="L1149">        int oldVersion = 10;</span>
+
+<span class="nc" id="L1151">        db.beginTransaction();</span>
+        try {
+<span class="nc" id="L1153">            Cursor cursor = db.query(ScheduledActionEntry.TABLE_NAME, null,</span>
+                    ScheduledActionEntry.COLUMN_TYPE + &quot;= ?&quot;,
+<span class="nc" id="L1155">                    new String[]{ScheduledAction.ActionType.BACKUP.name()}, null, null, null);</span>
+
+<span class="nc" id="L1157">            Map&lt;String, String&gt; uidToTagMap = new HashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L1158" title="All 2 branches missed.">            while (cursor.moveToNext()) {</span>
+<span class="nc" id="L1159">                String uid = cursor.getString(cursor.getColumnIndexOrThrow(ScheduledActionEntry.COLUMN_UID));</span>
+<span class="nc" id="L1160">                String tag = cursor.getString(cursor.getColumnIndexOrThrow(ScheduledActionEntry.COLUMN_TAG));</span>
+<span class="nc" id="L1161">                String[] tokens = tag.split(&quot;;&quot;);</span>
+                try {
+<span class="nc" id="L1163">                    Timestamp timestamp = TimestampHelper.getTimestampFromUtcString(tokens[2]);</span>
+<span class="nc" id="L1164">                } catch (IllegalArgumentException ex) {</span>
+<span class="nc" id="L1165">                    tokens[2] = TimestampHelper.getUtcStringFromTimestamp(PreferencesHelper.getLastExportTime());</span>
+                } finally {
+<span class="nc" id="L1167">                    tag = TextUtils.join(&quot;;&quot;, tokens);</span>
+<span class="nc" id="L1168">                }</span>
+<span class="nc" id="L1169">                uidToTagMap.put(uid, tag);</span>
+<span class="nc" id="L1170">            }</span>
+
+<span class="nc" id="L1172">            cursor.close();</span>
+
+<span class="nc" id="L1174">            ContentValues contentValues = new ContentValues();</span>
+<span class="nc bnc" id="L1175" title="All 2 branches missed.">            for (Map.Entry&lt;String, String&gt; entry : uidToTagMap.entrySet()) {</span>
+<span class="nc" id="L1176">                contentValues.clear();</span>
+<span class="nc" id="L1177">                contentValues.put(ScheduledActionEntry.COLUMN_TAG, entry.getValue());</span>
+<span class="nc" id="L1178">                db.update(ScheduledActionEntry.TABLE_NAME, contentValues,</span>
+<span class="nc" id="L1179">                        ScheduledActionEntry.COLUMN_UID + &quot; = ?&quot;, new String[]{entry.getKey()});</span>
+<span class="nc" id="L1180">            }</span>
+
+<span class="nc" id="L1182">            db.setTransactionSuccessful();</span>
+<span class="nc" id="L1183">            oldVersion = 11;</span>
+        } finally {
+<span class="nc" id="L1185">            db.endTransaction();</span>
+<span class="nc" id="L1186">        }</span>
+<span class="nc" id="L1187">        return oldVersion;</span>
+    }
+
+    public static Timestamp subtractTimeZoneOffset(Timestamp timestamp, TimeZone timeZone) {
+<span class="nc" id="L1191">        final long millisecondsToSubtract = Math.abs(timeZone.getOffset(timestamp.getTime()));</span>
+<span class="nc" id="L1192">        return new Timestamp(timestamp.getTime() - millisecondsToSubtract);</span>
+    }
+
+    /**
+     * Upgrade database to version 12
+     * &lt;p&gt;
+     *     Change last_export_time Android preference to current value - N
+     *     where N is the absolute timezone offset for current user time zone.
+     *     For details see #467.
+     * &lt;/p&gt;
+     * @param db SQLite database
+     * @return 12 if upgrade was successful, 11 otherwise
+     */
+    static int upgradeDbToVersion12(SQLiteDatabase db){
+<span class="nc" id="L1206">        Log.i(MigrationHelper.LOG_TAG, &quot;Upgrading database to version 12&quot;);</span>
+
+<span class="nc" id="L1208">        int oldVersion = 11;</span>
+
+        try {
+
+<span class="nc" id="L1212">            final Timestamp currentLastExportTime = PreferencesHelper.getLastExportTime();</span>
+
+<span class="nc" id="L1214">            final Timestamp updatedLastExportTime = subtractTimeZoneOffset(</span>
+<span class="nc" id="L1215">                    currentLastExportTime, TimeZone.getDefault());</span>
+<span class="nc" id="L1216">            PreferencesHelper.setLastExportTime(updatedLastExportTime);</span>
+
+<span class="nc" id="L1218">            oldVersion = 12;</span>
+
+<span class="nc" id="L1220">        } catch (Exception ignored){</span>
+            // Do nothing: here oldVersion = 11.
+<span class="nc" id="L1222">        }</span>
+
+<span class="nc" id="L1224">        return oldVersion;</span>
+    }
+
+    /**
+     * Upgrades the database to version 13.
+     * &lt;p&gt;This migration makes the following changes to the database:
+     * &lt;ul&gt;
+     *     &lt;li&gt;Adds support for multiple database for different books and one extra database for storing book info&lt;/li&gt;
+     *     &lt;li&gt;Adds a table for budgets&lt;/li&gt;
+     *     &lt;li&gt;Adds an extra table for recurrences&lt;/li&gt;
+     *     &lt;li&gt;Migrate scheduled transaction recurrences to own table&lt;/li&gt;
+     *     &lt;li&gt;Adds flags for reconciled status to split table&lt;/li&gt;
+     *     &lt;li&gt;Add flags for auto-/advance- create and notification to scheduled actions&lt;/li&gt;
+     *     &lt;li&gt;Migrate old shared preferences into new book-specific preferences&lt;/li&gt;
+     * &lt;/ul&gt;
+     * &lt;/p&gt;
+     * @param db SQlite database to be upgraded
+     * @return New database version, 13 if migration succeeds, 11 otherwise
+     */
+    static int upgradeDbToVersion13(SQLiteDatabase db){
+<span class="nc" id="L1244">        Log.i(DatabaseHelper.LOG_TAG, &quot;Upgrading database to version 13&quot;);</span>
+<span class="nc" id="L1245">        int oldVersion = 12;</span>
+
+<span class="nc" id="L1247">        db.beginTransaction();</span>
+        try {
+<span class="nc" id="L1249">            db.execSQL(&quot;CREATE TABLE &quot; + RecurrenceEntry.TABLE_NAME + &quot; (&quot;</span>
+                    + RecurrenceEntry._ID                   + &quot; integer primary key autoincrement, &quot;
+                    + RecurrenceEntry.COLUMN_UID            + &quot; varchar(255) not null UNIQUE, &quot;
+                    + RecurrenceEntry.COLUMN_MULTIPLIER     + &quot; integer not null default 1, &quot;
+                    + RecurrenceEntry.COLUMN_PERIOD_TYPE    + &quot; varchar(255) not null, &quot;
+                    + RecurrenceEntry.COLUMN_BYDAY          + &quot; varchar(255), &quot;
+                    + RecurrenceEntry.COLUMN_PERIOD_START   + &quot; timestamp not null, &quot;
+                    + RecurrenceEntry.COLUMN_PERIOD_END   + &quot; timestamp, &quot;
+                    + RecurrenceEntry.COLUMN_CREATED_AT     + &quot; TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, &quot;
+                    + RecurrenceEntry.COLUMN_MODIFIED_AT    + &quot; TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP); &quot;
+<span class="nc" id="L1259">                    + DatabaseHelper.createUpdatedAtTrigger(RecurrenceEntry.TABLE_NAME));</span>
+
+<span class="nc" id="L1261">            db.execSQL(&quot;CREATE TABLE &quot; + BudgetEntry.TABLE_NAME + &quot; (&quot;</span>
+                    + BudgetEntry._ID                   + &quot; integer primary key autoincrement, &quot;
+                    + BudgetEntry.COLUMN_UID            + &quot; varchar(255) not null UNIQUE, &quot;
+                    + BudgetEntry.COLUMN_NAME           + &quot; varchar(255) not null, &quot;
+                    + BudgetEntry.COLUMN_DESCRIPTION    + &quot; varchar(255), &quot;
+                    + BudgetEntry.COLUMN_RECURRENCE_UID + &quot; varchar(255) not null, &quot;
+                    + BudgetEntry.COLUMN_NUM_PERIODS    + &quot; integer, &quot;
+                    + BudgetEntry.COLUMN_CREATED_AT     + &quot; TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, &quot;
+                    + BudgetEntry.COLUMN_MODIFIED_AT    + &quot; TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, &quot;
+                    + &quot;FOREIGN KEY (&quot; 	+ BudgetEntry.COLUMN_RECURRENCE_UID + &quot;) REFERENCES &quot; + RecurrenceEntry.TABLE_NAME + &quot; (&quot; + RecurrenceEntry.COLUMN_UID + &quot;) &quot;
+<span class="nc" id="L1271">                    + &quot;);&quot; + DatabaseHelper.createUpdatedAtTrigger(BudgetEntry.TABLE_NAME));</span>
+
+<span class="nc" id="L1273">            db.execSQL(&quot;CREATE UNIQUE INDEX '&quot; + BudgetEntry.INDEX_UID</span>
+                    + &quot;' ON &quot; + BudgetEntry.TABLE_NAME + &quot;(&quot; + BudgetEntry.COLUMN_UID + &quot;)&quot;);
+
+<span class="nc" id="L1276">            db.execSQL(&quot;CREATE TABLE &quot; + BudgetAmountEntry.TABLE_NAME + &quot; (&quot;</span>
+                    + BudgetAmountEntry._ID                   + &quot; integer primary key autoincrement, &quot;
+                    + BudgetAmountEntry.COLUMN_UID            + &quot; varchar(255) not null UNIQUE, &quot;
+                    + BudgetAmountEntry.COLUMN_BUDGET_UID     + &quot; varchar(255) not null, &quot;
+                    + BudgetAmountEntry.COLUMN_ACCOUNT_UID    + &quot; varchar(255) not null, &quot;
+                    + BudgetAmountEntry.COLUMN_AMOUNT_NUM     + &quot; integer not null, &quot;
+                    + BudgetAmountEntry.COLUMN_AMOUNT_DENOM   + &quot; integer not null, &quot;
+                    + BudgetAmountEntry.COLUMN_PERIOD_NUM     + &quot; integer not null, &quot;
+                    + BudgetAmountEntry.COLUMN_CREATED_AT     + &quot; TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, &quot;
+                    + BudgetAmountEntry.COLUMN_MODIFIED_AT    + &quot; TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, &quot;
+                    + &quot;FOREIGN KEY (&quot; 	+ BudgetAmountEntry.COLUMN_ACCOUNT_UID + &quot;) REFERENCES &quot; + AccountEntry.TABLE_NAME + &quot; (&quot; + AccountEntry.COLUMN_UID + &quot;) ON DELETE CASCADE, &quot;
+                    + &quot;FOREIGN KEY (&quot; 	+ BudgetAmountEntry.COLUMN_BUDGET_UID + &quot;) REFERENCES &quot; + BudgetEntry.TABLE_NAME + &quot; (&quot; + BudgetEntry.COLUMN_UID + &quot;) ON DELETE CASCADE &quot;
+<span class="nc" id="L1288">                    + &quot;);&quot; + DatabaseHelper.createUpdatedAtTrigger(BudgetAmountEntry.TABLE_NAME));</span>
+
+<span class="nc" id="L1290">            db.execSQL(&quot;CREATE UNIQUE INDEX '&quot; + BudgetAmountEntry.INDEX_UID</span>
+                    + &quot;' ON &quot; + BudgetAmountEntry.TABLE_NAME + &quot;(&quot; + BudgetAmountEntry.COLUMN_UID + &quot;)&quot;);
+
+
+            //extract recurrences from scheduled actions table and put in the recurrence table
+<span class="nc" id="L1295">            db.execSQL(&quot;ALTER TABLE &quot; + ScheduledActionEntry.TABLE_NAME + &quot; RENAME TO &quot; + ScheduledActionEntry.TABLE_NAME + &quot;_bak&quot;);</span>
+
+<span class="nc" id="L1297">            db.execSQL(&quot;CREATE TABLE &quot; + ScheduledActionEntry.TABLE_NAME + &quot; (&quot;</span>
+                    + ScheduledActionEntry._ID                      + &quot; integer primary key autoincrement, &quot;
+                    + ScheduledActionEntry.COLUMN_UID               + &quot; varchar(255) not null UNIQUE, &quot;
+                    + ScheduledActionEntry.COLUMN_ACTION_UID        + &quot; varchar(255) not null, &quot;
+                    + ScheduledActionEntry.COLUMN_TYPE              + &quot; varchar(255) not null, &quot;
+                    + ScheduledActionEntry.COLUMN_RECURRENCE_UID    + &quot; varchar(255) not null, &quot;
+                    + ScheduledActionEntry.COLUMN_TEMPLATE_ACCT_UID + &quot; varchar(255) not null, &quot;
+                    + ScheduledActionEntry.COLUMN_LAST_RUN          + &quot; integer default 0, &quot;
+                    + ScheduledActionEntry.COLUMN_START_TIME        + &quot; integer not null, &quot;
+                    + ScheduledActionEntry.COLUMN_END_TIME          + &quot; integer default 0, &quot;
+                    + ScheduledActionEntry.COLUMN_TAG               + &quot; text, &quot;
+                    + ScheduledActionEntry.COLUMN_ENABLED           + &quot; tinyint default 1, &quot; //enabled by default
+                    + ScheduledActionEntry.COLUMN_AUTO_CREATE       + &quot; tinyint default 1, &quot;
+                    + ScheduledActionEntry.COLUMN_AUTO_NOTIFY       + &quot; tinyint default 0, &quot;
+                    + ScheduledActionEntry.COLUMN_ADVANCE_CREATION  + &quot; integer default 0, &quot;
+                    + ScheduledActionEntry.COLUMN_ADVANCE_NOTIFY    + &quot; integer default 0, &quot;
+                    + ScheduledActionEntry.COLUMN_TOTAL_FREQUENCY   + &quot; integer default 0, &quot;
+                    + ScheduledActionEntry.COLUMN_EXECUTION_COUNT   + &quot; integer default 0, &quot;
+                    + ScheduledActionEntry.COLUMN_CREATED_AT        + &quot; TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, &quot;
+                    + ScheduledActionEntry.COLUMN_MODIFIED_AT       + &quot; TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, &quot;
+                    + &quot;FOREIGN KEY (&quot; 	+ ScheduledActionEntry.COLUMN_RECURRENCE_UID + &quot;) REFERENCES &quot; + RecurrenceEntry.TABLE_NAME + &quot; (&quot; + RecurrenceEntry.COLUMN_UID + &quot;) &quot;
+<span class="nc" id="L1318">                    + &quot;);&quot; + DatabaseHelper.createUpdatedAtTrigger(ScheduledActionEntry.TABLE_NAME));</span>
+
+
+            // initialize new transaction table with data from old table
+<span class="nc" id="L1322">            db.execSQL(&quot;INSERT INTO &quot; + ScheduledActionEntry.TABLE_NAME + &quot; ( &quot;</span>
+                            + ScheduledActionEntry._ID + &quot; , &quot;
+                            + ScheduledActionEntry.COLUMN_UID + &quot; , &quot;
+                            + ScheduledActionEntry.COLUMN_ACTION_UID + &quot; , &quot;
+                            + ScheduledActionEntry.COLUMN_TYPE + &quot; , &quot;
+                            + ScheduledActionEntry.COLUMN_LAST_RUN + &quot; , &quot;
+                            + ScheduledActionEntry.COLUMN_START_TIME + &quot; , &quot;
+                            + ScheduledActionEntry.COLUMN_END_TIME + &quot; , &quot;
+                            + ScheduledActionEntry.COLUMN_ENABLED + &quot; , &quot;
+                            + ScheduledActionEntry.COLUMN_TOTAL_FREQUENCY + &quot; , &quot;
+                            + ScheduledActionEntry.COLUMN_EXECUTION_COUNT + &quot; , &quot;
+                            + ScheduledActionEntry.COLUMN_CREATED_AT + &quot; , &quot;
+                            + ScheduledActionEntry.COLUMN_MODIFIED_AT + &quot; , &quot;
+                            + ScheduledActionEntry.COLUMN_RECURRENCE_UID + &quot; , &quot;
+                            + ScheduledActionEntry.COLUMN_TEMPLATE_ACCT_UID + &quot; , &quot;
+                            + ScheduledActionEntry.COLUMN_TAG
+                            + &quot;)  SELECT &quot;
+                            + ScheduledActionEntry.TABLE_NAME + &quot;_bak.&quot; + ScheduledActionEntry._ID + &quot; , &quot;
+                            + ScheduledActionEntry.TABLE_NAME + &quot;_bak.&quot; + ScheduledActionEntry.COLUMN_UID + &quot; , &quot;
+                            + ScheduledActionEntry.TABLE_NAME + &quot;_bak.&quot; + ScheduledActionEntry.COLUMN_ACTION_UID + &quot; , &quot;
+                            + ScheduledActionEntry.TABLE_NAME + &quot;_bak.&quot; + ScheduledActionEntry.COLUMN_TYPE + &quot; , &quot;
+                            + ScheduledActionEntry.TABLE_NAME + &quot;_bak.&quot; + ScheduledActionEntry.COLUMN_LAST_RUN + &quot; , &quot;
+                            + ScheduledActionEntry.TABLE_NAME + &quot;_bak.&quot; + ScheduledActionEntry.COLUMN_START_TIME + &quot; , &quot;
+                            + ScheduledActionEntry.TABLE_NAME + &quot;_bak.&quot; + ScheduledActionEntry.COLUMN_END_TIME + &quot; , &quot;
+                            + ScheduledActionEntry.TABLE_NAME + &quot;_bak.&quot; + ScheduledActionEntry.COLUMN_ENABLED + &quot; , &quot;
+                            + ScheduledActionEntry.TABLE_NAME + &quot;_bak.&quot; + ScheduledActionEntry.COLUMN_TOTAL_FREQUENCY + &quot; , &quot;
+                            + ScheduledActionEntry.TABLE_NAME + &quot;_bak.&quot; + ScheduledActionEntry.COLUMN_EXECUTION_COUNT + &quot; , &quot;
+                            + ScheduledActionEntry.TABLE_NAME + &quot;_bak.&quot; + ScheduledActionEntry.COLUMN_CREATED_AT + &quot; , &quot;
+                            + ScheduledActionEntry.TABLE_NAME + &quot;_bak.&quot; + ScheduledActionEntry.COLUMN_MODIFIED_AT + &quot; , &quot;
+                            + &quot; 'dummy-string' ,&quot; //will be updated in next steps
+                            + &quot; 'dummy-string' ,&quot;
+                            + ScheduledActionEntry.TABLE_NAME + &quot;_bak.&quot; + ScheduledActionEntry.COLUMN_TAG
+                            + &quot; FROM &quot; + ScheduledActionEntry.TABLE_NAME + &quot;_bak;&quot;);
+
+            //update the template-account-guid and the recurrence guid for all scheduled actions
+<span class="nc" id="L1357">            Cursor cursor = db.query(ScheduledActionEntry.TABLE_NAME + &quot;_bak&quot;,</span>
+                    new String[]{ScheduledActionEntry.COLUMN_UID,
+                            &quot;period&quot;,
+                            ScheduledActionEntry.COLUMN_START_TIME
+                    },
+                    null, null, null, null, null);
+
+<span class="nc" id="L1364">            ContentValues contentValues = new ContentValues();</span>
+<span class="nc bnc" id="L1365" title="All 2 branches missed.">            while (cursor.moveToNext()){</span>
+<span class="nc" id="L1366">                String uid = cursor.getString(cursor.getColumnIndexOrThrow(ScheduledActionEntry.COLUMN_UID));</span>
+<span class="nc" id="L1367">                long period = cursor.getLong(cursor.getColumnIndexOrThrow(&quot;period&quot;));</span>
+<span class="nc" id="L1368">                long startTime = cursor.getLong(cursor.getColumnIndexOrThrow(ScheduledActionEntry.COLUMN_START_TIME));</span>
+<span class="nc" id="L1369">                Recurrence recurrence = Recurrence.fromLegacyPeriod(period);</span>
+<span class="nc" id="L1370">                recurrence.setPeriodStart(new Timestamp(startTime));</span>
+
+<span class="nc" id="L1372">                contentValues.clear();</span>
+<span class="nc" id="L1373">                contentValues.put(RecurrenceEntry.COLUMN_UID, recurrence.getUID());</span>
+<span class="nc" id="L1374">                contentValues.put(RecurrenceEntry.COLUMN_MULTIPLIER, recurrence.getMultiplier());</span>
+<span class="nc" id="L1375">                contentValues.put(RecurrenceEntry.COLUMN_PERIOD_TYPE, recurrence.getPeriodType().name());</span>
+<span class="nc" id="L1376">                contentValues.put(RecurrenceEntry.COLUMN_PERIOD_START, recurrence.getPeriodStart().toString());</span>
+<span class="nc" id="L1377">                db.insert(RecurrenceEntry.TABLE_NAME, null, contentValues);</span>
+
+<span class="nc" id="L1379">                contentValues.clear();</span>
+<span class="nc" id="L1380">                contentValues.put(ScheduledActionEntry.COLUMN_RECURRENCE_UID, recurrence.getUID());</span>
+<span class="nc" id="L1381">                contentValues.put(ScheduledActionEntry.COLUMN_TEMPLATE_ACCT_UID, BaseModel.generateUID());</span>
+<span class="nc" id="L1382">                db.update(ScheduledActionEntry.TABLE_NAME, contentValues,</span>
+                        ScheduledActionEntry.COLUMN_UID + &quot; = ?&quot;, new String[]{uid});
+<span class="nc" id="L1384">            }</span>
+<span class="nc" id="L1385">            cursor.close();</span>
+
+<span class="nc" id="L1387">            db.execSQL(&quot;DROP TABLE &quot; + ScheduledActionEntry.TABLE_NAME + &quot;_bak&quot;);</span>
+
+
+            //==============  Add RECONCILE_STATE and RECONCILE_DATE to the splits table ==========
+            //We migrate the whole table because we want those columns to have default values
+
+<span class="nc" id="L1393">            db.execSQL(&quot;ALTER TABLE &quot; + SplitEntry.TABLE_NAME + &quot; RENAME TO &quot; + SplitEntry.TABLE_NAME + &quot;_bak&quot;);</span>
+<span class="nc" id="L1394">            db.execSQL(&quot;CREATE TABLE &quot; + SplitEntry.TABLE_NAME + &quot; (&quot;</span>
+                    + SplitEntry._ID                    + &quot; integer primary key autoincrement, &quot;
+                    + SplitEntry.COLUMN_UID             + &quot; varchar(255) not null UNIQUE, &quot;
+                    + SplitEntry.COLUMN_MEMO 	        + &quot; text, &quot;
+                    + SplitEntry.COLUMN_TYPE            + &quot; varchar(255) not null, &quot;
+                    + SplitEntry.COLUMN_VALUE_NUM       + &quot; integer not null, &quot;
+                    + SplitEntry.COLUMN_VALUE_DENOM     + &quot; integer not null, &quot;
+                    + SplitEntry.COLUMN_QUANTITY_NUM    + &quot; integer not null, &quot;
+                    + SplitEntry.COLUMN_QUANTITY_DENOM  + &quot; integer not null, &quot;
+                    + SplitEntry.COLUMN_ACCOUNT_UID 	+ &quot; varchar(255) not null, &quot;
+                    + SplitEntry.COLUMN_TRANSACTION_UID + &quot; varchar(255) not null, &quot;
+                    + SplitEntry.COLUMN_RECONCILE_STATE + &quot; varchar(1) not null default 'n', &quot;
+                    + SplitEntry.COLUMN_RECONCILE_DATE  + &quot; timestamp not null default current_timestamp, &quot;
+                    + SplitEntry.COLUMN_CREATED_AT      + &quot; TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, &quot;
+                    + SplitEntry.COLUMN_MODIFIED_AT     + &quot; TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, &quot;
+                    + &quot;FOREIGN KEY (&quot; 	+ SplitEntry.COLUMN_ACCOUNT_UID + &quot;) REFERENCES &quot; + AccountEntry.TABLE_NAME + &quot; (&quot; + AccountEntry.COLUMN_UID + &quot;) ON DELETE CASCADE, &quot;
+                    + &quot;FOREIGN KEY (&quot; 	+ SplitEntry.COLUMN_TRANSACTION_UID + &quot;) REFERENCES &quot; + TransactionEntry.TABLE_NAME + &quot; (&quot; + TransactionEntry.COLUMN_UID + &quot;) ON DELETE CASCADE &quot;
+<span class="nc" id="L1411">                    + &quot;);&quot; + DatabaseHelper.createUpdatedAtTrigger(SplitEntry.TABLE_NAME));</span>
+
+<span class="nc" id="L1413">            db.execSQL(&quot;INSERT INTO &quot; + SplitEntry.TABLE_NAME + &quot; ( &quot;</span>
+                    + SplitEntry._ID                    + &quot; , &quot;
+                    + SplitEntry.COLUMN_UID             + &quot; , &quot;
+                    + SplitEntry.COLUMN_MEMO            + &quot; , &quot;
+                    + SplitEntry.COLUMN_TYPE            + &quot; , &quot;
+                    + SplitEntry.COLUMN_VALUE_NUM       + &quot; , &quot;
+                    + SplitEntry.COLUMN_VALUE_DENOM     + &quot; , &quot;
+                    + SplitEntry.COLUMN_QUANTITY_NUM    + &quot; , &quot;
+                    + SplitEntry.COLUMN_QUANTITY_DENOM  + &quot; , &quot;
+                    + SplitEntry.COLUMN_ACCOUNT_UID     + &quot; , &quot;
+                    + SplitEntry.COLUMN_TRANSACTION_UID
+                    + &quot;)  SELECT &quot;
+                    + SplitEntry.TABLE_NAME + &quot;_bak.&quot; + SplitEntry._ID                  + &quot; , &quot;
+                    + SplitEntry.TABLE_NAME + &quot;_bak.&quot; + SplitEntry.COLUMN_UID           + &quot; , &quot;
+                    + SplitEntry.TABLE_NAME + &quot;_bak.&quot; + SplitEntry.COLUMN_MEMO          + &quot; , &quot;
+                    + SplitEntry.TABLE_NAME + &quot;_bak.&quot; + SplitEntry.COLUMN_TYPE          + &quot; , &quot;
+                    + SplitEntry.TABLE_NAME + &quot;_bak.&quot; + SplitEntry.COLUMN_VALUE_NUM     + &quot; , &quot;
+                    + SplitEntry.TABLE_NAME + &quot;_bak.&quot; + SplitEntry.COLUMN_VALUE_DENOM   + &quot; , &quot;
+                    + SplitEntry.TABLE_NAME + &quot;_bak.&quot; + SplitEntry.COLUMN_QUANTITY_NUM  + &quot; , &quot;
+                    + SplitEntry.TABLE_NAME + &quot;_bak.&quot; + SplitEntry.COLUMN_QUANTITY_DENOM + &quot; , &quot;
+                    + SplitEntry.TABLE_NAME + &quot;_bak.&quot; + SplitEntry.COLUMN_ACCOUNT_UID   + &quot; , &quot;
+                    + SplitEntry.TABLE_NAME + &quot;_bak.&quot; + SplitEntry.COLUMN_TRANSACTION_UID
+                    + &quot; FROM &quot; + SplitEntry.TABLE_NAME + &quot;_bak;&quot;);
+
+
+<span class="nc" id="L1438">            db.execSQL(&quot;DROP TABLE &quot; + SplitEntry.TABLE_NAME + &quot;_bak&quot;);</span>
+
+<span class="nc" id="L1440">            db.setTransactionSuccessful();</span>
+<span class="nc" id="L1441">            oldVersion = 13;</span>
+        } finally {
+<span class="nc" id="L1443">            db.endTransaction();</span>
+<span class="nc" id="L1444">        }</span>
+
+        //Migrate book-specific preferences away from shared preferences
+<span class="nc" id="L1447">        Log.d(LOG_TAG, &quot;Migrating shared preferences into book preferences&quot;);</span>
+<span class="nc" id="L1448">        Context context = GnuCashApplication.getAppContext();</span>
+<span class="nc" id="L1449">        String keyUseDoubleEntry = context.getString(R.string.key_use_double_entry);</span>
+<span class="nc" id="L1450">        String keySaveOpeningBalance = context.getString(R.string.key_save_opening_balances);</span>
+<span class="nc" id="L1451">        String keyLastExportTime = PreferencesHelper.PREFERENCE_LAST_EXPORT_TIME_KEY;</span>
+<span class="nc" id="L1452">        String keyUseCompactView = context.getString(R.string.key_use_compact_list);</span>
+
+<span class="nc" id="L1454">        SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(context);</span>
+<span class="nc" id="L1455">        String lastExportTime = sharedPrefs.getString(keyLastExportTime, TimestampHelper.getTimestampFromEpochZero().toString());</span>
+<span class="nc" id="L1456">        boolean useDoubleEntry = sharedPrefs.getBoolean(keyUseDoubleEntry, true);</span>
+<span class="nc" id="L1457">        boolean saveOpeningBalance = sharedPrefs.getBoolean(keySaveOpeningBalance, false);</span>
+<span class="nc" id="L1458">        boolean useCompactTrnView = PreferenceManager.getDefaultSharedPreferences(context)</span>
+<span class="nc bnc" id="L1459" title="All 2 branches missed.">                .getBoolean(context.getString(R.string.key_use_double_entry), !useDoubleEntry);</span>
+
+<span class="nc" id="L1461">        String rootAccountUID = getGnuCashRootAccountUID(db);</span>
+<span class="nc" id="L1462">        SharedPreferences bookPrefs = context.getSharedPreferences(rootAccountUID, Context.MODE_PRIVATE);</span>
+
+<span class="nc" id="L1464">        bookPrefs.edit()</span>
+<span class="nc" id="L1465">                .putString(keyLastExportTime, lastExportTime)</span>
+<span class="nc" id="L1466">                .putBoolean(keyUseDoubleEntry, useDoubleEntry)</span>
+<span class="nc" id="L1467">                .putBoolean(keySaveOpeningBalance, saveOpeningBalance)</span>
+<span class="nc" id="L1468">                .putBoolean(keyUseCompactView, useCompactTrnView)</span>
+<span class="nc" id="L1469">                .apply();</span>
+
+<span class="nc" id="L1471">        rescheduleServiceAlarm();</span>
+
+
+<span class="nc" id="L1474">        return oldVersion;</span>
+    }
+
+    /**
+     * Cancel the existing alarm for the scheduled service and restarts/reschedules the service
+     */
+    private static void rescheduleServiceAlarm() {
+<span class="nc" id="L1481">        Context context = GnuCashApplication.getAppContext();</span>
+
+        //cancel the existing pending intent so that the alarm can be rescheduled
+<span class="nc" id="L1484">        Intent alarmIntent = new Intent(context, ScheduledActionService.class);</span>
+<span class="nc" id="L1485">        PendingIntent pendingIntent = PendingIntent.getService(context, 0, alarmIntent, PendingIntent.FLAG_NO_CREATE);</span>
+<span class="nc bnc" id="L1486" title="All 2 branches missed.">        if (pendingIntent != null) {</span>
+<span class="nc" id="L1487">            AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);</span>
+<span class="nc" id="L1488">            alarmManager.cancel(pendingIntent);</span>
+<span class="nc" id="L1489">            pendingIntent.cancel();</span>
+        }
+
+<span class="nc" id="L1492">        GnuCashApplication.startScheduledActionExecutionService(context);</span>
+<span class="nc" id="L1493">    }</span>
+
+    /**
+     * Move files from {@code srcDir} to {@code dstDir}
+     * Subdirectories will be created in the target as necessary
+     * @param srcDir Source directory which should already exist
+     * @param dstDir Destination directory which should already exist
+     * @see #moveFile(File, File)
+     * @throws IOException if the {@code srcDir} does not exist or {@code dstDir} could not be created
+     * @throws IllegalArgumentException if {@code srcDir} is not a directory
+     */
+    private static void moveDirectory(File srcDir, File dstDir) throws IOException {
+<span class="nc bnc" id="L1505" title="All 2 branches missed.">        if (!srcDir.isDirectory()){</span>
+<span class="nc" id="L1506">            throw new IllegalArgumentException(&quot;Source is not a directory: &quot; + srcDir.getPath());</span>
+        }
+
+<span class="nc bnc" id="L1509" title="All 2 branches missed.">        if (!srcDir.exists()){</span>
+<span class="nc" id="L1510">            String msg = String.format(Locale.US, &quot;Source directory %s does not exist&quot;, srcDir.getPath());</span>
+<span class="nc" id="L1511">            Log.e(LOG_TAG, msg);</span>
+<span class="nc" id="L1512">            throw new IOException(msg);</span>
+        }
+
+<span class="nc bnc" id="L1515" title="All 4 branches missed.">        if (!dstDir.exists() || !dstDir.isDirectory()){</span>
+<span class="nc" id="L1516">            Log.w(LOG_TAG, &quot;Target directory does not exist. Attempting to create...&quot; + dstDir.getPath());</span>
+<span class="nc bnc" id="L1517" title="All 2 branches missed.">            if (!dstDir.mkdirs()){</span>
+<span class="nc" id="L1518">                throw new IOException(String.format(&quot;Target directory %s does not exist and could not be created&quot;, dstDir.getPath()));</span>
+            }
+        }
+
+<span class="nc bnc" id="L1522" title="All 2 branches missed.">        if (srcDir.listFiles() == null) //nothing to see here, move along</span>
+<span class="nc" id="L1523">            return;</span>
+
+<span class="nc bnc" id="L1525" title="All 2 branches missed.">        for (File src : srcDir.listFiles()){</span>
+<span class="nc bnc" id="L1526" title="All 2 branches missed.">            if (src.isDirectory()){</span>
+<span class="nc" id="L1527">                File dst = new File(dstDir, src.getName());</span>
+<span class="nc" id="L1528">                dst.mkdir();</span>
+<span class="nc" id="L1529">                moveDirectory(src, dst);</span>
+<span class="nc bnc" id="L1530" title="All 2 branches missed.">                if (!src.delete())</span>
+<span class="nc" id="L1531">                    Log.i(LOG_TAG, &quot;Failed to delete directory: &quot; + src.getPath());</span>
+                continue;
+            }
+
+            try {
+<span class="nc" id="L1536">                File dst = new File(dstDir, src.getName());</span>
+<span class="nc" id="L1537">                MigrationHelper.moveFile(src, dst);</span>
+<span class="nc" id="L1538">            } catch (IOException e) {</span>
+<span class="nc" id="L1539">                Log.e(LOG_TAG, &quot;Error moving file &quot; + src.getPath());</span>
+<span class="nc" id="L1540">                Crashlytics.logException(e);</span>
+<span class="nc" id="L1541">            }</span>
+        }
+<span class="nc" id="L1543">    }</span>
+
+    /**
+     * Upgrade the database to version 14
+     * &lt;p&gt;
+     *     This migration actually does not change anything in the database
+     *     It moves the backup files to a new backup location which does not require SD CARD write permission
+     * &lt;/p&gt;
+     * @param db SQLite database to be upgraded
+     * @return New database version
+     */
+    public static int upgradeDbToVersion14(SQLiteDatabase db){
+<span class="nc" id="L1555">        Log.i(DatabaseHelper.LOG_TAG, &quot;Upgrading database to version 14&quot;);</span>
+<span class="nc" id="L1556">        int oldDbVersion = 13;</span>
+<span class="nc" id="L1557">        File backupFolder = new File(Exporter.BASE_FOLDER_PATH);</span>
+<span class="nc" id="L1558">        backupFolder.mkdir();</span>
+
+<span class="nc" id="L1560">        new Thread(new Runnable() {</span>
+            @Override
+            public void run() {
+<span class="nc" id="L1563">                File srcDir = new File(Exporter.LEGACY_BASE_FOLDER_PATH);</span>
+<span class="nc" id="L1564">                File dstDir = new File(Exporter.BASE_FOLDER_PATH);</span>
+                try {
+<span class="nc" id="L1566">                    moveDirectory(srcDir, dstDir);</span>
+<span class="nc" id="L1567">                    File readmeFile = new File(Exporter.LEGACY_BASE_FOLDER_PATH, &quot;README.txt&quot;);</span>
+<span class="nc" id="L1568">                    FileWriter writer = null;</span>
+<span class="nc" id="L1569">                    writer = new FileWriter(readmeFile);</span>
+<span class="nc" id="L1570">                    writer.write(&quot;Backup files have been moved to &quot; + dstDir.getPath() +</span>
+                            &quot;\nYou can now delete this folder&quot;);
+<span class="nc" id="L1572">                    writer.flush();</span>
+<span class="nc" id="L1573">                } catch (IOException | IllegalArgumentException ex) {</span>
+<span class="nc" id="L1574">                    ex.printStackTrace();</span>
+<span class="nc" id="L1575">                    String msg = String.format(&quot;Error moving files from %s to %s&quot;, srcDir.getPath(), dstDir.getPath());</span>
+<span class="nc" id="L1576">                    Log.e(LOG_TAG, msg);</span>
+<span class="nc" id="L1577">                    Crashlytics.log(msg);</span>
+<span class="nc" id="L1578">                    Crashlytics.logException(ex);</span>
+<span class="nc" id="L1579">                }</span>
+
+<span class="nc" id="L1581">            }</span>
+<span class="nc" id="L1582">        }).start();</span>
+
+<span class="nc" id="L1584">        return 14;</span>
+    }
+
+    /**
+     * Upgrades the database to version 14.
+     * &lt;p&gt;This migration makes the following changes to the database:
+     * &lt;ul&gt;
+     *     &lt;li&gt;Fixes accounts referencing a default transfer account that no longer
+     *         exists (see #654)&lt;/li&gt;
+     * &lt;/ul&gt;
+     * &lt;/p&gt;
+     * @param db SQLite database to be upgraded
+     * @return New database version, 14 if migration succeeds, 13 otherwise
+     */
+    static int upgradeDbToVersion15(SQLiteDatabase db) {
+<span class="nc" id="L1599">        Log.i(DatabaseHelper.LOG_TAG, &quot;Upgrading database to version 15&quot;);</span>
+<span class="nc" id="L1600">        int dbVersion = 14;</span>
+
+<span class="nc" id="L1602">        db.beginTransaction();</span>
+        try {
+<span class="nc" id="L1604">            ContentValues contentValues = new ContentValues();</span>
+<span class="nc" id="L1605">            contentValues.putNull(AccountEntry.COLUMN_DEFAULT_TRANSFER_ACCOUNT_UID);</span>
+<span class="nc" id="L1606">            db.update(</span>
+                    AccountEntry.TABLE_NAME,
+                    contentValues,
+                    AccountEntry.TABLE_NAME + &quot;.&quot; + AccountEntry.COLUMN_DEFAULT_TRANSFER_ACCOUNT_UID
+                            + &quot; NOT IN (SELECT &quot; + AccountEntry.COLUMN_UID
+                            + &quot;             FROM &quot; + AccountEntry.TABLE_NAME + &quot;)&quot;,
+                    null);
+<span class="nc" id="L1613">            db.setTransactionSuccessful();</span>
+<span class="nc" id="L1614">            dbVersion = 15;</span>
+        } finally {
+<span class="nc" id="L1616">            db.endTransaction();</span>
+<span class="nc" id="L1617">        }</span>
+
+        //remove previously saved export destination index because the number of destinations has changed
+        //an invalid value would lead to crash on start
+<span class="nc" id="L1621">        Context context = GnuCashApplication.getAppContext();</span>
+<span class="nc" id="L1622">        android.preference.PreferenceManager.getDefaultSharedPreferences(context)</span>
+<span class="nc" id="L1623">                .edit()</span>
+<span class="nc" id="L1624">                .remove(context.getString(R.string.key_last_export_destination))</span>
+<span class="nc" id="L1625">                .apply();</span>
+
+        //the default interval has been changed from daily to hourly with this release. So reschedule alarm
+<span class="nc" id="L1628">        rescheduleServiceAlarm();</span>
+<span class="nc" id="L1629">        return dbVersion;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

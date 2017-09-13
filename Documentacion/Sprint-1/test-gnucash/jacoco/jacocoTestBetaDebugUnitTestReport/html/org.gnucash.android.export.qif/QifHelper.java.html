@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>QifHelper.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.export.qif</a> &gt; <span class="el_source">QifHelper.java</span></div><h1>QifHelper.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2013 - 2014 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ * Copyright (c) 2014 Yongxin Wang &lt;fefe.wyx@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.export.qif;
+
+import org.gnucash.android.model.AccountType;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+/**
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ */
+<span class="nc" id="L28">public class QifHelper {</span>
+    /*
+    Prefixes for the QIF file
+     */
+    public static final String PAYEE_PREFIX         = &quot;P&quot;;
+    public static final String DATE_PREFIX          = &quot;D&quot;;
+    public static final String AMOUNT_PREFIX        = &quot;T&quot;;
+    public static final String MEMO_PREFIX          = &quot;M&quot;;
+    public static final String CATEGORY_PREFIX      = &quot;L&quot;;
+    public static final String SPLIT_MEMO_PREFIX    = &quot;E&quot;;
+    public static final String SPLIT_AMOUNT_PREFIX  = &quot;$&quot;;
+    public static final String SPLIT_CATEGORY_PREFIX    = &quot;S&quot;;
+    public static final String SPLIT_PERCENTAGE_PREFIX  = &quot;%&quot;;
+    public static final String ACCOUNT_HEADER           = &quot;!Account&quot;;
+    public static final String ACCOUNT_NAME_PREFIX      = &quot;N&quot;;
+
+    public static final String INTERNAL_CURRENCY_PREFIX = &quot;*&quot;;
+
+    public static final String ENTRY_TERMINATOR = &quot;^&quot;;
+<span class="nc" id="L47">    private static final SimpleDateFormat QIF_DATE_FORMATTER = new SimpleDateFormat(&quot;yyyy/M/d&quot;);</span>
+
+    /**
+     * Formats the date for QIF in the form d MMMM YYYY.
+     * For example 25 January 2013
+     * @param timeMillis Time in milliseconds since epoch
+     * @return Formatted date from the time
+     */
+    public static final String formatDate(long timeMillis){
+<span class="nc" id="L56">        Date date = new Date(timeMillis);</span>
+<span class="nc" id="L57">        return QIF_DATE_FORMATTER.format(date);</span>
+    }
+
+    /**
+     * Returns the QIF header for the transaction based on the account type.
+     * By default, the QIF cash header is used
+     * @param accountType AccountType of account
+     * @return QIF header for the transactions
+     */
+    public static String getQifHeader(AccountType accountType){
+<span class="nc bnc" id="L67" title="All 6 branches missed.">        switch (accountType) {</span>
+            case CASH:
+<span class="nc" id="L69">                return &quot;!Type:Cash&quot;;</span>
+            case BANK:
+<span class="nc" id="L71">                return &quot;!Type:Bank&quot;;</span>
+            case CREDIT:
+<span class="nc" id="L73">                return &quot;!Type:CCard&quot;;</span>
+            case ASSET:
+<span class="nc" id="L75">                return &quot;!Type:Oth A&quot;;</span>
+            case LIABILITY:
+<span class="nc" id="L77">                return &quot;!Type:Oth L&quot;;</span>
+            default:
+<span class="nc" id="L79">                return &quot;!Type:Cash&quot;;</span>
+        }
+    }
+
+    public static String getQifHeader(String accountType) {
+<span class="nc" id="L84">        return getQifHeader(AccountType.valueOf(accountType));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

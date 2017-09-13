@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Commodity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.model</a> &gt; <span class="el_source">Commodity.java</span></div><h1>Commodity.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2015 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.gnucash.android.model;
+
+import org.gnucash.android.app.GnuCashApplication;
+import org.gnucash.android.db.adapter.CommoditiesDbAdapter;
+
+/**
+ * Commodities are the currencies used in the application.
+ * At the moment only ISO4217 currencies are supported
+ */
+public class Commodity extends BaseModel {
+
+<span class="pc" id="L27">    public enum Namespace { ISO4217 } //Namespace for commodities</span>
+
+<span class="fc" id="L29">    private Namespace mNamespace = Namespace.ISO4217;</span>
+
+    /**
+     * Default commodity for device locale
+     * &lt;p&gt;This value is set when a new application instance is created in {@link GnuCashApplication#onCreate()}.
+     * The value initialized here is just a placeholder for unit tests&lt;/p&gt;
+     */
+<span class="fc" id="L36">    public static Commodity DEFAULT_COMMODITY = new Commodity(&quot;US Dollars&quot;, &quot;USD&quot;, 100); //this value is a stub. Will be overwritten when the app is launched</span>
+
+<span class="fc" id="L38">    public static Commodity USD = new Commodity(&quot;&quot;, &quot;USD&quot;, 100);</span>
+<span class="fc" id="L39">    public static Commodity EUR = new Commodity(&quot;&quot;, &quot;EUR&quot;, 100);</span>
+<span class="fc" id="L40">    public static Commodity GBP = new Commodity(&quot;&quot;, &quot;GBP&quot;, 100);</span>
+<span class="fc" id="L41">    public static Commodity CHF = new Commodity(&quot;&quot;, &quot;CHF&quot;, 100);</span>
+<span class="fc" id="L42">    public static Commodity CAD = new Commodity(&quot;&quot;, &quot;CAD&quot;, 100);</span>
+<span class="fc" id="L43">    public static Commodity JPY = new Commodity(&quot;&quot;, &quot;JPY&quot;, 1);</span>
+<span class="fc" id="L44">    public static Commodity AUD = new Commodity(&quot;&quot;, &quot;AUD&quot;, 100);</span>
+
+    /**
+     * This is the currency code for ISO4217 currencies
+     */
+    private String mMnemonic;
+    private String mFullname;
+    private String mCusip;
+<span class="fc" id="L52">    private String mLocalSymbol = &quot;&quot;;</span>
+    private int mSmallestFraction;
+    private int mQuoteFlag;
+
+    /**
+     * Create a new commodity
+     * @param fullname Official full name of the currency
+     * @param mnemonic Official abbreviated designation for the currency
+     * @param smallestFraction Number of sub-units that the basic commodity can be divided into, as power of 10. e.g. 10^&amp;lt;number_of_fraction_digits&amp;gt;
+     */
+<span class="fc" id="L62">    public Commodity(String fullname, String mnemonic, int smallestFraction){</span>
+<span class="fc" id="L63">        this.mFullname = fullname;</span>
+<span class="fc" id="L64">        this.mMnemonic = mnemonic;</span>
+<span class="fc" id="L65">        setSmallestFraction(smallestFraction);</span>
+<span class="fc" id="L66">    }</span>
+
+    /**
+     * Returns an instance of commodity for the specified currencyCode
+     * @param currencyCode ISO 4217 currency code (3-letter)
+     */
+    public static Commodity getInstance(String currencyCode){
+<span class="pc bpc" id="L73" title="24 of 30 branches missed.">        switch (currencyCode){ //save time for database trip</span>
+<span class="fc" id="L74">            case &quot;USD&quot;: return USD;</span>
+<span class="fc" id="L75">            case &quot;EUR&quot;: return EUR;</span>
+<span class="nc" id="L76">            case &quot;GBP&quot;: return GBP;</span>
+<span class="nc" id="L77">            case &quot;CHF&quot;: return CHF;</span>
+<span class="nc" id="L78">            case &quot;JPY&quot;: return JPY;</span>
+<span class="nc" id="L79">            case &quot;AUD&quot;: return AUD;</span>
+<span class="nc" id="L80">            case &quot;CAD&quot;: return CAD;</span>
+<span class="nc" id="L81">            default: return CommoditiesDbAdapter.getInstance().getCommodity(currencyCode);</span>
+        }
+    }
+
+    public Namespace getNamespace() {
+<span class="nc" id="L86">        return mNamespace;</span>
+    }
+
+    public void setNamespace(Namespace namespace) {
+<span class="nc" id="L90">        this.mNamespace = namespace;</span>
+<span class="nc" id="L91">    }</span>
+
+    /**
+     * Returns the mnemonic, or currency code for ISO4217 currencies
+     * @return Mnemonic of the commodity
+     */
+    public String getMnemonic() {
+<span class="nc" id="L98">        return mMnemonic;</span>
+    }
+
+    /**
+     * Alias for {@link #getMnemonic()}
+     * @return ISO 4217 code for this commodity
+     */
+    public String getCurrencyCode(){
+<span class="nc" id="L106">        return getMnemonic();</span>
+    }
+
+    public void setMnemonic(String mMnemonic) {
+<span class="nc" id="L110">        this.mMnemonic = mMnemonic;</span>
+<span class="nc" id="L111">    }</span>
+
+    public String getFullname() {
+<span class="nc" id="L114">        return mFullname;</span>
+    }
+
+    public void setFullname(String mFullname) {
+<span class="nc" id="L118">        this.mFullname = mFullname;</span>
+<span class="nc" id="L119">    }</span>
+
+    public String getCusip() {
+<span class="nc" id="L122">        return mCusip;</span>
+    }
+
+    public void setCusip(String mCusip) {
+<span class="nc" id="L126">        this.mCusip = mCusip;</span>
+<span class="nc" id="L127">    }</span>
+
+    public String getLocalSymbol() {
+<span class="nc" id="L130">        return mLocalSymbol;</span>
+    }
+
+    /**
+     * Returns the symbol for this commodity.
+     * &lt;p&gt;Normally this would be the local symbol, but in it's absence, the mnemonic (currency code)
+     * is returned.&lt;/p&gt;
+     * @return
+     */
+    public String getSymbol(){
+<span class="nc bnc" id="L140" title="All 4 branches missed.">        if (mLocalSymbol == null || mLocalSymbol.isEmpty()){</span>
+<span class="nc" id="L141">            return mMnemonic;</span>
+        }
+<span class="nc" id="L143">        return mLocalSymbol;</span>
+    }
+
+    public void setLocalSymbol(String localSymbol) {
+<span class="nc" id="L147">        this.mLocalSymbol = localSymbol;</span>
+<span class="nc" id="L148">    }</span>
+
+    /**
+     * Returns the smallest fraction supported by the commodity as a power of 10.
+     * &lt;p&gt;i.e. for commodities with no fractions, 1 is returned, for commodities with 2 fractions, 100 is returned&lt;/p&gt;
+     * @return Smallest fraction as power of 10
+     */
+    public int getSmallestFraction() {
+<span class="fc" id="L156">        return mSmallestFraction;</span>
+    }
+
+    /**
+     * Returns the (minimum) number of digits that this commodity supports in its fractional part
+     * &lt;p&gt;For any unsupported values for the smallest fraction, a default value of 2 is returned.
+     * Supported values for the smallest fraction are powers of 10 i.e. 1, 10, 100 etc&lt;/p&gt;
+     * @return Number of digits in fraction
+     * @see #getSmallestFraction()
+     */
+    public int getSmallestFractionDigits(){
+<span class="pc bpc" id="L167" title="1 of 2 branches missed.">        if (mSmallestFraction == 0){</span>
+<span class="nc" id="L168">            return 0;</span>
+        } else {
+<span class="fc" id="L170">            return Integer.numberOfTrailingZeros(mSmallestFraction);</span>
+        }
+    }
+
+    /**
+     * Sets the smallest fraction for the commodity.
+     * &lt;p&gt;The fraction is a power of 10. So commodities with 2 fraction digits, have fraction of 10^2 = 100.&lt;br&gt;
+     *     If the parameter is any other value, a default fraction of 100 will be set&lt;/p&gt;
+     * @param smallestFraction Smallest fraction as power of ten
+     * @throws IllegalArgumentException if the smallest fraction is not a power of 10
+     */
+    public void setSmallestFraction(int smallestFraction) {
+<span class="fc" id="L182">        this.mSmallestFraction = smallestFraction;</span>
+<span class="fc" id="L183">    }</span>
+
+    public int getQuoteFlag() {
+<span class="nc" id="L186">        return mQuoteFlag;</span>
+    }
+
+    public void setQuoteFlag(int quoteFlag) {
+<span class="nc" id="L190">        this.mQuoteFlag = quoteFlag;</span>
+<span class="nc" id="L191">    }</span>
+
+    @Override
+    /**
+     * Returns the full name of the currency, or the currency code if there is no full name
+     * @return String representation of the commodity
+     */
+    public String toString() {
+<span class="nc bnc" id="L199" title="All 4 branches missed.">        return mFullname == null || mFullname.isEmpty() ? mMnemonic : mFullname;</span>
+    }
+
+    /**
+     * Overrides {@link BaseModel#equals(Object)} to compare only the currency codes of the commodity.
+     * &lt;p&gt;Two commodities are considered equal if they have the same currency code&lt;/p&gt;
+     * @param o Commodity instance to compare
+     * @return {@code true} if both instances have same currency code, {@code false} otherwise
+     */
+    @Override
+    public boolean equals(Object o) {
+<span class="pc bpc" id="L210" title="1 of 2 branches missed.">        if (this == o) return true;</span>
+<span class="nc bnc" id="L211" title="All 4 branches missed.">        if (o == null || getClass() != o.getClass()) return false;</span>
+
+<span class="nc" id="L213">        Commodity commodity = (Commodity) o;</span>
+
+<span class="nc" id="L215">        return mMnemonic.equals(commodity.mMnemonic);</span>
+
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L221">        return mMnemonic.hashCode();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

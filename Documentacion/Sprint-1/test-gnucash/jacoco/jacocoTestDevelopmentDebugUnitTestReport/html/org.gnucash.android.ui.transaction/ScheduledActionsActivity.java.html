@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ScheduledActionsActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.ui.transaction</a> &gt; <span class="el_source">ScheduledActionsActivity.java</span></div><h1>ScheduledActionsActivity.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2015 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.gnucash.android.ui.transaction;
+
+import android.os.Bundle;
+import android.support.design.widget.TabLayout;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentStatePagerAdapter;
+import android.support.v4.view.PagerAdapter;
+import android.support.v4.view.ViewPager;
+
+import org.gnucash.android.R;
+import org.gnucash.android.model.ScheduledAction;
+import org.gnucash.android.ui.common.BaseDrawerActivity;
+
+/**
+ * Activity for displaying scheduled actions
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ */
+<span class="nc" id="L34">public class ScheduledActionsActivity extends BaseDrawerActivity {</span>
+
+    public static final int INDEX_SCHEDULED_TRANSACTIONS    = 0;
+    public static final int INDEX_SCHEDULED_EXPORTS         = 1;
+
+    ViewPager mViewPager;
+
+    @Override
+    public int getContentView() {
+<span class="nc" id="L43">        return R.layout.activity_scheduled_events;</span>
+    }
+
+    @Override
+    public int getTitleRes() {
+<span class="nc" id="L48">        return R.string.nav_menu_scheduled_actions;</span>
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="nc" id="L53">        super.onCreate(savedInstanceState);</span>
+
+<span class="nc" id="L55">        TabLayout tabLayout = (TabLayout) findViewById(R.id.tab_layout);</span>
+<span class="nc" id="L56">        tabLayout.addTab(tabLayout.newTab().setText(R.string.title_scheduled_transactions));</span>
+<span class="nc" id="L57">        tabLayout.addTab(tabLayout.newTab().setText(R.string.title_scheduled_exports));</span>
+<span class="nc" id="L58">        tabLayout.setTabGravity(TabLayout.GRAVITY_FILL);</span>
+
+<span class="nc" id="L60">        mViewPager = (ViewPager) findViewById(R.id.pager);</span>
+
+        //show the simple accounts list
+<span class="nc" id="L63">        PagerAdapter mPagerAdapter = new ScheduledActionsViewPager(getSupportFragmentManager());</span>
+<span class="nc" id="L64">        mViewPager.setAdapter(mPagerAdapter);</span>
+
+<span class="nc" id="L66">        mViewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout));</span>
+<span class="nc" id="L67">        tabLayout.setOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {</span>
+            @Override
+            public void onTabSelected(TabLayout.Tab tab) {
+<span class="nc" id="L70">                mViewPager.setCurrentItem(tab.getPosition());</span>
+<span class="nc" id="L71">            }</span>
+
+            @Override
+            public void onTabUnselected(TabLayout.Tab tab) {
+                //nothing to see here, move along
+<span class="nc" id="L76">            }</span>
+
+            @Override
+            public void onTabReselected(TabLayout.Tab tab) {
+                //nothing to see here, move along
+<span class="nc" id="L81">            }</span>
+        });
+<span class="nc" id="L83">    }</span>
+
+
+    /**
+     * View pager adapter for managing the scheduled action views
+     */
+    private class ScheduledActionsViewPager extends FragmentStatePagerAdapter {
+
+<span class="nc" id="L91">        public ScheduledActionsViewPager(FragmentManager fm) {</span>
+<span class="nc" id="L92">            super(fm);</span>
+<span class="nc" id="L93">        }</span>
+
+        @Override
+        public CharSequence getPageTitle(int position) {
+<span class="nc bnc" id="L97" title="All 3 branches missed.">            switch (position){</span>
+                case INDEX_SCHEDULED_TRANSACTIONS:
+<span class="nc" id="L99">                    return getString(R.string.title_scheduled_transactions);</span>
+                case INDEX_SCHEDULED_EXPORTS:
+<span class="nc" id="L101">                    return getString(R.string.title_scheduled_exports);</span>
+                default:
+<span class="nc" id="L103">                    return super.getPageTitle(position);</span>
+            }
+        }
+
+        @Override
+        public Fragment getItem(int position) {
+<span class="nc bnc" id="L109" title="All 3 branches missed.">            switch (position){</span>
+                case INDEX_SCHEDULED_TRANSACTIONS:
+<span class="nc" id="L111">                    return ScheduledActionsListFragment.getInstance(ScheduledAction.ActionType.TRANSACTION);</span>
+                case INDEX_SCHEDULED_EXPORTS:
+<span class="nc" id="L113">                    return ScheduledActionsListFragment.getInstance(ScheduledAction.ActionType.BACKUP);</span>
+            }
+<span class="nc" id="L115">            return null;</span>
+        }
+
+        @Override
+        public int getCount() {
+<span class="nc" id="L120">            return 2;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

@@ -1,0 +1,804 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DatabaseAdapter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.db.adapter</a> &gt; <span class="el_source">DatabaseAdapter.java</span></div><h1>DatabaseAdapter.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2012 - 2015 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.db.adapter;
+
+import android.content.ContentValues;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteStatement;
+import android.support.annotation.NonNull;
+import android.text.TextUtils;
+import android.util.Log;
+
+import org.gnucash.android.db.DatabaseSchema;
+import org.gnucash.android.db.DatabaseSchema.AccountEntry;
+import org.gnucash.android.db.DatabaseSchema.CommonColumns;
+import org.gnucash.android.db.DatabaseSchema.SplitEntry;
+import org.gnucash.android.db.DatabaseSchema.TransactionEntry;
+import org.gnucash.android.model.AccountType;
+import org.gnucash.android.model.BaseModel;
+import org.gnucash.android.util.TimestampHelper;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Adapter to be used for creating and opening the database for read/write operations.
+ * The adapter abstracts several methods for database access and should be subclassed
+ * by any other adapters to database-backed data models.
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ */
+public abstract class DatabaseAdapter&lt;Model extends BaseModel&gt; {
+	/**
+	 * Tag for logging
+	 */
+<span class="nc" id="L50">	protected String LOG_TAG = &quot;DatabaseAdapter&quot;;</span>
+
+	/**
+	 * SQLite database
+	 */
+    protected final SQLiteDatabase mDb;
+
+    protected final String mTableName;
+
+    protected final String[] mColumns;
+
+    protected volatile SQLiteStatement mReplaceStatement;
+
+    protected volatile SQLiteStatement mUpdateStatement;
+
+    protected volatile SQLiteStatement mInsertStatement;
+
+<span class="nc" id="L67">    public enum UpdateMethod {</span>
+<span class="nc" id="L68">        insert, update, replace</span>
+    };
+
+    /**
+     * Opens the database adapter with an existing database
+     * @param db SQLiteDatabase object
+     */
+<span class="nc" id="L75">    public DatabaseAdapter(SQLiteDatabase db, @NonNull String tableName, @NonNull String[] columns) {</span>
+<span class="nc" id="L76">        this.mTableName = tableName;</span>
+<span class="nc" id="L77">        this.mDb = db;</span>
+<span class="nc" id="L78">        this.mColumns = columns;</span>
+<span class="nc bnc" id="L79" title="All 4 branches missed.">        if (!db.isOpen() || db.isReadOnly())</span>
+<span class="nc" id="L80">            throw new IllegalArgumentException(&quot;Database not open or is read-only. Require writeable database&quot;);</span>
+
+<span class="nc bnc" id="L82" title="All 2 branches missed.">        if (mDb.getVersion() &gt;= 9) {</span>
+<span class="nc" id="L83">            createTempView();</span>
+        }
+<span class="nc" id="L85">        LOG_TAG = getClass().getSimpleName();</span>
+<span class="nc" id="L86">    }</span>
+
+    private void createTempView() {
+        //the multiplication by 1.0 is to cause sqlite to handle the value as REAL and not to round off
+
+        // Create some temporary views. Temporary views only exists in one DB session, and will not
+        // be saved in the DB
+        //
+        // TODO: Useful views should be add to the DB
+        //
+        // create a temporary view, combining accounts, transactions and splits, as this is often used
+        // in the queries
+
+        //todo: would it be useful to add the split reconciled_state and reconciled_date to this view?
+<span class="nc" id="L100">        mDb.execSQL(&quot;CREATE TEMP VIEW IF NOT EXISTS trans_split_acct AS SELECT &quot;</span>
+                        + TransactionEntry.TABLE_NAME + &quot;.&quot; + CommonColumns.COLUMN_MODIFIED_AT + &quot; AS &quot;
+                        + TransactionEntry.TABLE_NAME + &quot;_&quot; + CommonColumns.COLUMN_MODIFIED_AT + &quot; , &quot;
+                        + TransactionEntry.TABLE_NAME + &quot;.&quot; + TransactionEntry.COLUMN_UID + &quot; AS &quot;
+                        + TransactionEntry.TABLE_NAME + &quot;_&quot; + TransactionEntry.COLUMN_UID + &quot; , &quot;
+                        + TransactionEntry.TABLE_NAME + &quot;.&quot; + TransactionEntry.COLUMN_DESCRIPTION + &quot; AS &quot;
+                        + TransactionEntry.TABLE_NAME + &quot;_&quot; + TransactionEntry.COLUMN_DESCRIPTION + &quot; , &quot;
+                        + TransactionEntry.TABLE_NAME + &quot;.&quot; + TransactionEntry.COLUMN_NOTES + &quot; AS &quot;
+                        + TransactionEntry.TABLE_NAME + &quot;_&quot; + TransactionEntry.COLUMN_NOTES + &quot; , &quot;
+                        + TransactionEntry.TABLE_NAME + &quot;.&quot; + TransactionEntry.COLUMN_CURRENCY + &quot; AS &quot;
+                        + TransactionEntry.TABLE_NAME + &quot;_&quot; + TransactionEntry.COLUMN_CURRENCY + &quot; , &quot;
+                        + TransactionEntry.TABLE_NAME + &quot;.&quot; + TransactionEntry.COLUMN_TIMESTAMP + &quot; AS &quot;
+                        + TransactionEntry.TABLE_NAME + &quot;_&quot; + TransactionEntry.COLUMN_TIMESTAMP + &quot; , &quot;
+                        + TransactionEntry.TABLE_NAME + &quot;.&quot; + TransactionEntry.COLUMN_EXPORTED + &quot; AS &quot;
+                        + TransactionEntry.TABLE_NAME + &quot;_&quot; + TransactionEntry.COLUMN_EXPORTED + &quot; , &quot;
+                        + TransactionEntry.TABLE_NAME + &quot;.&quot; + TransactionEntry.COLUMN_TEMPLATE + &quot; AS &quot;
+                        + TransactionEntry.TABLE_NAME + &quot;_&quot; + TransactionEntry.COLUMN_TEMPLATE + &quot; , &quot;
+                        + SplitEntry.TABLE_NAME + &quot;.&quot; + SplitEntry.COLUMN_UID + &quot; AS &quot;
+                        + SplitEntry.TABLE_NAME + &quot;_&quot; + SplitEntry.COLUMN_UID + &quot; , &quot;
+                        + SplitEntry.TABLE_NAME + &quot;.&quot; + SplitEntry.COLUMN_TYPE + &quot; AS &quot;
+                        + SplitEntry.TABLE_NAME + &quot;_&quot; + SplitEntry.COLUMN_TYPE + &quot; , &quot;
+                        + SplitEntry.TABLE_NAME + &quot;.&quot; + SplitEntry.COLUMN_VALUE_NUM + &quot; AS &quot;
+                        + SplitEntry.TABLE_NAME + &quot;_&quot; + SplitEntry.COLUMN_VALUE_NUM + &quot; , &quot;
+                        + SplitEntry.TABLE_NAME + &quot;.&quot; + SplitEntry.COLUMN_VALUE_DENOM + &quot; AS &quot;
+                        + SplitEntry.TABLE_NAME + &quot;_&quot; + SplitEntry.COLUMN_VALUE_DENOM + &quot; , &quot;
+                        + SplitEntry.TABLE_NAME + &quot;.&quot; + SplitEntry.COLUMN_QUANTITY_NUM + &quot; AS &quot;
+                        + SplitEntry.TABLE_NAME + &quot;_&quot; + SplitEntry.COLUMN_QUANTITY_NUM + &quot; , &quot;
+                        + SplitEntry.TABLE_NAME + &quot;.&quot; + SplitEntry.COLUMN_QUANTITY_DENOM + &quot; AS &quot;
+                        + SplitEntry.TABLE_NAME + &quot;_&quot; + SplitEntry.COLUMN_QUANTITY_DENOM + &quot; , &quot;
+                        + SplitEntry.TABLE_NAME + &quot;.&quot; + SplitEntry.COLUMN_MEMO + &quot; AS &quot;
+                        + SplitEntry.TABLE_NAME + &quot;_&quot; + SplitEntry.COLUMN_MEMO + &quot; , &quot;
+                        + AccountEntry.TABLE_NAME + &quot;.&quot; + AccountEntry.COLUMN_UID + &quot; AS &quot;
+                        + AccountEntry.TABLE_NAME + &quot;_&quot; + AccountEntry.COLUMN_UID + &quot; , &quot;
+                        + AccountEntry.TABLE_NAME + &quot;.&quot; + AccountEntry.COLUMN_NAME + &quot; AS &quot;
+                        + AccountEntry.TABLE_NAME + &quot;_&quot; + AccountEntry.COLUMN_NAME + &quot; , &quot;
+                        + AccountEntry.TABLE_NAME + &quot;.&quot; + AccountEntry.COLUMN_CURRENCY + &quot; AS &quot;
+                        + AccountEntry.TABLE_NAME + &quot;_&quot; + AccountEntry.COLUMN_CURRENCY + &quot; , &quot;
+                        + AccountEntry.TABLE_NAME + &quot;.&quot; + AccountEntry.COLUMN_PARENT_ACCOUNT_UID + &quot; AS &quot;
+                        + AccountEntry.TABLE_NAME + &quot;_&quot; + AccountEntry.COLUMN_PARENT_ACCOUNT_UID + &quot; , &quot;
+                        + AccountEntry.TABLE_NAME + &quot;.&quot; + AccountEntry.COLUMN_PLACEHOLDER + &quot; AS &quot;
+                        + AccountEntry.TABLE_NAME + &quot;_&quot; + AccountEntry.COLUMN_PLACEHOLDER + &quot; , &quot;
+                        + AccountEntry.TABLE_NAME + &quot;.&quot; + AccountEntry.COLUMN_COLOR_CODE + &quot; AS &quot;
+                        + AccountEntry.TABLE_NAME + &quot;_&quot; + AccountEntry.COLUMN_COLOR_CODE + &quot; , &quot;
+                        + AccountEntry.TABLE_NAME + &quot;.&quot; + AccountEntry.COLUMN_FAVORITE + &quot; AS &quot;
+                        + AccountEntry.TABLE_NAME + &quot;_&quot; + AccountEntry.COLUMN_FAVORITE + &quot; , &quot;
+                        + AccountEntry.TABLE_NAME + &quot;.&quot; + AccountEntry.COLUMN_FULL_NAME + &quot; AS &quot;
+                        + AccountEntry.TABLE_NAME + &quot;_&quot; + AccountEntry.COLUMN_FULL_NAME + &quot; , &quot;
+                        + AccountEntry.TABLE_NAME + &quot;.&quot; + AccountEntry.COLUMN_TYPE + &quot; AS &quot;
+                        + AccountEntry.TABLE_NAME + &quot;_&quot; + AccountEntry.COLUMN_TYPE + &quot; , &quot;
+                        + AccountEntry.TABLE_NAME + &quot;.&quot; + AccountEntry.COLUMN_DEFAULT_TRANSFER_ACCOUNT_UID + &quot; AS &quot;
+                        + AccountEntry.TABLE_NAME + &quot;_&quot; + AccountEntry.COLUMN_DEFAULT_TRANSFER_ACCOUNT_UID
+                        + &quot; FROM &quot; + TransactionEntry.TABLE_NAME + &quot; , &quot; + SplitEntry.TABLE_NAME + &quot; ON &quot;
+                        + TransactionEntry.TABLE_NAME + &quot;.&quot; + TransactionEntry.COLUMN_UID + &quot;=&quot; + SplitEntry.TABLE_NAME + &quot;.&quot; + SplitEntry.COLUMN_TRANSACTION_UID
+                        + &quot; , &quot; + AccountEntry.TABLE_NAME + &quot; ON &quot;
+                        + SplitEntry.TABLE_NAME + &quot;.&quot; + SplitEntry.COLUMN_ACCOUNT_UID + &quot;=&quot; + AccountEntry.TABLE_NAME + &quot;.&quot; + AccountEntry.COLUMN_UID
+        );
+
+        // SELECT transactions_uid AS trans_acct_t_uid ,
+        //      SUBSTR (
+        //          MIN (
+        //              ( CASE WHEN IFNULL ( splits_memo , '' ) == '' THEN 'a' ELSE 'b' END ) || accounts_uid
+        //          ) ,
+        //          2
+        //      ) AS trans_acct_a_uid ,
+        //   TOTAL ( CASE WHEN splits_type = 'DEBIT' THEN splits_value_num
+        //                ELSE - splits_value_num END ) * 1.0 / splits_value_denom AS trans_acct_balance ,
+        //   COUNT ( DISTINCT accounts_currency_code ) AS trans_currency_count ,
+        //   COUNT (*) AS trans_split_count
+        //   FROM trans_split_acct GROUP BY transactions_uid
+        //
+        // This temporary view would pick one Account_UID for each
+        // Transaction, which can be used to order all transactions. If possible, account_uid of a split whose
+        // memo is null is select.
+        //
+        // Transaction balance is also picked out by this view
+        //
+        // a split without split memo is chosen if possible, in the following manner:
+        //   if the splits memo is null or empty string, attach an 'a' in front of the split account uid,
+        //   if not, attach a 'b' to the split account uid
+        //   pick the minimal value of the modified account uid (one of the ones begins with 'a', if exists)
+        //   use substr to get account uid
+
+<span class="nc" id="L182">        mDb.execSQL(&quot;CREATE TEMP VIEW IF NOT EXISTS trans_extra_info AS SELECT &quot; + TransactionEntry.TABLE_NAME + &quot;_&quot; + TransactionEntry.COLUMN_UID +</span>
+                &quot; AS trans_acct_t_uid , SUBSTR ( MIN ( ( CASE WHEN IFNULL ( &quot; + SplitEntry.TABLE_NAME + &quot;_&quot; +
+                SplitEntry.COLUMN_MEMO + &quot; , '' ) == '' THEN 'a' ELSE 'b' END ) || &quot; +
+                AccountEntry.TABLE_NAME + &quot;_&quot; + AccountEntry.COLUMN_UID +
+                &quot; ) , 2 ) AS trans_acct_a_uid , TOTAL ( CASE WHEN &quot; + SplitEntry.TABLE_NAME + &quot;_&quot; +
+                SplitEntry.COLUMN_TYPE + &quot; = 'DEBIT' THEN &quot;+ SplitEntry.TABLE_NAME + &quot;_&quot; +
+                SplitEntry.COLUMN_VALUE_NUM + &quot; ELSE - &quot; + SplitEntry.TABLE_NAME + &quot;_&quot; +
+                SplitEntry.COLUMN_VALUE_NUM + &quot; END ) * 1.0 / &quot; + SplitEntry.TABLE_NAME + &quot;_&quot; +
+                SplitEntry.COLUMN_VALUE_DENOM + &quot; AS trans_acct_balance , COUNT ( DISTINCT &quot; +
+                AccountEntry.TABLE_NAME + &quot;_&quot; + AccountEntry.COLUMN_CURRENCY +
+                &quot; ) AS trans_currency_count , COUNT (*) AS trans_split_count FROM trans_split_acct &quot; +
+                &quot; GROUP BY &quot; + TransactionEntry.TABLE_NAME + &quot;_&quot; + TransactionEntry.COLUMN_UID
+        );
+<span class="nc" id="L195">    }</span>
+
+    /**
+     * Checks if the database is open
+     * @return &lt;code&gt;true&lt;/code&gt; if the database is open, &lt;code&gt;false&lt;/code&gt; otherwise
+     */
+    public boolean isOpen(){
+<span class="nc" id="L202">        return mDb.isOpen();</span>
+    }
+
+    /**
+     * Adds a record to the database with the data contained in the model.
+     * &lt;p&gt;This method uses the SQL REPLACE instructions to replace any record with a matching GUID.
+     * So beware of any foreign keys with cascade dependencies which might need to be re-added&lt;/p&gt;
+     * @param model Model to be saved to the database
+     */
+    public void addRecord(@NonNull final Model model){
+<span class="nc" id="L212">        addRecord(model, UpdateMethod.replace);</span>
+<span class="nc" id="L213">    }</span>
+
+    /**
+     * Add a model record to the database.
+     * &lt;p&gt;If unsure about which {@code updateMethod} to use, use {@link UpdateMethod#replace}&lt;/p&gt;
+     * @param model Subclass of {@link BaseModel} to be added
+     * @param updateMethod Method to use for adding the record
+     */
+    public void addRecord(@NonNull final Model model, UpdateMethod updateMethod){
+<span class="nc" id="L222">        Log.d(LOG_TAG, String.format(&quot;Adding %s record to database: &quot;, model.getClass().getSimpleName()));</span>
+<span class="nc bnc" id="L223" title="All 3 branches missed.">        switch(updateMethod){</span>
+            case insert:
+<span class="nc" id="L225">                synchronized(getInsertStatement()) {</span>
+<span class="nc" id="L226">                    setBindings(getInsertStatement(), model).execute();</span>
+<span class="nc" id="L227">                }</span>
+<span class="nc" id="L228">                break;</span>
+            case update:
+<span class="nc" id="L230">                synchronized(getUpdateStatement()) {</span>
+<span class="nc" id="L231">                    setBindings(getUpdateStatement(), model).execute();</span>
+<span class="nc" id="L232">                }</span>
+<span class="nc" id="L233">                break;</span>
+            default:
+<span class="nc" id="L235">                synchronized(getReplaceStatement()) {</span>
+<span class="nc" id="L236">                    setBindings(getReplaceStatement(), model).execute();</span>
+<span class="nc" id="L237">                }</span>
+                break;
+        }
+<span class="nc" id="L240">    }</span>
+
+    /**
+     * Persist the model object to the database as records using the {@code updateMethod}
+     * @param modelList List of records
+     * @param updateMethod Method to use when persisting them
+     * @return Number of rows affected in the database
+     */
+    private long doAddModels(@NonNull final List&lt;Model&gt; modelList, UpdateMethod updateMethod) {
+<span class="nc" id="L249">        long nRow = 0;</span>
+<span class="nc bnc" id="L250" title="All 3 branches missed.">        switch (updateMethod) {</span>
+            case update:
+<span class="nc" id="L252">                synchronized(getUpdateStatement()) {</span>
+<span class="nc bnc" id="L253" title="All 2 branches missed.">                    for (Model model : modelList) {</span>
+<span class="nc" id="L254">                        setBindings(getUpdateStatement(), model).execute();</span>
+<span class="nc" id="L255">                        nRow++;</span>
+<span class="nc" id="L256">                    }</span>
+<span class="nc" id="L257">                }</span>
+<span class="nc" id="L258">                break;</span>
+            case insert:
+<span class="nc" id="L260">                synchronized(getInsertStatement()) {</span>
+<span class="nc bnc" id="L261" title="All 2 branches missed.">                    for (Model model : modelList) {</span>
+<span class="nc" id="L262">                        setBindings(getInsertStatement(), model).execute();</span>
+<span class="nc" id="L263">                        nRow++;</span>
+<span class="nc" id="L264">                    }</span>
+<span class="nc" id="L265">                }</span>
+<span class="nc" id="L266">                break;</span>
+            default:
+<span class="nc" id="L268">                synchronized(getReplaceStatement()) {</span>
+<span class="nc bnc" id="L269" title="All 2 branches missed.">                    for (Model model : modelList) {</span>
+<span class="nc" id="L270">                        setBindings(getReplaceStatement(), model).execute();</span>
+<span class="nc" id="L271">                        nRow++;</span>
+<span class="nc" id="L272">                    }</span>
+<span class="nc" id="L273">                }</span>
+                break;
+        }
+<span class="nc" id="L276">        return nRow;</span>
+    }
+
+    /**
+     * Add multiple records to the database at once
+     * &lt;p&gt;Either all or none of the records will be inserted/updated into the database.&lt;/p&gt;
+     * @param modelList List of model records
+     * @return Number of rows inserted
+     */
+    public long bulkAddRecords(@NonNull List&lt;Model&gt; modelList){
+<span class="nc" id="L286">        return bulkAddRecords(modelList, UpdateMethod.replace);</span>
+    }
+
+    public long bulkAddRecords(@NonNull List&lt;Model&gt; modelList, UpdateMethod updateMethod) {
+<span class="nc bnc" id="L290" title="All 2 branches missed.">        if (modelList.isEmpty()) {</span>
+<span class="nc" id="L291">            Log.d(LOG_TAG, &quot;Empty model list. Cannot bulk add records, returning 0&quot;);</span>
+<span class="nc" id="L292">            return 0;</span>
+        }
+
+<span class="nc" id="L295">        Log.i(LOG_TAG, String.format(&quot;Bulk adding %d %s records to the database&quot;, modelList.size(),</span>
+<span class="nc bnc" id="L296" title="All 2 branches missed.">                modelList.size() == 0 ? &quot;null&quot;: modelList.get(0).getClass().getSimpleName()));</span>
+<span class="nc" id="L297">        long nRow = 0;</span>
+        try {
+<span class="nc" id="L299">            mDb.beginTransaction();</span>
+<span class="nc" id="L300">            nRow = doAddModels(modelList, updateMethod);</span>
+<span class="nc" id="L301">            mDb.setTransactionSuccessful();</span>
+        }
+        finally {
+<span class="nc" id="L304">            mDb.endTransaction();</span>
+<span class="nc" id="L305">        }</span>
+
+<span class="nc" id="L307">        return nRow;</span>
+    }
+
+    /**
+     * Builds an instance of the model from the database record entry
+     * &lt;p&gt;When implementing this method, remember to call {@link #populateBaseModelAttributes(Cursor, BaseModel)}&lt;/p&gt;
+     * @param cursor Cursor pointing to the record
+     * @return New instance of the model from database record
+     */
+    public abstract Model buildModelInstance(@NonNull final Cursor cursor);
+
+    /**
+     * Generates an {@link SQLiteStatement} with values from the {@code model}.
+     * This statement can be executed to replace a record in the database.
+     * &lt;p&gt;If the {@link #mReplaceStatement} is null, subclasses should create a new statement and return.&lt;br/&gt;
+     * If it is not null, the previous bindings will be cleared and replaced with those from the model&lt;/p&gt;
+     * @return SQLiteStatement for replacing a record in the database
+     */
+    protected final @NonNull SQLiteStatement getReplaceStatement() {
+<span class="nc" id="L326">        SQLiteStatement stmt = mReplaceStatement;</span>
+<span class="nc bnc" id="L327" title="All 2 branches missed.">        if (stmt == null) {</span>
+<span class="nc" id="L328">            synchronized (this) {</span>
+<span class="nc" id="L329">                stmt = mReplaceStatement;</span>
+<span class="nc bnc" id="L330" title="All 2 branches missed.">                if (stmt == null) {</span>
+<span class="nc" id="L331">                    mReplaceStatement = stmt</span>
+<span class="nc" id="L332">                            = mDb.compileStatement(&quot;REPLACE INTO &quot; + mTableName + &quot; ( &quot;</span>
+<span class="nc" id="L333">                            + TextUtils.join(&quot; , &quot;, mColumns) + &quot; , &quot;</span>
+                            + CommonColumns.COLUMN_UID
+                            + &quot; ) VALUES ( &quot;
+<span class="nc" id="L336">                            + (new String(new char[mColumns.length]).replace(&quot;\0&quot;, &quot;? , &quot;))</span>
+                            + &quot;?)&quot;);
+                }
+<span class="nc" id="L339">            }</span>
+        }
+<span class="nc" id="L341">        return stmt;</span>
+    }
+
+    protected final @NonNull SQLiteStatement getUpdateStatement() {
+<span class="nc" id="L345">        SQLiteStatement stmt = mUpdateStatement;</span>
+<span class="nc bnc" id="L346" title="All 2 branches missed.">        if (stmt == null) {</span>
+<span class="nc" id="L347">            synchronized (this) {</span>
+<span class="nc" id="L348">                stmt = mUpdateStatement;</span>
+<span class="nc bnc" id="L349" title="All 2 branches missed.">                if (stmt == null) {</span>
+<span class="nc" id="L350">                    mUpdateStatement = stmt</span>
+<span class="nc" id="L351">                            = mDb.compileStatement(&quot;UPDATE &quot; + mTableName + &quot; SET &quot;</span>
+<span class="nc" id="L352">                            + TextUtils.join(&quot; = ? , &quot;, mColumns) + &quot; = ? WHERE &quot;</span>
+                            + CommonColumns.COLUMN_UID
+                            + &quot; = ?&quot;);
+                }
+<span class="nc" id="L356">            }</span>
+        }
+<span class="nc" id="L358">        return stmt;</span>
+    }
+
+    protected final @NonNull SQLiteStatement getInsertStatement() {
+<span class="nc" id="L362">        SQLiteStatement stmt = mInsertStatement;</span>
+<span class="nc bnc" id="L363" title="All 2 branches missed.">        if (stmt == null) {</span>
+<span class="nc" id="L364">            synchronized (this) {</span>
+<span class="nc" id="L365">                stmt = mInsertStatement;</span>
+<span class="nc bnc" id="L366" title="All 2 branches missed.">                if (stmt == null) {</span>
+<span class="nc" id="L367">                    mInsertStatement = stmt</span>
+<span class="nc" id="L368">                            = mDb.compileStatement(&quot;INSERT INTO &quot; + mTableName + &quot; ( &quot;</span>
+<span class="nc" id="L369">                            + TextUtils.join(&quot; , &quot;, mColumns) + &quot; , &quot;</span>
+                            + CommonColumns.COLUMN_UID
+                            + &quot; ) VALUES ( &quot;
+<span class="nc" id="L372">                            + (new String(new char[mColumns.length]).replace(&quot;\0&quot;, &quot;? , &quot;))</span>
+                            + &quot;?)&quot;);
+                }
+<span class="nc" id="L375">            }</span>
+        }
+<span class="nc" id="L377">        return stmt;</span>
+    }
+
+    /**
+     * Binds the values from the model the the SQL statement
+     * @param stmt SQL statement with placeholders
+     * @param model Model from which to read bind attributes
+     * @return SQL statement ready for execution
+     */
+    protected abstract @NonNull SQLiteStatement setBindings(@NonNull SQLiteStatement stmt, @NonNull final Model model);
+
+    /**
+     * Returns a model instance populated with data from the record with GUID {@code uid}
+     * &lt;p&gt;Sub-classes which require special handling should override this method&lt;/p&gt;
+     * @param uid GUID of the record
+     * @return BaseModel instance of the record
+     * @throws IllegalArgumentException if the record UID does not exist in thd database
+     */
+    public Model getRecord(@NonNull String uid){
+<span class="nc" id="L396">        Log.v(LOG_TAG, &quot;Fetching record with GUID &quot; + uid);</span>
+
+<span class="nc" id="L398">        Cursor cursor = fetchRecord(uid);</span>
+        try {
+<span class="nc bnc" id="L400" title="All 2 branches missed.">            if (cursor.moveToFirst()) {</span>
+<span class="nc" id="L401">                return buildModelInstance(cursor);</span>
+            }
+            else {
+<span class="nc" id="L404">                throw new IllegalArgumentException(LOG_TAG + &quot;: Record with &quot; + uid + &quot; does not exist&quot;);</span>
+            }
+        } finally {
+<span class="nc" id="L407">            cursor.close();</span>
+        }
+    }
+
+    /**
+     * Overload of {@link #getRecord(String)}
+     * Simply converts the record ID to a GUID and calls {@link #getRecord(String)}
+     * @param id Database record ID
+     * @return Subclass of {@link BaseModel} containing record info
+     */
+    public Model getRecord(long id){
+<span class="nc" id="L418">        return getRecord(getUID(id));</span>
+    }
+
+    /**
+     * Returns all the records in the database
+     * @return List of records in the database
+     */
+    public List&lt;Model&gt; getAllRecords(){
+<span class="nc" id="L426">        List&lt;Model&gt; modelRecords = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L427">        Cursor c = fetchAllRecords();</span>
+        try {
+<span class="nc bnc" id="L429" title="All 2 branches missed.">            while (c.moveToNext()) {</span>
+<span class="nc" id="L430">                modelRecords.add(buildModelInstance(c));</span>
+            }
+        } finally {
+<span class="nc" id="L433">            c.close();</span>
+<span class="nc" id="L434">        }</span>
+<span class="nc" id="L435">        return modelRecords;</span>
+    }
+
+    /**
+     * Extracts the attributes of the base model and adds them to the ContentValues object provided
+     * @param contentValues Content values to which to add attributes
+     * @param model {@link org.gnucash.android.model.BaseModel} from which to extract values
+     * @return {@link android.content.ContentValues} with the data to be inserted into the db
+     */
+    protected ContentValues extractBaseModelAttributes(@NonNull ContentValues contentValues, @NonNull Model model){
+<span class="nc" id="L445">        contentValues.put(CommonColumns.COLUMN_UID, model.getUID());</span>
+<span class="nc" id="L446">        contentValues.put(CommonColumns.COLUMN_CREATED_AT, TimestampHelper.getUtcStringFromTimestamp(model.getCreatedTimestamp()));</span>
+        //there is a trigger in the database for updated the modified_at column
+        /* Due to the use of SQL REPLACE syntax, we insert the created_at values each time
+        * (maintain the original creation time and not the time of creation of the replacement)
+        * The updated_at column has a trigger in the database which will update the column
+         */
+<span class="nc" id="L452">        return contentValues;</span>
+    }
+
+    /**
+     * Initializes the model with values from the database record common to all models (i.e. in the BaseModel)
+     * @param cursor Cursor pointing to database record
+     * @param model Model instance to be initialized
+     */
+    protected void populateBaseModelAttributes(Cursor cursor, BaseModel model){
+<span class="nc" id="L461">        String uid = cursor.getString(cursor.getColumnIndexOrThrow(CommonColumns.COLUMN_UID));</span>
+<span class="nc" id="L462">        String created = cursor.getString(cursor.getColumnIndexOrThrow(CommonColumns.COLUMN_CREATED_AT));</span>
+<span class="nc" id="L463">        String modified= cursor.getString(cursor.getColumnIndexOrThrow(CommonColumns.COLUMN_MODIFIED_AT));</span>
+
+<span class="nc" id="L465">        model.setUID(uid);</span>
+<span class="nc" id="L466">        model.setCreatedTimestamp(TimestampHelper.getTimestampFromUtcString(created));</span>
+<span class="nc" id="L467">        model.setModifiedTimestamp(TimestampHelper.getTimestampFromUtcString(modified));</span>
+<span class="nc" id="L468">    }</span>
+
+	/**
+	 * Retrieves record with id &lt;code&gt;rowId&lt;/code&gt; from database table
+	 * @param rowId ID of record to be retrieved
+	 * @return {@link Cursor} to record retrieved
+	 */
+	public Cursor fetchRecord(long rowId){
+<span class="nc" id="L476">		return mDb.query(mTableName, null, DatabaseSchema.CommonColumns._ID + &quot;=&quot; + rowId,</span>
+				null, null, null, null);
+	}
+
+    /**
+     * Retrieves record with GUID {@code uid} from database table
+     * @param uid GUID of record to be retrieved
+     * @return {@link Cursor} to record retrieved
+     */
+    public Cursor fetchRecord(@NonNull String uid){
+<span class="nc" id="L486">        return mDb.query(mTableName, null, CommonColumns.COLUMN_UID + &quot;=?&quot; ,</span>
+                new String[]{uid}, null, null, null);
+    }
+
+	/**
+	 * Retrieves all records from database table
+	 * @return {@link Cursor} to all records in table &lt;code&gt;tableName&lt;/code&gt;
+	 */
+	public Cursor fetchAllRecords(){
+<span class="nc" id="L495">		return fetchAllRecords(null, null, null);</span>
+	}
+
+    /**
+     * Fetch all records from database matching conditions
+     * @param where SQL where clause
+     * @param whereArgs String arguments for where clause
+     * @param orderBy SQL orderby clause
+     * @return Cursor to records matching conditions
+     */
+    public Cursor fetchAllRecords(String where, String[] whereArgs, String orderBy){
+<span class="nc" id="L506">        return mDb.query(mTableName, null, where, whereArgs, null, null, orderBy);</span>
+    }
+
+	/**
+	 * Deletes record with ID &lt;code&gt;rowID&lt;/code&gt; from database table.
+	 * @param rowId ID of record to be deleted
+	 * @return &lt;code&gt;true&lt;/code&gt; if deletion was successful, &lt;code&gt;false&lt;/code&gt; otherwise
+	 */
+	public boolean deleteRecord(long rowId){
+<span class="nc" id="L515">        Log.d(LOG_TAG, &quot;Deleting record with id &quot; + rowId + &quot; from &quot; + mTableName);</span>
+<span class="nc bnc" id="L516" title="All 2 branches missed.">		return mDb.delete(mTableName, DatabaseSchema.CommonColumns._ID + &quot;=&quot; + rowId, null) &gt; 0;</span>
+	}
+
+    /**
+     * Deletes all records in the database
+     * @return Number of deleted records
+     */
+    public int deleteAllRecords(){
+<span class="nc" id="L524">        return mDb.delete(mTableName, null, null);</span>
+    }
+
+    /**
+     * Returns the string unique ID (GUID) of a record in the database
+     * @param uid GUID of the record
+     * @return Long record ID
+     * @throws IllegalArgumentException if the GUID does not exist in the database
+     */
+    public long getID(@NonNull String uid){
+<span class="nc" id="L534">        Cursor cursor = mDb.query(mTableName,</span>
+                new String[] {DatabaseSchema.CommonColumns._ID},
+                DatabaseSchema.CommonColumns.COLUMN_UID + &quot; = ?&quot;,
+                new String[]{uid},
+                null, null, null);
+<span class="nc" id="L539">        long result = -1;</span>
+        try{
+<span class="nc bnc" id="L541" title="All 2 branches missed.">            if (cursor.moveToFirst()) {</span>
+<span class="nc" id="L542">                result = cursor.getLong(cursor.getColumnIndexOrThrow(DatabaseSchema.CommonColumns._ID));</span>
+            } else {
+<span class="nc" id="L544">                throw new IllegalArgumentException(mTableName + &quot; with GUID &quot; + uid + &quot; does not exist in the db&quot;);</span>
+            }
+        } finally {
+<span class="nc" id="L547">            cursor.close();</span>
+<span class="nc" id="L548">        }</span>
+<span class="nc" id="L549">        return result;</span>
+    }
+
+    /**
+     * Returns the string unique ID (GUID) of a record in the database
+     * @param id long database record ID
+     * @return GUID of the record
+     * @throws IllegalArgumentException if the record ID does not exist in the database
+     */
+    public String getUID(long id){
+<span class="nc" id="L559">        Cursor cursor = mDb.query(mTableName,</span>
+                new String[]{DatabaseSchema.CommonColumns.COLUMN_UID},
+                DatabaseSchema.CommonColumns._ID + &quot; = &quot; + id,
+                null, null, null, null);
+
+<span class="nc" id="L564">        String uid = null;</span>
+        try {
+<span class="nc bnc" id="L566" title="All 2 branches missed.">            if (cursor.moveToFirst()) {</span>
+<span class="nc" id="L567">                uid = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseSchema.CommonColumns.COLUMN_UID));</span>
+            } else {
+<span class="nc" id="L569">                throw new IllegalArgumentException(mTableName + &quot; Record ID &quot; + id + &quot; does not exist in the db&quot;);</span>
+            }
+        } finally {
+<span class="nc" id="L572">            cursor.close();</span>
+<span class="nc" id="L573">        }</span>
+<span class="nc" id="L574">        return uid;</span>
+    }
+
+    /**
+     * Returns the currency code (according to the ISO 4217 standard) of the account
+     * with unique Identifier &lt;code&gt;accountUID&lt;/code&gt;
+     * @param accountUID Unique Identifier of the account
+     * @return Currency code of the account. &quot;&quot; if accountUID
+     *      does not exist in DB
+     */
+    public String getAccountCurrencyCode(@NonNull String accountUID) {
+<span class="nc" id="L585">        Cursor cursor = mDb.query(DatabaseSchema.AccountEntry.TABLE_NAME,</span>
+                new String[] {DatabaseSchema.AccountEntry.COLUMN_CURRENCY},
+                DatabaseSchema.AccountEntry.COLUMN_UID + &quot;= ?&quot;,
+                new String[]{accountUID}, null, null, null);
+        try {
+<span class="nc bnc" id="L590" title="All 2 branches missed.">            if (cursor.moveToFirst()) {</span>
+<span class="nc" id="L591">                return cursor.getString(0);</span>
+            } else {
+<span class="nc" id="L593">                throw new IllegalArgumentException(&quot;Account &quot; + accountUID + &quot; does not exist&quot;);</span>
+            }
+        } finally {
+<span class="nc" id="L596">            cursor.close();</span>
+        }
+    }
+
+
+    /**
+     * Returns the commodity GUID for the given ISO 4217 currency code
+     * @param currencyCode ISO 4217 currency code
+     * @return GUID of commodity
+     */
+    public String getCommodityUID(String currencyCode){
+<span class="nc" id="L607">        String where = DatabaseSchema.CommodityEntry.COLUMN_MNEMONIC + &quot;= ?&quot;;</span>
+<span class="nc" id="L608">        String[] whereArgs = new String[]{currencyCode};</span>
+
+<span class="nc" id="L610">        Cursor cursor = mDb.query(DatabaseSchema.CommodityEntry.TABLE_NAME,</span>
+                new String[]{DatabaseSchema.CommodityEntry.COLUMN_UID},
+                where, whereArgs, null, null, null);
+        try {
+<span class="nc bnc" id="L614" title="All 2 branches missed.">            if (cursor.moveToNext()) {</span>
+<span class="nc" id="L615">                return cursor.getString(cursor.getColumnIndexOrThrow(DatabaseSchema.CommodityEntry.COLUMN_UID));</span>
+            } else {
+<span class="nc" id="L617">                throw new IllegalArgumentException(&quot;Currency code not found in commodities&quot;);</span>
+            }
+        } finally {
+<span class="nc" id="L620">            cursor.close();</span>
+        }
+    }
+
+    /**
+     * Returns the {@link org.gnucash.android.model.AccountType} of the account with unique ID &lt;code&gt;uid&lt;/code&gt;
+     * @param accountUID Unique ID of the account
+     * @return {@link org.gnucash.android.model.AccountType} of the account.
+     * @throws java.lang.IllegalArgumentException if accountUID does not exist in DB,
+     */
+    public AccountType getAccountType(@NonNull String accountUID){
+<span class="nc" id="L631">        String type = &quot;&quot;;</span>
+<span class="nc" id="L632">        Cursor c = mDb.query(DatabaseSchema.AccountEntry.TABLE_NAME,</span>
+                new String[]{DatabaseSchema.AccountEntry.COLUMN_TYPE},
+                DatabaseSchema.AccountEntry.COLUMN_UID + &quot;=?&quot;,
+                new String[]{accountUID}, null, null, null);
+        try {
+<span class="nc bnc" id="L637" title="All 2 branches missed.">            if (c.moveToFirst()) {</span>
+<span class="nc" id="L638">                type = c.getString(c.getColumnIndexOrThrow(DatabaseSchema.AccountEntry.COLUMN_TYPE));</span>
+            } else {
+<span class="nc" id="L640">                throw new IllegalArgumentException(&quot;account &quot; + accountUID + &quot; does not exist in DB&quot;);</span>
+            }
+        } finally {
+<span class="nc" id="L643">            c.close();</span>
+<span class="nc" id="L644">        }</span>
+<span class="nc" id="L645">        return AccountType.valueOf(type);</span>
+    }
+
+    /**
+     * Updates a record in the table
+     * @param recordId Database ID of the record to be updated
+     * @param columnKey Name of column to be updated
+     * @param newValue  New value to be assigned to the columnKey
+     * @return Number of records affected
+     */
+    protected int updateRecord(String tableName, long recordId, String columnKey, String newValue) {
+<span class="nc" id="L656">        ContentValues contentValues = new ContentValues();</span>
+<span class="nc bnc" id="L657" title="All 2 branches missed.">        if (newValue == null) {</span>
+<span class="nc" id="L658">            contentValues.putNull(columnKey);</span>
+        } else {
+<span class="nc" id="L660">            contentValues.put(columnKey, newValue);</span>
+        }
+<span class="nc" id="L662">        return mDb.update(tableName, contentValues,</span>
+                DatabaseSchema.CommonColumns._ID + &quot;=&quot; + recordId, null);
+    }
+
+    /**
+     * Updates a record in the table
+     * @param uid GUID of the record
+     * @param columnKey Name of column to be updated
+     * @param newValue  New value to be assigned to the columnKey
+     * @return Number of records affected
+     */
+    public int updateRecord(@NonNull String uid, @NonNull String columnKey, String newValue) {
+<span class="nc" id="L674">        return updateRecords(CommonColumns.COLUMN_UID + &quot;= ?&quot;, new String[]{uid}, columnKey, newValue);</span>
+    }
+
+    /**
+     * Overloaded method. Updates the record with GUID {@code uid} with the content values
+     * @param uid GUID of the record
+     * @param contentValues Content values to update
+     * @return Number of records updated
+     */
+    public int updateRecord(@NonNull String uid, @NonNull ContentValues contentValues){
+<span class="nc" id="L684">        return mDb.update(mTableName, contentValues, CommonColumns.COLUMN_UID + &quot;=?&quot;, new String[]{uid});</span>
+    }
+
+    /**
+     * Updates all records which match the {@code where} clause with the {@code newValue} for the column
+     * @param where SQL where clause
+     * @param whereArgs String arguments for where clause
+     * @param columnKey Name of column to be updated
+     * @param newValue New value to be assigned to the columnKey
+     * @return Number of records affected
+     */
+    public int updateRecords(String where, String[] whereArgs, @NonNull String columnKey, String newValue){
+<span class="nc" id="L696">        ContentValues contentValues = new ContentValues();</span>
+<span class="nc bnc" id="L697" title="All 2 branches missed.">        if (newValue == null) {</span>
+<span class="nc" id="L698">            contentValues.putNull(columnKey);</span>
+        } else {
+<span class="nc" id="L700">            contentValues.put(columnKey, newValue);</span>
+        }
+<span class="nc" id="L702">        return mDb.update(mTableName, contentValues, where, whereArgs);</span>
+    }
+
+    /**
+     * Deletes a record from the database given its unique identifier.
+     * &lt;p&gt;Overload of the method {@link #deleteRecord(long)}&lt;/p&gt;
+     * @param uid GUID of the record
+     * @return &lt;code&gt;true&lt;/code&gt; if deletion was successful, &lt;code&gt;false&lt;/code&gt; otherwise
+     * @see #deleteRecord(long)
+     */
+    public boolean deleteRecord(@NonNull String uid){
+<span class="nc" id="L713">        return deleteRecord(getID(uid));</span>
+    }
+
+    /**
+     * Returns an attribute from a specific column in the database for a specific record.
+     * &lt;p&gt;The attribute is returned as a string which can then be converted to another type if
+     * the caller was expecting something other type &lt;/p&gt;
+     * @param recordUID GUID of the record
+     * @param columnName Name of the column to be retrieved
+     * @return String value of the column entry
+     * @throws IllegalArgumentException if either the {@code recordUID} or {@code columnName} do not exist in the database
+     */
+    public String getAttribute(@NonNull String recordUID, @NonNull String columnName){
+<span class="nc" id="L726">        return getAttribute(mTableName, recordUID, columnName);</span>
+    }
+
+    /**
+     * Returns an attribute from a specific column in the database for a specific record and specific table.
+     * &lt;p&gt;The attribute is returned as a string which can then be converted to another type if
+     * the caller was expecting something other type &lt;/p&gt;
+     * &lt;p&gt;This method is an override of {@link #getAttribute(String, String)} which allows to select a value from a
+     * different table than the one of current adapter instance
+     * &lt;/p&gt;
+     * @param tableName Database table name. See {@link DatabaseSchema}
+     * @param recordUID GUID of the record
+     * @param columnName Name of the column to be retrieved
+     * @return String value of the column entry
+     * @throws IllegalArgumentException if either the {@code recordUID} or {@code columnName} do not exist in the database
+     */
+    protected String getAttribute(@NonNull String tableName, @NonNull String recordUID, @NonNull String columnName){
+<span class="nc" id="L743">        Cursor cursor = mDb.query(tableName,</span>
+                new String[]{columnName},
+                AccountEntry.COLUMN_UID + &quot; = ?&quot;,
+                new String[]{recordUID}, null, null, null);
+
+        try {
+<span class="nc bnc" id="L749" title="All 2 branches missed.">            if (cursor.moveToFirst())</span>
+<span class="nc" id="L750">                return cursor.getString(cursor.getColumnIndexOrThrow(columnName));</span>
+            else {
+<span class="nc" id="L752">                throw new IllegalArgumentException(String.format(&quot;Record with GUID %s does not exist in the db&quot;, recordUID));</span>
+            }
+        } finally {
+<span class="nc" id="L755">            cursor.close();</span>
+        }
+    }
+
+    /**
+     * Returns the number of records in the database table backed by this adapter
+     * @return Total number of records in the database
+     */
+    public long getRecordsCount(){
+<span class="nc" id="L764">        String sql = &quot;SELECT COUNT(*) FROM &quot; + mTableName;</span>
+<span class="nc" id="L765">        SQLiteStatement statement = mDb.compileStatement(sql);</span>
+<span class="nc" id="L766">        return statement.simpleQueryForLong();</span>
+    }
+
+    /**
+     * Expose mDb.beginTransaction()
+     */
+    public void beginTransaction() {
+<span class="nc" id="L773">        mDb.beginTransaction();</span>
+<span class="nc" id="L774">    }</span>
+
+    /**
+     * Expose mDb.setTransactionSuccessful()
+     */
+    public void setTransactionSuccessful() {
+<span class="nc" id="L780">        mDb.setTransactionSuccessful();</span>
+<span class="nc" id="L781">    }</span>
+
+    /// Foreign key constraits should be enabled in general.
+    /// But if it affects speed (check constraints takes time)
+    /// and the constrained can be assured by the program,
+    /// or if some SQL exec will cause deletion of records
+    /// (like use replace in accounts update will delete all transactions)
+    /// that need not be deleted, then it can be disabled temporarily
+    public void enableForeignKey(boolean enable) {
+<span class="nc bnc" id="L790" title="All 2 branches missed.">        if (enable){</span>
+<span class="nc" id="L791">            mDb.execSQL(&quot;PRAGMA foreign_keys=ON;&quot;);</span>
+        } else {
+<span class="nc" id="L793">            mDb.execSQL(&quot;PRAGMA foreign_keys=OFF;&quot;);</span>
+        }
+<span class="nc" id="L795">    }</span>
+
+    /**
+     * Expose mDb.endTransaction()
+     */
+    public void endTransaction() {
+<span class="nc" id="L801">        mDb.endTransaction();</span>
+<span class="nc" id="L802">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

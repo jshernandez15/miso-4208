@@ -1,0 +1,419 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Budget.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.model</a> &gt; <span class="el_source">Budget.java</span></div><h1>Budget.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2015 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.model;
+
+import android.support.annotation.NonNull;
+import android.util.Log;
+
+import org.joda.time.LocalDateTime;
+
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+/**
+ * Budgets model
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ */
+public class Budget extends BaseModel {
+
+    private String mName;
+    private String mDescription;
+    private Recurrence mRecurrence;
+<span class="pc" id="L41">    private List&lt;BudgetAmount&gt; mBudgetAmounts = new ArrayList&lt;&gt;();</span>
+<span class="pc" id="L42">    private long mNumberOfPeriods = 12; //default to 12 periods per year</span>
+
+    /**
+     * Default constructor
+     */
+<span class="nc" id="L47">    public Budget(){</span>
+        //nothing to see here, move along
+<span class="nc" id="L49">    }</span>
+
+    /**
+     * Overloaded constructor.
+     * Initializes the name and amount of this budget
+     * @param name String name of the budget
+     */
+<span class="fc" id="L56">    public Budget(@NonNull String name){</span>
+<span class="fc" id="L57">        this.mName = name;</span>
+<span class="fc" id="L58">    }</span>
+
+<span class="nc" id="L60">    public Budget(@NonNull String name, @NonNull Recurrence recurrence){</span>
+<span class="nc" id="L61">        this.mName = name;</span>
+<span class="nc" id="L62">        this.mRecurrence = recurrence;</span>
+<span class="nc" id="L63">    }</span>
+
+    /**
+     * Returns the name of the budget
+     * @return name of the budget
+     */
+    public String getName() {
+<span class="nc" id="L70">        return mName;</span>
+    }
+
+    /**
+     * Sets the name of the budget
+     * @param name String name of budget
+     */
+    public void setName(@NonNull String name) {
+<span class="nc" id="L78">        this.mName = name;</span>
+<span class="nc" id="L79">    }</span>
+
+    /**
+     * Returns the description of the budget
+     * @return String description of budget
+     */
+    public String getDescription() {
+<span class="nc" id="L86">        return mDescription;</span>
+    }
+
+    /**
+     * Sets the description of the budget
+     * @param description String description
+     */
+    public void setDescription(String description) {
+<span class="nc" id="L94">        this.mDescription = description;</span>
+<span class="nc" id="L95">    }</span>
+
+    /**
+     * Returns the recurrence for this budget
+     * @return Recurrence object for this budget
+     */
+    public Recurrence getRecurrence() {
+<span class="nc" id="L102">        return mRecurrence;</span>
+    }
+
+    /**
+     * Set the recurrence pattern for this budget
+     * @param recurrence Recurrence object
+     */
+    public void setRecurrence(@NonNull Recurrence recurrence) {
+<span class="nc" id="L110">        this.mRecurrence = recurrence;</span>
+<span class="nc" id="L111">    }</span>
+
+    /**
+     * Return list of budget amounts associated with this budget
+     * @return List of budget amounts
+     */
+    public List&lt;BudgetAmount&gt; getBudgetAmounts() {
+<span class="fc" id="L118">        return mBudgetAmounts;</span>
+    }
+
+    /**
+     * Set the list of budget amounts
+     * @param budgetAmounts List of budget amounts
+     */
+    public void setBudgetAmounts(List&lt;BudgetAmount&gt; budgetAmounts) {
+<span class="fc" id="L126">        this.mBudgetAmounts = budgetAmounts;</span>
+<span class="fc bfc" id="L127" title="All 2 branches covered.">        for (BudgetAmount budgetAmount : mBudgetAmounts) {</span>
+<span class="fc" id="L128">            budgetAmount.setBudgetUID(getUID());</span>
+<span class="fc" id="L129">        }</span>
+<span class="fc" id="L130">    }</span>
+
+    /**
+     * Adds a BudgetAmount to this budget
+     * @param budgetAmount Budget amount
+     */
+    public void addBudgetAmount(BudgetAmount budgetAmount){
+<span class="fc" id="L137">        budgetAmount.setBudgetUID(getUID());</span>
+<span class="fc" id="L138">        mBudgetAmounts.add(budgetAmount);</span>
+<span class="fc" id="L139">    }</span>
+
+    /**
+     * Returns the budget amount for a specific account
+     * @param accountUID GUID of the account
+     * @return Money amount of the budget or null if the budget has no amount for the account
+     */
+    public Money getAmount(@NonNull String accountUID){
+<span class="pc bpc" id="L147" title="1 of 2 branches missed.">        for (BudgetAmount budgetAmount : mBudgetAmounts) {</span>
+<span class="pc bpc" id="L148" title="1 of 2 branches missed.">            if (budgetAmount.getAccountUID().equals(accountUID))</span>
+<span class="fc" id="L149">                return budgetAmount.getAmount();</span>
+<span class="nc" id="L150">        }</span>
+<span class="nc" id="L151">        return null;</span>
+    }
+
+    /**
+     * Returns the budget amount for a specific account and period
+     * @param accountUID GUID of the account
+     * @param periodNum Budgeting period, zero-based index
+     * @return Money amount or zero if no matching {@link BudgetAmount} is found for the period
+     */
+    public Money getAmount(@NonNull String accountUID, int periodNum){
+<span class="nc bnc" id="L161" title="All 2 branches missed.">        for (BudgetAmount budgetAmount : mBudgetAmounts) {</span>
+<span class="nc bnc" id="L162" title="All 2 branches missed.">            if (budgetAmount.getAccountUID().equals(accountUID)</span>
+<span class="nc bnc" id="L163" title="All 4 branches missed.">                    &amp;&amp; (budgetAmount.getPeriodNum() == periodNum || budgetAmount.getPeriodNum() == -1)){</span>
+<span class="nc" id="L164">                return budgetAmount.getAmount();</span>
+            }
+<span class="nc" id="L166">        }</span>
+<span class="nc" id="L167">        return Money.getZeroInstance();</span>
+    }
+
+    /**
+     * Returns the sum of all budget amounts in this budget
+     * &lt;p&gt;&lt;b&gt;NOTE:&lt;/b&gt; This method ignores budgets of accounts which are in different currencies&lt;/p&gt;
+     * @return Money sum of all amounts
+     */
+    public Money getAmountSum(){
+<span class="fc" id="L176">        Money sum = null; //we explicitly allow this null instead of a money instance, because this method should never return null for a budget</span>
+<span class="fc bfc" id="L177" title="All 2 branches covered.">        for (BudgetAmount budgetAmount : mBudgetAmounts) {</span>
+<span class="fc bfc" id="L178" title="All 2 branches covered.">            if (sum == null){</span>
+<span class="fc" id="L179">                sum = budgetAmount.getAmount();</span>
+            } else {
+                try {
+<span class="fc" id="L182">                    sum = sum.add(budgetAmount.getAmount().abs());</span>
+<span class="nc" id="L183">                } catch (Money.CurrencyMismatchException ex){</span>
+<span class="nc" id="L184">                    Log.i(getClass().getSimpleName(), &quot;Skip some budget amounts with different currency&quot;);</span>
+<span class="fc" id="L185">                }</span>
+            }
+<span class="fc" id="L187">        }</span>
+<span class="fc" id="L188">        return sum;</span>
+    }
+
+    /**
+     * Returns the number of periods covered by this budget
+     * @return Number of periods
+     */
+    public long getNumberOfPeriods() {
+<span class="nc" id="L196">        return mNumberOfPeriods;</span>
+    }
+
+    /**
+     * Returns the timestamp of the start of current period of the budget
+     * @return Start timestamp in milliseconds
+     */
+    public long getStartofCurrentPeriod(){
+<span class="nc" id="L204">        LocalDateTime localDate = new LocalDateTime();</span>
+<span class="nc" id="L205">        int interval = mRecurrence.getMultiplier();</span>
+<span class="nc bnc" id="L206" title="All 6 branches missed.">        switch (mRecurrence.getPeriodType()){</span>
+            case HOUR:
+<span class="nc" id="L208">                localDate = localDate.millisOfDay().withMinimumValue().plusHours(interval);</span>
+<span class="nc" id="L209">                break;</span>
+            case DAY:
+<span class="nc" id="L211">                localDate = localDate.millisOfDay().withMinimumValue().plusDays(interval);</span>
+<span class="nc" id="L212">                break;</span>
+            case WEEK:
+<span class="nc" id="L214">                localDate = localDate.dayOfWeek().withMinimumValue().minusDays(interval);</span>
+<span class="nc" id="L215">                break;</span>
+            case MONTH:
+<span class="nc" id="L217">                localDate = localDate.dayOfMonth().withMinimumValue().minusMonths(interval);</span>
+<span class="nc" id="L218">                break;</span>
+            case YEAR:
+<span class="nc" id="L220">                localDate = localDate.dayOfYear().withMinimumValue().minusYears(interval);</span>
+                break;
+        }
+<span class="nc" id="L223">        return localDate.toDate().getTime();</span>
+    }
+
+    /**
+     * Returns the end timestamp of the current period
+     * @return End timestamp in milliseconds
+     */
+    public long getEndOfCurrentPeriod(){
+<span class="nc" id="L231">        LocalDateTime localDate = new LocalDateTime();</span>
+<span class="nc" id="L232">        int interval = mRecurrence.getMultiplier();</span>
+<span class="nc bnc" id="L233" title="All 6 branches missed.">        switch (mRecurrence.getPeriodType()){</span>
+            case HOUR:
+<span class="nc" id="L235">                localDate = localDate.millisOfDay().withMaximumValue().plusHours(interval);</span>
+<span class="nc" id="L236">                break;</span>
+            case DAY:
+<span class="nc" id="L238">                localDate = localDate.millisOfDay().withMaximumValue().plusDays(interval);</span>
+<span class="nc" id="L239">                break;</span>
+            case WEEK:
+<span class="nc" id="L241">                localDate = localDate.dayOfWeek().withMaximumValue().plusWeeks(interval);</span>
+<span class="nc" id="L242">                break;</span>
+            case MONTH:
+<span class="nc" id="L244">                localDate = localDate.dayOfMonth().withMaximumValue().plusMonths(interval);</span>
+<span class="nc" id="L245">                break;</span>
+            case YEAR:
+<span class="nc" id="L247">                localDate = localDate.dayOfYear().withMaximumValue().plusYears(interval);</span>
+                break;
+        }
+<span class="nc" id="L250">        return localDate.toDate().getTime();</span>
+    }
+
+    public long getStartOfPeriod(int periodNum){
+<span class="nc" id="L254">        LocalDateTime localDate = new LocalDateTime(mRecurrence.getPeriodStart().getTime());</span>
+<span class="nc" id="L255">        int interval = mRecurrence.getMultiplier() * periodNum;</span>
+<span class="nc bnc" id="L256" title="All 6 branches missed.">        switch (mRecurrence.getPeriodType()){</span>
+            case HOUR:
+<span class="nc" id="L258">                localDate = localDate.millisOfDay().withMinimumValue().plusHours(interval);</span>
+<span class="nc" id="L259">                break;</span>
+            case DAY:
+<span class="nc" id="L261">                localDate = localDate.millisOfDay().withMinimumValue().plusDays(interval);</span>
+<span class="nc" id="L262">                break;</span>
+            case WEEK:
+<span class="nc" id="L264">                localDate = localDate.dayOfWeek().withMinimumValue().minusDays(interval);</span>
+<span class="nc" id="L265">                break;</span>
+            case MONTH:
+<span class="nc" id="L267">                localDate = localDate.dayOfMonth().withMinimumValue().minusMonths(interval);</span>
+<span class="nc" id="L268">                break;</span>
+            case YEAR:
+<span class="nc" id="L270">                localDate = localDate.dayOfYear().withMinimumValue().minusYears(interval);</span>
+                break;
+        }
+<span class="nc" id="L273">        return localDate.toDate().getTime();</span>
+    }
+
+    /**
+     * Returns the end timestamp of the period
+     * @param periodNum Number of the period
+     * @return End timestamp in milliseconds of the period
+     */
+    public long getEndOfPeriod(int periodNum){
+<span class="nc" id="L282">        LocalDateTime localDate = new LocalDateTime();</span>
+<span class="nc" id="L283">        int interval = mRecurrence.getMultiplier() * periodNum;</span>
+<span class="nc bnc" id="L284" title="All 6 branches missed.">        switch (mRecurrence.getPeriodType()){</span>
+            case HOUR:
+<span class="nc" id="L286">                localDate = localDate.plusHours(interval);</span>
+<span class="nc" id="L287">                break;</span>
+            case DAY:
+<span class="nc" id="L289">                localDate = localDate.millisOfDay().withMaximumValue().plusDays(interval);</span>
+<span class="nc" id="L290">                break;</span>
+            case WEEK:
+<span class="nc" id="L292">                localDate = localDate.dayOfWeek().withMaximumValue().plusWeeks(interval);</span>
+<span class="nc" id="L293">                break;</span>
+            case MONTH:
+<span class="nc" id="L295">                localDate = localDate.dayOfMonth().withMaximumValue().plusMonths(interval);</span>
+<span class="nc" id="L296">                break;</span>
+            case YEAR:
+<span class="nc" id="L298">                localDate = localDate.dayOfYear().withMaximumValue().plusYears(interval);</span>
+                break;
+        }
+<span class="nc" id="L301">        return localDate.toDate().getTime();</span>
+    }
+
+    /**
+     * Sets the number of periods for the budget
+     * @param numberOfPeriods Number of periods as long
+     */
+    public void setNumberOfPeriods(long numberOfPeriods) {
+<span class="fc" id="L309">        this.mNumberOfPeriods = numberOfPeriods;</span>
+<span class="fc" id="L310">    }</span>
+
+    /**
+     * Returns the number of accounts in this budget
+     * @return Number of budgeted accounts
+     */
+    public int getNumberOfAccounts(){
+<span class="fc" id="L317">        Set&lt;String&gt; accountSet = new HashSet&lt;&gt;();</span>
+<span class="fc bfc" id="L318" title="All 2 branches covered.">        for (BudgetAmount budgetAmount : mBudgetAmounts) {</span>
+<span class="fc" id="L319">            accountSet.add(budgetAmount.getAccountUID());</span>
+<span class="fc" id="L320">        }</span>
+<span class="fc" id="L321">        return accountSet.size();</span>
+    }
+
+    /**
+     * Returns the list of budget amounts where only one BudgetAmount is present if the amount of the budget amount
+     * is the same for all periods in the budget.
+     * BudgetAmounts with different amounts per period are still return separately
+     * &lt;p&gt;
+     *     This method is used during import because GnuCash desktop saves one BudgetAmount per period for the whole budgeting period.
+     *     While this can be easily displayed in a table form on the desktop, it is not feasible in the Android app.
+     *     So we display only one BudgetAmount if it covers all periods in the budgeting period
+     * &lt;/p&gt;
+     * @return List of {@link BudgetAmount}s
+     */
+    public List&lt;BudgetAmount&gt; getCompactedBudgetAmounts(){
+
+<span class="fc" id="L337">        Map&lt;String, List&lt;BigDecimal&gt;&gt; accountAmountMap = new HashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L338" title="All 2 branches covered.">        for (BudgetAmount budgetAmount : mBudgetAmounts) {</span>
+<span class="fc" id="L339">            String accountUID = budgetAmount.getAccountUID();</span>
+<span class="fc" id="L340">            BigDecimal amount = budgetAmount.getAmount().asBigDecimal();</span>
+<span class="fc bfc" id="L341" title="All 2 branches covered.">            if (accountAmountMap.containsKey(accountUID)){</span>
+<span class="fc" id="L342">                accountAmountMap.get(accountUID).add(amount);</span>
+            } else {
+<span class="fc" id="L344">                List&lt;BigDecimal&gt; amounts = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L345">                amounts.add(amount);</span>
+<span class="fc" id="L346">                accountAmountMap.put(accountUID, amounts);</span>
+            }
+<span class="fc" id="L348">        }</span>
+
+<span class="fc" id="L350">        List&lt;BudgetAmount&gt; compactBudgetAmounts = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L351" title="All 2 branches covered.">        for (Map.Entry&lt;String, List&lt;BigDecimal&gt;&gt; entry : accountAmountMap.entrySet()) {</span>
+<span class="fc" id="L352">            List&lt;BigDecimal&gt; amounts = entry.getValue();</span>
+<span class="fc" id="L353">            BigDecimal first = amounts.get(0);</span>
+<span class="fc" id="L354">            boolean allSame = true;</span>
+<span class="fc bfc" id="L355" title="All 2 branches covered.">            for (BigDecimal bigDecimal : amounts) {</span>
+<span class="fc" id="L356">                allSame &amp;= bigDecimal.equals(first);</span>
+<span class="fc" id="L357">            }</span>
+
+<span class="fc bfc" id="L359" title="All 2 branches covered.">            if (allSame){</span>
+<span class="fc bfc" id="L360" title="All 2 branches covered.">                if (amounts.size() == 1) {</span>
+<span class="pc bpc" id="L361" title="1 of 2 branches missed.">                    for (BudgetAmount bgtAmount : mBudgetAmounts) {</span>
+<span class="fc bfc" id="L362" title="All 2 branches covered.">                        if (bgtAmount.getAccountUID().equals(entry.getKey())) {</span>
+<span class="fc" id="L363">                            compactBudgetAmounts.add(bgtAmount);</span>
+<span class="fc" id="L364">                            break;</span>
+                        }
+<span class="fc" id="L366">                    }</span>
+                } else {
+<span class="fc" id="L368">                    BudgetAmount bgtAmount = new BudgetAmount(getUID(), entry.getKey());</span>
+<span class="fc" id="L369">                    bgtAmount.setAmount(new Money(first, Commodity.DEFAULT_COMMODITY));</span>
+<span class="fc" id="L370">                    bgtAmount.setPeriodNum(-1);</span>
+<span class="fc" id="L371">                    compactBudgetAmounts.add(bgtAmount);</span>
+<span class="fc" id="L372">                }</span>
+            } else {
+                //if not all amounts are the same, then just add them as we read them
+<span class="fc bfc" id="L375" title="All 2 branches covered.">                for (BudgetAmount bgtAmount : mBudgetAmounts) {</span>
+<span class="fc bfc" id="L376" title="All 2 branches covered.">                    if (bgtAmount.getAccountUID().equals(entry.getKey())){</span>
+<span class="fc" id="L377">                        compactBudgetAmounts.add(bgtAmount);</span>
+                    }
+<span class="fc" id="L379">                }</span>
+            }
+<span class="fc" id="L381">        }</span>
+
+<span class="fc" id="L383">        return compactBudgetAmounts;</span>
+    }
+
+    /**
+     * Returns a list of budget amounts where each period has it's own budget amount
+     * &lt;p&gt;Any budget amounts in the database with a period number of -1 are expanded to individual budget amounts for all periods&lt;/p&gt;
+     * &lt;p&gt;This method is useful with exporting budget amounts to XML&lt;/p&gt;
+     * @return List of expande
+     */
+    public List&lt;BudgetAmount&gt; getExpandedBudgetAmounts(){
+<span class="fc" id="L393">        List&lt;BudgetAmount&gt; amountsToAdd = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L394">        List&lt;BudgetAmount&gt; amountsToRemove = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L395" title="All 2 branches covered.">        for (BudgetAmount budgetAmount : mBudgetAmounts) {</span>
+<span class="pc bpc" id="L396" title="1 of 2 branches missed.">            if (budgetAmount.getPeriodNum() == -1){</span>
+<span class="fc" id="L397">                amountsToRemove.add(budgetAmount);</span>
+<span class="fc" id="L398">                String accountUID = budgetAmount.getAccountUID();</span>
+<span class="fc bfc" id="L399" title="All 2 branches covered.">                for (int period = 0; period &lt; mNumberOfPeriods; period++) {</span>
+<span class="fc" id="L400">                    BudgetAmount bgtAmount = new BudgetAmount(getUID(), accountUID);</span>
+<span class="fc" id="L401">                    bgtAmount.setAmount(budgetAmount.getAmount());</span>
+<span class="fc" id="L402">                    bgtAmount.setPeriodNum(period);</span>
+<span class="fc" id="L403">                    amountsToAdd.add(bgtAmount);</span>
+                }
+            }
+<span class="fc" id="L406">        }</span>
+
+<span class="fc" id="L408">        List&lt;BudgetAmount&gt; expandedBudgetAmounts = new ArrayList&lt;&gt;(mBudgetAmounts);</span>
+<span class="fc bfc" id="L409" title="All 2 branches covered.">        for (BudgetAmount bgtAmount : amountsToRemove) {</span>
+<span class="fc" id="L410">            expandedBudgetAmounts.remove(bgtAmount);</span>
+<span class="fc" id="L411">        }</span>
+
+<span class="fc bfc" id="L413" title="All 2 branches covered.">        for (BudgetAmount bgtAmount : amountsToAdd) {</span>
+<span class="fc" id="L414">            expandedBudgetAmounts.add(bgtAmount);</span>
+<span class="fc" id="L415">        }</span>
+<span class="fc" id="L416">        return expandedBudgetAmounts;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

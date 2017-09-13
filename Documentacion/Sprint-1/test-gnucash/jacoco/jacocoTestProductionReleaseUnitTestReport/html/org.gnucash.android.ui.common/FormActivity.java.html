@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FormActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.ui.common</a> &gt; <span class="el_source">FormActivity.java</span></div><h1>FormActivity.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2015 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.ui.common;
+
+import android.content.Intent;
+import android.graphics.drawable.ColorDrawable;
+import android.os.Build;
+import android.os.Bundle;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
+import android.support.v7.widget.Toolbar;
+import android.view.MenuItem;
+
+import org.gnucash.android.R;
+import org.gnucash.android.app.GnuCashApplication;
+import org.gnucash.android.db.adapter.AccountsDbAdapter;
+import org.gnucash.android.db.adapter.BooksDbAdapter;
+import org.gnucash.android.ui.account.AccountFormFragment;
+import org.gnucash.android.ui.budget.BudgetAmountEditorFragment;
+import org.gnucash.android.ui.budget.BudgetFormFragment;
+import org.gnucash.android.ui.export.ExportFormFragment;
+import org.gnucash.android.ui.passcode.PasscodeLockActivity;
+import org.gnucash.android.ui.transaction.SplitEditorFragment;
+import org.gnucash.android.ui.transaction.TransactionFormFragment;
+import org.gnucash.android.ui.util.widget.CalculatorKeyboard;
+import org.gnucash.android.util.BookUtils;
+
+/**
+ * Activity for displaying forms in the application.
+ * The activity provides the standard close button, but it is up to the form fragments to display
+ * menu options (e.g. for saving etc)
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ */
+<span class="nc bnc" id="L49" title="All 2 branches missed.">public class FormActivity extends PasscodeLockActivity {</span>
+
+    private String mAccountUID;
+
+    private CalculatorKeyboard mOnBackListener;
+
+<span class="nc" id="L55">    public enum FormType {ACCOUNT, TRANSACTION, EXPORT, SPLIT_EDITOR, BUDGET, BUDGET_AMOUNT_EDITOR}</span>
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="nc" id="L59">        super.onCreate(savedInstanceState);</span>
+<span class="nc" id="L60">        setContentView(R.layout.activity_form);</span>
+
+        //if a parameter was passed to open an account within a specific book, then switch
+<span class="nc" id="L63">        String bookUID = getIntent().getStringExtra(UxArgument.BOOK_UID);</span>
+<span class="nc bnc" id="L64" title="All 4 branches missed.">        if (bookUID != null &amp;&amp; !bookUID.equals(BooksDbAdapter.getInstance().getActiveBookUID())){</span>
+<span class="nc" id="L65">            BookUtils.activateBook(bookUID);</span>
+        }
+
+<span class="nc" id="L68">        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);</span>
+<span class="nc" id="L69">        setSupportActionBar(toolbar);</span>
+
+<span class="nc" id="L71">        android.support.v7.app.ActionBar actionBar = getSupportActionBar();</span>
+<span class="nc bnc" id="L72" title="All 4 branches missed.">        assert(actionBar != null);</span>
+<span class="nc" id="L73">        actionBar.setHomeButtonEnabled(true);</span>
+<span class="nc" id="L74">        actionBar.setDisplayHomeAsUpEnabled(true);</span>
+<span class="nc" id="L75">        actionBar.setHomeAsUpIndicator(R.drawable.ic_close_white_24dp);</span>
+
+<span class="nc" id="L77">        final Intent intent = getIntent();</span>
+<span class="nc" id="L78">        String formtypeString = intent.getStringExtra(UxArgument.FORM_TYPE);</span>
+<span class="nc" id="L79">        FormType formType = FormType.valueOf(formtypeString);</span>
+
+<span class="nc" id="L81">        mAccountUID = intent.getStringExtra(UxArgument.SELECTED_ACCOUNT_UID);</span>
+<span class="nc bnc" id="L82" title="All 2 branches missed.">        if (mAccountUID == null){</span>
+<span class="nc" id="L83">            mAccountUID = intent.getStringExtra(UxArgument.PARENT_ACCOUNT_UID);</span>
+        }
+<span class="nc bnc" id="L85" title="All 2 branches missed.">        if (mAccountUID != null) {</span>
+<span class="nc" id="L86">            int colorCode = AccountsDbAdapter.getActiveAccountColorResource(mAccountUID);</span>
+<span class="nc" id="L87">            actionBar.setBackgroundDrawable(new ColorDrawable(colorCode));</span>
+<span class="nc bnc" id="L88" title="All 2 branches missed.">            if (Build.VERSION.SDK_INT &gt; 20)</span>
+<span class="nc" id="L89">                getWindow().setStatusBarColor(GnuCashApplication.darken(colorCode));</span>
+        }
+<span class="nc bnc" id="L91" title="All 7 branches missed.">        switch (formType){</span>
+            case ACCOUNT:
+<span class="nc" id="L93">                showAccountFormFragment(intent.getExtras());</span>
+<span class="nc" id="L94">                break;</span>
+
+            case TRANSACTION:
+<span class="nc" id="L97">                showTransactionFormFragment(intent.getExtras());</span>
+<span class="nc" id="L98">                break;</span>
+
+            case EXPORT:
+<span class="nc" id="L101">                showExportFormFragment(null);</span>
+<span class="nc" id="L102">                break;</span>
+
+            case SPLIT_EDITOR:
+<span class="nc" id="L105">                showSplitEditorFragment(intent.getExtras());</span>
+<span class="nc" id="L106">                break;</span>
+
+            case BUDGET:
+<span class="nc" id="L109">                showBudgetFormFragment(intent.getExtras());</span>
+<span class="nc" id="L110">                break;</span>
+
+            case BUDGET_AMOUNT_EDITOR:
+<span class="nc" id="L113">                showBudgetAmountEditorFragment(intent.getExtras());</span>
+<span class="nc" id="L114">                break;</span>
+
+            default:
+<span class="nc" id="L117">                throw new IllegalArgumentException(&quot;No form display type specified&quot;);</span>
+        }
+
+
+<span class="nc" id="L121">    }</span>
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+<span class="nc bnc" id="L125" title="All 2 branches missed.">        switch (item.getItemId()){</span>
+            case android.R.id.home:
+<span class="nc" id="L127">                setResult(RESULT_CANCELED);</span>
+<span class="nc" id="L128">                finish();</span>
+<span class="nc" id="L129">                return true;</span>
+        }
+
+<span class="nc" id="L132">        return super.onOptionsItemSelected(item);</span>
+    }
+
+    /**
+     * Return the GUID of the account for which the form is displayed.
+     * If the form is a transaction form, the transaction is created within that account. If it is
+     * an account form, then the GUID is the parent account
+     * @return GUID of account
+     */
+    public String getCurrentAccountUID() {
+<span class="nc" id="L142">        return mAccountUID;</span>
+    }
+
+    /**
+     * Shows the form for creating/editing accounts
+     * @param args Arguments to use for initializing the form.
+     *             This could be an account to edit or a preset for the parent account
+     */
+    private void showAccountFormFragment(Bundle args){
+<span class="nc" id="L151">        AccountFormFragment accountFormFragment = AccountFormFragment.newInstance();</span>
+<span class="nc" id="L152">        accountFormFragment.setArguments(args);</span>
+<span class="nc" id="L153">        showFormFragment(accountFormFragment);</span>
+<span class="nc" id="L154">    }</span>
+
+    /**
+     * Loads the transaction insert/edit fragment and passes the arguments
+     * @param args Bundle arguments to be passed to the fragment
+     */
+    private void showTransactionFormFragment(Bundle args){
+<span class="nc" id="L161">        TransactionFormFragment transactionFormFragment = new TransactionFormFragment();</span>
+<span class="nc" id="L162">        transactionFormFragment.setArguments(args);</span>
+<span class="nc" id="L163">        showFormFragment(transactionFormFragment);</span>
+<span class="nc" id="L164">    }</span>
+
+    /**
+     * Loads the export form fragment and passes the arguments
+     * @param args Bundle arguments
+     */
+    private void showExportFormFragment(Bundle args){
+<span class="nc" id="L171">        ExportFormFragment exportFragment = new ExportFormFragment();</span>
+<span class="nc" id="L172">        exportFragment.setArguments(args);</span>
+<span class="nc" id="L173">        showFormFragment(exportFragment);</span>
+<span class="nc" id="L174">    }</span>
+
+    /**
+     * Load the split editor fragment
+     * @param args View arguments
+     */
+    private void showSplitEditorFragment(Bundle args){
+<span class="nc" id="L181">        SplitEditorFragment splitEditor = SplitEditorFragment.newInstance(args);</span>
+<span class="nc" id="L182">        showFormFragment(splitEditor);</span>
+<span class="nc" id="L183">    }</span>
+
+    /**
+     * Load the budget form
+     * @param args View arguments
+     */
+    private void showBudgetFormFragment(Bundle args){
+<span class="nc" id="L190">        BudgetFormFragment budgetFormFragment = new BudgetFormFragment();</span>
+<span class="nc" id="L191">        budgetFormFragment.setArguments(args);</span>
+<span class="nc" id="L192">        showFormFragment(budgetFormFragment);</span>
+<span class="nc" id="L193">    }</span>
+
+    /**
+     * Load the budget amount editor fragment
+     * @param args Arguments
+     */
+    private void showBudgetAmountEditorFragment(Bundle args){
+<span class="nc" id="L200">        BudgetAmountEditorFragment fragment = BudgetAmountEditorFragment.newInstance(args);</span>
+<span class="nc" id="L201">        showFormFragment(fragment);</span>
+<span class="nc" id="L202">    }</span>
+
+    /**
+     * Loads the fragment into the fragment container, replacing whatever was there before
+     * @param fragment Fragment to be displayed
+     */
+    private void showFormFragment(Fragment fragment){
+<span class="nc" id="L209">        FragmentManager fragmentManager = getSupportFragmentManager();</span>
+<span class="nc" id="L210">        FragmentTransaction fragmentTransaction = fragmentManager</span>
+<span class="nc" id="L211">                .beginTransaction();</span>
+
+<span class="nc" id="L213">        fragmentTransaction.add(R.id.fragment_container, fragment);</span>
+<span class="nc" id="L214">        fragmentTransaction.commit();</span>
+<span class="nc" id="L215">    }</span>
+
+
+    public void setOnBackListener(CalculatorKeyboard keyboard) {
+<span class="nc" id="L219">        mOnBackListener = keyboard;</span>
+<span class="nc" id="L220">    }</span>
+
+    @Override
+    public void onBackPressed() {
+<span class="nc" id="L224">        boolean eventProcessed = false;</span>
+
+<span class="nc bnc" id="L226" title="All 2 branches missed.">        if (mOnBackListener != null)</span>
+<span class="nc" id="L227">            eventProcessed = mOnBackListener.onBackPressed();</span>
+
+<span class="nc bnc" id="L229" title="All 2 branches missed.">        if (!eventProcessed)</span>
+<span class="nc" id="L230">            super.onBackPressed();</span>
+<span class="nc" id="L231">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

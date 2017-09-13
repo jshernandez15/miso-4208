@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GncXmlHelper.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.export.xml</a> &gt; <span class="el_source">GncXmlHelper.java</span></div><h1>GncXmlHelper.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2014 - 2015 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ * Copyright (c) 2014 Yongxin Wang &lt;fefe.wyx@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.export.xml;
+
+import org.gnucash.android.model.Commodity;
+import org.gnucash.android.ui.transaction.TransactionFormFragment;
+
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.text.NumberFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+
+/**
+ * Collection of helper tags and methods for Gnc XML export
+ *
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ * @author Yongxin Wang &lt;fefe.wyx@gmail.com&gt;
+ */
+<span class="nc" id="L37">public abstract class GncXmlHelper {</span>
+    public static final String TAG_GNC_PREFIX       = &quot;gnc:&quot;;
+
+    public static final String ATTR_KEY_CD_TYPE     = &quot;cd:type&quot;;
+    public static final String ATTR_KEY_TYPE        = &quot;type&quot;;
+    public static final String ATTR_KEY_VERSION     = &quot;version&quot;;
+    public static final String ATTR_VALUE_STRING    = &quot;string&quot;;
+    public static final String ATTR_VALUE_NUMERIC   = &quot;numeric&quot;;
+    public static final String ATTR_VALUE_GUID      = &quot;guid&quot;;
+    public static final String ATTR_VALUE_BOOK      = &quot;book&quot;;
+    public static final String ATTR_VALUE_FRAME     = &quot;frame&quot;;
+    public static final String TAG_GDATE            = &quot;gdate&quot;;
+
+    /*
+    Qualified GnuCash XML tag names
+     */
+    public static final String TAG_ROOT             = &quot;gnc-v2&quot;;
+    public static final String TAG_BOOK             = &quot;gnc:book&quot;;
+    public static final String TAG_BOOK_ID          = &quot;book:id&quot;;
+    public static final String TAG_COUNT_DATA       = &quot;gnc:count-data&quot;;
+
+    public static final String TAG_COMMODITY        = &quot;gnc:commodity&quot;;
+    public static final String TAG_COMMODITY_ID     = &quot;cmdty:id&quot;;
+    public static final String TAG_COMMODITY_SPACE  = &quot;cmdty:space&quot;;
+
+    public static final String TAG_ACCOUNT          = &quot;gnc:account&quot;;
+    public static final String TAG_ACCT_NAME        = &quot;act:name&quot;;
+    public static final String TAG_ACCT_ID          = &quot;act:id&quot;;
+    public static final String TAG_ACCT_TYPE        = &quot;act:type&quot;;
+    public static final String TAG_ACCT_COMMODITY   = &quot;act:commodity&quot;;
+    public static final String TAG_COMMODITY_SCU    = &quot;act:commodity-scu&quot;;
+    public static final String TAG_PARENT_UID       = &quot;act:parent&quot;;
+
+    public static final String TAG_SLOT_KEY         = &quot;slot:key&quot;;
+    public static final String TAG_SLOT_VALUE       = &quot;slot:value&quot;;
+    public static final String TAG_ACCT_SLOTS       = &quot;act:slots&quot;;
+    public static final String TAG_SLOT             = &quot;slot&quot;;
+    public static final String TAG_ACCT_DESCRIPTION = &quot;act:description&quot;;
+
+    public static final String TAG_TRANSACTION      = &quot;gnc:transaction&quot;;
+    public static final String TAG_TRX_ID           = &quot;trn:id&quot;;
+    public static final String TAG_TRX_CURRENCY     = &quot;trn:currency&quot;;
+    public static final String TAG_DATE_POSTED      = &quot;trn:date-posted&quot;;
+    public static final String TAG_TS_DATE          = &quot;ts:date&quot;;
+    public static final String TAG_DATE_ENTERED     = &quot;trn:date-entered&quot;;
+    public static final String TAG_TRN_DESCRIPTION  = &quot;trn:description&quot;;
+    public static final String TAG_TRN_SPLITS       = &quot;trn:splits&quot;;
+    public static final String TAG_TRN_SPLIT        = &quot;trn:split&quot;;
+    public static final String TAG_TRN_SLOTS        = &quot;trn:slots&quot;;
+    public static final String TAG_TEMPLATE_TRANSACTIONS = &quot;gnc:template-transactions&quot;;
+
+    public static final String TAG_SPLIT_ID         = &quot;split:id&quot;;
+    public static final String TAG_SPLIT_MEMO       = &quot;split:memo&quot;;
+    public static final String TAG_RECONCILED_STATE = &quot;split:reconciled-state&quot;;
+    public static final String TAG_RECONCILED_DATE  = &quot;split:recondiled-date&quot;;
+    public static final String TAG_SPLIT_ACCOUNT    = &quot;split:account&quot;;
+    public static final String TAG_SPLIT_VALUE      = &quot;split:value&quot;;
+    public static final String TAG_SPLIT_QUANTITY   = &quot;split:quantity&quot;;
+    public static final String TAG_SPLIT_SLOTS      = &quot;split:slots&quot;;
+
+    public static final String TAG_PRICEDB          = &quot;gnc:pricedb&quot;;
+    public static final String TAG_PRICE            = &quot;price&quot;;
+    public static final String TAG_PRICE_ID         = &quot;price:id&quot;;
+    public static final String TAG_PRICE_COMMODITY  = &quot;price:commodity&quot;;
+    public static final String TAG_PRICE_CURRENCY   = &quot;price:currency&quot;;
+    public static final String TAG_PRICE_TIME       = &quot;price:time&quot;;
+    public static final String TAG_PRICE_SOURCE     = &quot;price:source&quot;;
+    public static final String TAG_PRICE_TYPE       = &quot;price:type&quot;;
+    public static final String TAG_PRICE_VALUE      = &quot;price:value&quot;;
+
+    /**
+     * Periodicity of the recurrence.
+     * &lt;p&gt;Only currently used for reading old backup files. May be removed in the future. &lt;/p&gt;
+     * @deprecated Use {@link #TAG_GNC_RECURRENCE} instead
+     */
+    @Deprecated
+    public static final String TAG_RECURRENCE_PERIOD = &quot;trn:recurrence_period&quot;;
+
+    public static final String TAG_SCHEDULED_ACTION         = &quot;gnc:schedxaction&quot;;
+    public static final String TAG_SX_ID                    = &quot;sx:id&quot;;
+    public static final String TAG_SX_NAME                  = &quot;sx:name&quot;;
+    public static final String TAG_SX_ENABLED               = &quot;sx:enabled&quot;;
+    public static final String TAG_SX_AUTO_CREATE           = &quot;sx:autoCreate&quot;;
+    public static final String TAG_SX_AUTO_CREATE_NOTIFY    = &quot;sx:autoCreateNotify&quot;;
+    public static final String TAG_SX_ADVANCE_CREATE_DAYS   = &quot;sx:advanceCreateDays&quot;;
+    public static final String TAG_SX_ADVANCE_REMIND_DAYS   = &quot;sx:advanceRemindDays&quot;;
+    public static final String TAG_SX_INSTANCE_COUNT        = &quot;sx:instanceCount&quot;;
+    public static final String TAG_SX_START                 = &quot;sx:start&quot;;
+    public static final String TAG_SX_LAST                  = &quot;sx:last&quot;;
+    public static final String TAG_SX_END                   = &quot;sx:end&quot;;
+    public static final String TAG_SX_NUM_OCCUR             = &quot;sx:num-occur&quot;;
+    public static final String TAG_SX_REM_OCCUR             = &quot;sx:rem-occur&quot;;
+    public static final String TAG_SX_TAG                   = &quot;sx:tag&quot;;
+    public static final String TAG_SX_TEMPL_ACCOUNT         = &quot;sx:templ-acct&quot;;
+    public static final String TAG_SX_SCHEDULE              = &quot;sx:schedule&quot;;
+    public static final String TAG_GNC_RECURRENCE           = &quot;gnc:recurrence&quot;;
+
+    public static final String TAG_RX_MULT                  = &quot;recurrence:mult&quot;;
+    public static final String TAG_RX_PERIOD_TYPE           = &quot;recurrence:period_type&quot;;
+    public static final String TAG_RX_START                 = &quot;recurrence:start&quot;;
+
+
+    public static final String TAG_BUDGET                   = &quot;gnc:budget&quot;;
+    public static final String TAG_BUDGET_ID                = &quot;bgt:id&quot;;
+    public static final String TAG_BUDGET_NAME              = &quot;bgt:name&quot;;
+    public static final String TAG_BUDGET_DESCRIPTION       = &quot;bgt:description&quot;;
+    public static final String TAG_BUDGET_NUM_PERIODS       = &quot;bgt:num-periods&quot;;
+    public static final String TAG_BUDGET_RECURRENCE        = &quot;bgt:recurrence&quot;;
+    public static final String TAG_BUDGET_SLOTS             = &quot;bgt:slots&quot;;
+
+
+    public static final String RECURRENCE_VERSION           = &quot;1.0.0&quot;;
+    public static final String BOOK_VERSION                 = &quot;2.0.0&quot;;
+<span class="fc" id="L150">    public static final SimpleDateFormat TIME_FORMATTER     = new SimpleDateFormat(&quot;yyyy-MM-dd HH:mm:ss Z&quot;, Locale.US);</span>
+<span class="fc" id="L151">    public static final SimpleDateFormat DATE_FORMATTER     = new SimpleDateFormat(&quot;yyyy-MM-dd&quot;, Locale.US);</span>
+
+    public static final String KEY_PLACEHOLDER              = &quot;placeholder&quot;;
+    public static final String KEY_COLOR                    = &quot;color&quot;;
+    public static final String KEY_FAVORITE                 = &quot;favorite&quot;;
+    public static final String KEY_NOTES                    = &quot;notes&quot;;
+    public static final String KEY_EXPORTED                 = &quot;exported&quot;;
+    public static final String KEY_SCHEDX_ACTION            = &quot;sched-xaction&quot;;
+    public static final String KEY_SPLIT_ACCOUNT_SLOT       = &quot;account&quot;;
+    public static final String KEY_DEBIT_FORMULA            = &quot;debit-formula&quot;;
+    public static final String KEY_CREDIT_FORMULA           = &quot;credit-formula&quot;;
+    public static final String KEY_DEBIT_NUMERIC            = &quot;debit-numeric&quot;;
+    public static final String KEY_CREDIT_NUMERIC           = &quot;credit-numeric&quot;;
+    public static final String KEY_FROM_SCHED_ACTION        = &quot;from-sched-xaction&quot;;
+    public static final String KEY_DEFAULT_TRANSFER_ACCOUNT = &quot;default_transfer_account&quot;;
+
+
+    /**
+     * Formats dates for the GnuCash XML format
+     * @param milliseconds Milliseconds since epoch
+     */
+    public static String formatDate(long milliseconds){
+<span class="nc" id="L173">        return TIME_FORMATTER.format(new Date(milliseconds));</span>
+    }
+
+    /**
+     * Parses a date string formatted in the format &quot;yyyy-MM-dd HH:mm:ss Z&quot;
+     * @param dateString String date representation
+     * @return Time in milliseconds since epoch
+     * @throws ParseException if the date string could not be parsed e.g. because of different format
+     */
+    public static long parseDate(String dateString) throws ParseException {
+<span class="nc" id="L183">        Date date = TIME_FORMATTER.parse(dateString);</span>
+<span class="nc" id="L184">        return date.getTime();</span>
+    }
+
+    /**
+     * Parses amount strings from GnuCash XML into {@link java.math.BigDecimal}s.
+     * The amounts are formatted as 12345/100
+     * @param amountString String containing the amount
+     * @return BigDecimal with numerical value
+     * @throws ParseException if the amount could not be parsed
+     */
+    public static BigDecimal parseSplitAmount(String amountString) throws ParseException {
+<span class="fc" id="L195">        int pos = amountString.indexOf(&quot;/&quot;);</span>
+<span class="fc bfc" id="L196" title="All 2 branches covered.">        if (pos &lt; 0)</span>
+        {
+<span class="fc" id="L198">            throw new ParseException(&quot;Cannot parse money string : &quot; + amountString, 0);</span>
+        }
+
+<span class="fc" id="L201">        int scale = amountString.length() - pos - 2; //do this before, because we could modify the string</span>
+        //String numerator = TransactionFormFragment.stripCurrencyFormatting(amountString.substring(0, pos));
+<span class="fc" id="L203">        String numerator = amountString.substring(0,pos);</span>
+<span class="fc" id="L204">        numerator = TransactionFormFragment.stripCurrencyFormatting(numerator);</span>
+<span class="fc" id="L205">        BigInteger numeratorInt = new BigInteger(numerator);</span>
+<span class="fc" id="L206">        return new BigDecimal(numeratorInt, scale);</span>
+    }
+
+    /**
+     * Formats money amounts for splits in the format 2550/100
+     * @param amount Split amount as BigDecimal
+     * @param commodity Commodity of the transaction
+     * @return Formatted split amount
+     * @deprecated Just use the values for numerator and denominator which are saved in the database
+     */
+    public static String formatSplitAmount(BigDecimal amount, Commodity commodity){
+<span class="fc" id="L217">        int denomInt = commodity.getSmallestFraction();</span>
+<span class="fc" id="L218">        BigDecimal denom = new BigDecimal(denomInt);</span>
+<span class="fc" id="L219">        String denomString = Integer.toString(denomInt);</span>
+
+<span class="fc" id="L221">        String numerator = TransactionFormFragment.stripCurrencyFormatting(amount.multiply(denom).stripTrailingZeros().toPlainString());</span>
+<span class="fc" id="L222">        return numerator + &quot;/&quot; + denomString;</span>
+    }
+
+    /**
+     * Format the amount in template transaction splits.
+     * &lt;p&gt;GnuCash desktop always formats with a locale dependent format, and that varies per user.&lt;br&gt;
+     * So we will use the device locale here and hope that the user has the same locale on the desktop GnuCash&lt;/p&gt;
+     * @param amount Amount to be formatted
+     * @return String representation of amount
+     */
+    public static String formatTemplateSplitAmount(BigDecimal amount){
+        //TODO: If we ever implement an application-specific locale setting, use it here as well
+<span class="nc" id="L234">        return NumberFormat.getNumberInstance().format(amount);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>
