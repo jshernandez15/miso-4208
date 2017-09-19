@@ -1,0 +1,852 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AccountFormFragment.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.ui.account</a> &gt; <span class="el_source">AccountFormFragment.java</span></div><h1>AccountFormFragment.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2012 - 2014 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ * Copyright (c) 2014 Yongxin Wang &lt;fefe.wyx@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.ui.account;
+
+import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.res.Resources;
+import android.content.res.TypedArray;
+import android.database.Cursor;
+import android.graphics.Color;
+import android.os.Bundle;
+import android.support.design.widget.TextInputLayout;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.widget.SimpleCursorAdapter;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.AppCompatActivity;
+import android.text.Editable;
+import android.text.TextUtils;
+import android.text.TextWatcher;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.WindowManager;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
+import android.widget.CompoundButton.OnCheckedChangeListener;
+import android.widget.EditText;
+import android.widget.Spinner;
+
+import org.gnucash.android.R;
+import org.gnucash.android.db.DatabaseSchema;
+import org.gnucash.android.db.adapter.AccountsDbAdapter;
+import org.gnucash.android.db.adapter.CommoditiesDbAdapter;
+import org.gnucash.android.db.adapter.DatabaseAdapter;
+import org.gnucash.android.model.Account;
+import org.gnucash.android.model.AccountType;
+import org.gnucash.android.model.Commodity;
+import org.gnucash.android.model.Money;
+import org.gnucash.android.ui.colorpicker.ColorPickerDialog;
+import org.gnucash.android.ui.colorpicker.ColorPickerSwatch;
+import org.gnucash.android.ui.colorpicker.ColorSquare;
+import org.gnucash.android.ui.common.UxArgument;
+import org.gnucash.android.ui.settings.PreferenceActivity;
+import org.gnucash.android.util.CommoditiesCursorAdapter;
+import org.gnucash.android.util.QualifiedAccountNameCursorAdapter;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+
+import butterknife.BindView;
+import butterknife.ButterKnife;
+
+/**
+ * Fragment used for creating and editing accounts
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ * @author Yongxin Wang &lt;fefe.wyx@gmail.com&gt;
+ */
+<span class="nc bnc" id="L85" title="All 2 branches missed.">public class AccountFormFragment extends Fragment {</span>
+
+    /**
+     * Tag for the color picker dialog fragment
+     */
+    private static final String COLOR_PICKER_DIALOG_TAG = &quot;color_picker_dialog&quot;;
+
+    /**
+	 * EditText for the name of the account to be created/edited
+	 */
+	@BindView(R.id.input_account_name) EditText mNameEditText;
+
+    @BindView(R.id.name_text_input_layout) TextInputLayout mTextInputLayout;
+
+	/**
+	 * Spinner for selecting the currency of the account
+	 * Currencies listed are those specified by ISO 4217
+	 */
+	@BindView(R.id.input_currency_spinner) Spinner mCurrencySpinner;
+	
+	/**
+	 * Accounts database adapter
+	 */
+	private AccountsDbAdapter mAccountsDbAdapter;
+
+    /**
+     * GUID of the parent account
+     * This value is set to the parent account of the transaction being edited or
+     * the account in which a new sub-account is being created
+     */
+<span class="nc" id="L115">    private String mParentAccountUID = null;</span>
+
+    /**
+     * Account ID of the root account
+     */
+<span class="nc" id="L120">    private long mRootAccountId = -1;</span>
+
+    /**
+     * Account UID of the root account
+     */
+<span class="nc" id="L125">    private String mRootAccountUID = null;</span>
+
+	/**
+	 * Reference to account object which will be created at end of dialog
+	 */
+<span class="nc" id="L130">	private Account mAccount = null;</span>
+
+    /**
+     * Unique ID string of account being edited
+     */
+<span class="nc" id="L135">    private String mAccountUID = null;</span>
+
+    /**
+     * Cursor which will hold set of eligible parent accounts
+     */
+	private Cursor mParentAccountCursor;
+
+    /**
+     * List of all descendant Account UIDs, if we are modifying an account
+     * null if creating a new account
+     */
+    private List&lt;String&gt; mDescendantAccountUIDs;
+
+    /**
+     * SimpleCursorAdapter for the parent account spinner
+     * @see QualifiedAccountNameCursorAdapter
+     */
+	private SimpleCursorAdapter mParentAccountCursorAdapter;
+
+    /**
+     * Spinner for parent account list
+     */
+	@BindView(R.id.input_parent_account) Spinner mParentAccountSpinner;
+
+    /**
+     * Checkbox which activates the parent account spinner when selected
+     * Leaving this unchecked means it is a top-level root account
+     */
+	@BindView(R.id.checkbox_parent_account) CheckBox mParentCheckBox;
+
+    /**
+     * Spinner for the account type
+     * @see org.gnucash.android.model.AccountType
+     */
+    @BindView(R.id.input_account_type_spinner) Spinner mAccountTypeSpinner;
+
+    /**
+     * Checkbox for activating the default transfer account spinner
+     */
+    @BindView(R.id.checkbox_default_transfer_account) CheckBox mDefaultTransferAccountCheckBox;
+
+    /**
+     * Spinner for selecting the default transfer account
+     */
+    @BindView(R.id.input_default_transfer_account) Spinner mDefaultTransferAccountSpinner;
+
+    /**
+     * Account description input text view
+     */
+    @BindView(R.id.input_account_description) EditText mDescriptionEditText;
+
+    /**
+     * Checkbox indicating if account is a placeholder account
+     */
+    @BindView(R.id.checkbox_placeholder_account) CheckBox mPlaceholderCheckBox;
+
+    /**
+     * Cursor adapter which binds to the spinner for default transfer account
+     */
+    private SimpleCursorAdapter mDefaultTransferAccountCursorAdapter;
+
+    /**
+     * Flag indicating if double entry transactions are enabled
+     */
+    private boolean mUseDoubleEntry;
+
+<span class="nc" id="L201">    private int mSelectedColor = Account.DEFAULT_COLOR;</span>
+
+    /**
+     * Trigger for color picker dialog
+     */
+    @BindView(R.id.input_color_picker) ColorSquare mColorSquare;
+
+<span class="nc" id="L208">    private final ColorPickerSwatch.OnColorSelectedListener mColorSelectedListener =</span>
+<span class="nc" id="L209">            new ColorPickerSwatch.OnColorSelectedListener() {</span>
+                @Override
+                public void onColorSelected(int color) {
+<span class="nc" id="L212">                    mColorSquare.setBackgroundColor(color);</span>
+<span class="nc" id="L213">                    mSelectedColor = color;</span>
+<span class="nc" id="L214">                }</span>
+            };
+
+
+    /**
+	 * Default constructor
+	 * Required, else the app crashes on screen rotation
+	 */
+<span class="nc" id="L222">	public AccountFormFragment() {</span>
+		//nothing to see here, move along
+<span class="nc" id="L224">	}</span>
+	
+	/**
+	 * Construct a new instance of the dialog
+	 * @return New instance of the dialog fragment
+	 */
+	static public AccountFormFragment newInstance() {
+<span class="nc" id="L231">        AccountFormFragment f = new AccountFormFragment();</span>
+<span class="nc" id="L232">        f.mAccountsDbAdapter = AccountsDbAdapter.getInstance();</span>
+<span class="nc" id="L233">        return f;</span>
+    }
+	
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
+<span class="nc" id="L238">		super.onCreate(savedInstanceState);</span>
+<span class="nc" id="L239">		setHasOptionsMenu(true);</span>
+<span class="nc" id="L240">        mAccountsDbAdapter = AccountsDbAdapter.getInstance();</span>
+
+<span class="nc" id="L242">        SharedPreferences sharedPrefs = PreferenceActivity.getActiveBookSharedPreferences();</span>
+<span class="nc" id="L243">        mUseDoubleEntry = sharedPrefs.getBoolean(getString(R.string.key_use_double_entry), true);</span>
+<span class="nc" id="L244">	}</span>
+	
+	/**
+	 * Inflates the dialog view and retrieves references to the dialog elements
+	 */
+	@Override	public View onCreateView(LayoutInflater inflater, ViewGroup container,
+			Bundle savedInstanceState) {
+<span class="nc" id="L251">		View view = inflater.inflate(R.layout.fragment_account_form, container, false);</span>
+<span class="nc" id="L252">        ButterKnife.bind(this, view);</span>
+
+<span class="nc" id="L254">        mNameEditText.addTextChangedListener(new TextWatcher() {</span>
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                //nothing to see here, move along
+<span class="nc" id="L258">            }</span>
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                //nothing to see here, move along
+<span class="nc" id="L263">            }</span>
+
+            @Override
+            public void afterTextChanged(Editable s) {
+<span class="nc bnc" id="L267" title="All 2 branches missed.">                if (s.toString().length() &gt; 0) {</span>
+<span class="nc" id="L268">                    mTextInputLayout.setErrorEnabled(false);</span>
+                }
+<span class="nc" id="L270">            }</span>
+        });
+
+<span class="nc" id="L273">        mAccountTypeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {</span>
+            @Override
+            public void onItemSelected(AdapterView&lt;?&gt; parentView, View selectedItemView, int position, long id) {
+<span class="nc" id="L276">                loadParentAccountList(getSelectedAccountType());</span>
+<span class="nc bnc" id="L277" title="All 2 branches missed.">                if (mParentAccountUID != null)</span>
+<span class="nc" id="L278">                    setParentAccountSelection(mAccountsDbAdapter.getID(mParentAccountUID));</span>
+<span class="nc" id="L279">            }</span>
+
+            @Override
+            public void onNothingSelected(AdapterView&lt;?&gt; adapterView) {
+                //nothing to see here, move along
+<span class="nc" id="L284">            }</span>
+        });
+
+
+<span class="nc" id="L288">		mParentAccountSpinner.setEnabled(false);</span>
+
+<span class="nc" id="L290">		mParentCheckBox.setOnCheckedChangeListener(new OnCheckedChangeListener() {</span>
+
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+<span class="nc" id="L294">                mParentAccountSpinner.setEnabled(isChecked);</span>
+<span class="nc" id="L295">            }</span>
+        });
+
+<span class="nc" id="L298">        mDefaultTransferAccountSpinner.setEnabled(false);</span>
+<span class="nc" id="L299">        mDefaultTransferAccountCheckBox.setOnCheckedChangeListener(new OnCheckedChangeListener() {</span>
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
+<span class="nc" id="L302">                mDefaultTransferAccountSpinner.setEnabled(isChecked);</span>
+<span class="nc" id="L303">            }</span>
+        });
+
+<span class="nc" id="L306">        mColorSquare.setOnClickListener(new View.OnClickListener() {</span>
+            @Override
+            public void onClick(View view) {
+<span class="nc" id="L309">                showColorPickerDialog();</span>
+<span class="nc" id="L310">            }</span>
+        });
+
+<span class="nc" id="L313">		return view;</span>
+	}
+	
+
+	/**
+	 * Initializes the values of the views in the dialog
+	 */
+	@Override
+	public void onActivityCreated(Bundle savedInstanceState) {
+<span class="nc" id="L322">		super.onActivityCreated(savedInstanceState);</span>
+
+<span class="nc" id="L324">        CommoditiesCursorAdapter commoditiesAdapter = new CommoditiesCursorAdapter(</span>
+<span class="nc" id="L325">                getActivity(), android.R.layout.simple_spinner_item);</span>
+<span class="nc" id="L326">        commoditiesAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);</span>
+
+<span class="nc" id="L328">        mCurrencySpinner.setAdapter(commoditiesAdapter);</span>
+
+
+<span class="nc" id="L331">        mAccountUID = getArguments().getString(UxArgument.SELECTED_ACCOUNT_UID);</span>
+
+<span class="nc" id="L333">        ActionBar supportActionBar = ((AppCompatActivity) getActivity()).getSupportActionBar();</span>
+<span class="nc bnc" id="L334" title="All 2 branches missed.">        if (mAccountUID != null) {</span>
+<span class="nc" id="L335">            mAccount = mAccountsDbAdapter.getRecord(mAccountUID);</span>
+<span class="nc" id="L336">            supportActionBar.setTitle(R.string.title_edit_account);</span>
+        } else {
+<span class="nc" id="L338">            supportActionBar.setTitle(R.string.title_create_account);</span>
+        }
+
+<span class="nc" id="L341">        mRootAccountUID = mAccountsDbAdapter.getOrCreateGnuCashRootAccountUID();</span>
+<span class="nc bnc" id="L342" title="All 2 branches missed.">        if (mRootAccountUID != null)</span>
+<span class="nc" id="L343">            mRootAccountId = mAccountsDbAdapter.getID(mRootAccountUID);</span>
+
+        //need to load the cursor adapters for the spinners before initializing the views
+<span class="nc" id="L346">        loadAccountTypesList();</span>
+<span class="nc" id="L347">        loadDefaultTransferAccountList();</span>
+<span class="nc" id="L348">        setDefaultTransferAccountInputsVisible(mUseDoubleEntry);</span>
+
+<span class="nc bnc" id="L350" title="All 2 branches missed.">        if (mAccount != null){</span>
+<span class="nc" id="L351">            initializeViewsWithAccount(mAccount);</span>
+            //do not immediately open the keyboard when editing an account
+<span class="nc" id="L353">            getActivity().getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);</span>
+        } else {
+<span class="nc" id="L355">            initializeViews();</span>
+        }
+
+<span class="nc" id="L358">	}</span>
+
+    /**
+     * Initialize view with the properties of &lt;code&gt;account&lt;/code&gt;.
+     * This is applicable when editing an account
+     * @param account Account whose fields are used to populate the form
+     */
+    private void initializeViewsWithAccount(Account account){
+<span class="nc bnc" id="L366" title="All 2 branches missed.">        if (account == null)</span>
+<span class="nc" id="L367">            throw new IllegalArgumentException(&quot;Account cannot be null&quot;);</span>
+
+<span class="nc" id="L369">        loadParentAccountList(account.getAccountType());</span>
+<span class="nc" id="L370">        mParentAccountUID = account.getParentUID();</span>
+<span class="nc bnc" id="L371" title="All 2 branches missed.">        if (mParentAccountUID == null) {</span>
+            // null parent, set Parent as root
+<span class="nc" id="L373">            mParentAccountUID = mRootAccountUID;</span>
+        }
+
+<span class="nc bnc" id="L376" title="All 2 branches missed.">        if (mParentAccountUID != null) {</span>
+<span class="nc" id="L377">            setParentAccountSelection(mAccountsDbAdapter.getID(mParentAccountUID));</span>
+        }
+
+<span class="nc" id="L380">        String currencyCode = account.getCommodity().getCurrencyCode();</span>
+<span class="nc" id="L381">        setSelectedCurrency(currencyCode);</span>
+
+<span class="nc bnc" id="L383" title="All 2 branches missed.">        if (mAccountsDbAdapter.getTransactionMaxSplitNum(mAccount.getUID()) &gt; 1)</span>
+        {
+            //TODO: Allow changing the currency and effecting the change for all transactions without any currency exchange (purely cosmetic change)
+<span class="nc" id="L386">            mCurrencySpinner.setEnabled(false);</span>
+        }
+
+<span class="nc" id="L389">        mNameEditText.setText(account.getName());</span>
+<span class="nc" id="L390">        mNameEditText.setSelection(mNameEditText.getText().length());</span>
+<span class="nc" id="L391">        mDescriptionEditText.setText(account.getDescription());</span>
+
+<span class="nc bnc" id="L393" title="All 2 branches missed.">        if (mUseDoubleEntry) {</span>
+<span class="nc bnc" id="L394" title="All 2 branches missed.">            if (account.getDefaultTransferAccountUID() != null) {</span>
+<span class="nc" id="L395">                long doubleDefaultAccountId = mAccountsDbAdapter.getID(account.getDefaultTransferAccountUID());</span>
+<span class="nc" id="L396">                setDefaultTransferAccountSelection(doubleDefaultAccountId, true);</span>
+<span class="nc" id="L397">            } else {</span>
+<span class="nc" id="L398">                String currentAccountUID = account.getParentUID();</span>
+<span class="nc" id="L399">                String rootAccountUID = mAccountsDbAdapter.getOrCreateGnuCashRootAccountUID();</span>
+<span class="nc bnc" id="L400" title="All 2 branches missed.">                while (!currentAccountUID.equals(rootAccountUID)) {</span>
+<span class="nc" id="L401">                    long defaultTransferAccountID = mAccountsDbAdapter.getDefaultTransferAccountID(mAccountsDbAdapter.getID(currentAccountUID));</span>
+<span class="nc bnc" id="L402" title="All 2 branches missed.">                    if (defaultTransferAccountID &gt; 0) {</span>
+<span class="nc" id="L403">                        setDefaultTransferAccountSelection(defaultTransferAccountID, false);</span>
+<span class="nc" id="L404">                        break; //we found a parent with default transfer setting</span>
+                    }
+<span class="nc" id="L406">                    currentAccountUID = mAccountsDbAdapter.getParentAccountUID(currentAccountUID);</span>
+<span class="nc" id="L407">                }</span>
+            }
+        }
+
+<span class="nc" id="L411">        mPlaceholderCheckBox.setChecked(account.isPlaceholderAccount());</span>
+<span class="nc" id="L412">        mSelectedColor = account.getColor();</span>
+<span class="nc" id="L413">        mColorSquare.setBackgroundColor(account.getColor());</span>
+
+<span class="nc" id="L415">        setAccountTypeSelection(account.getAccountType());</span>
+<span class="nc" id="L416">    }</span>
+
+    /**
+     * Initialize views with defaults for new account
+     */
+    private void initializeViews(){
+<span class="nc" id="L422">        setSelectedCurrency(Money.DEFAULT_CURRENCY_CODE);</span>
+<span class="nc" id="L423">        mColorSquare.setBackgroundColor(Color.LTGRAY);</span>
+<span class="nc" id="L424">        mParentAccountUID = getArguments().getString(UxArgument.PARENT_ACCOUNT_UID);</span>
+
+
+<span class="nc bnc" id="L427" title="All 2 branches missed.">        if (mParentAccountUID != null) {</span>
+<span class="nc" id="L428">            AccountType parentAccountType = mAccountsDbAdapter.getAccountType(mParentAccountUID);</span>
+<span class="nc" id="L429">            setAccountTypeSelection(parentAccountType);</span>
+<span class="nc" id="L430">            loadParentAccountList(parentAccountType);</span>
+<span class="nc" id="L431">            setParentAccountSelection(mAccountsDbAdapter.getID(mParentAccountUID));</span>
+        }
+
+<span class="nc" id="L434">    }</span>
+
+    /**
+     * Selects the corresponding account type in the spinner
+     * @param accountType AccountType to be set
+     */
+    private void setAccountTypeSelection(AccountType accountType){
+<span class="nc" id="L441">        String[] accountTypeEntries = getResources().getStringArray(R.array.key_account_type_entries);</span>
+<span class="nc" id="L442">        int accountTypeIndex = Arrays.asList(accountTypeEntries).indexOf(accountType.name());</span>
+<span class="nc" id="L443">        mAccountTypeSpinner.setSelection(accountTypeIndex);</span>
+<span class="nc" id="L444">    }</span>
+
+    /**
+     * Toggles the visibility of the default transfer account input fields.
+     * This field is irrelevant for users who do not use double accounting
+     */
+    private void setDefaultTransferAccountInputsVisible(boolean visible) {
+<span class="nc bnc" id="L451" title="All 2 branches missed.">        final int visibility = visible ? View.VISIBLE : View.GONE;</span>
+<span class="nc" id="L452">        final View view = getView();</span>
+<span class="nc bnc" id="L453" title="All 4 branches missed.">        assert view != null;</span>
+<span class="nc" id="L454">        view.findViewById(R.id.layout_default_transfer_account).setVisibility(visibility);</span>
+<span class="nc" id="L455">        view.findViewById(R.id.label_default_transfer_account).setVisibility(visibility);</span>
+<span class="nc" id="L456">    }</span>
+
+    /**
+     * Selects the currency with code &lt;code&gt;currencyCode&lt;/code&gt; in the spinner
+     * @param currencyCode ISO 4217 currency code to be selected
+     */
+    private void setSelectedCurrency(String currencyCode){
+<span class="nc" id="L463">        CommoditiesDbAdapter commodityDbAdapter = CommoditiesDbAdapter.getInstance();</span>
+<span class="nc" id="L464">        long commodityId = commodityDbAdapter.getID(commodityDbAdapter.getCommodityUID(currencyCode));</span>
+<span class="nc" id="L465">        int position = 0;</span>
+<span class="nc bnc" id="L466" title="All 2 branches missed.">        for (int i = 0; i &lt; mCurrencySpinner.getCount(); i++) {</span>
+<span class="nc bnc" id="L467" title="All 2 branches missed.">            if (commodityId == mCurrencySpinner.getItemIdAtPosition(i)) {</span>
+<span class="nc" id="L468">                position = i;</span>
+            }
+        }
+<span class="nc" id="L471">        mCurrencySpinner.setSelection(position);</span>
+<span class="nc" id="L472">    }</span>
+
+    /**
+     * Selects the account with ID &lt;code&gt;parentAccountId&lt;/code&gt; in the parent accounts spinner
+     * @param parentAccountId Record ID of parent account to be selected
+     */
+    private void setParentAccountSelection(long parentAccountId){
+<span class="nc bnc" id="L479" title="All 4 branches missed.">        if (parentAccountId &lt;= 0 || parentAccountId == mRootAccountId) {</span>
+<span class="nc" id="L480">            return;</span>
+        }
+
+<span class="nc bnc" id="L483" title="All 2 branches missed.">        for (int pos = 0; pos &lt; mParentAccountCursorAdapter.getCount(); pos++) {</span>
+<span class="nc bnc" id="L484" title="All 2 branches missed.">            if (mParentAccountCursorAdapter.getItemId(pos) == parentAccountId){</span>
+<span class="nc" id="L485">                mParentCheckBox.setChecked(true);</span>
+<span class="nc" id="L486">                mParentAccountSpinner.setEnabled(true);</span>
+<span class="nc" id="L487">                mParentAccountSpinner.setSelection(pos, true);</span>
+<span class="nc" id="L488">                break;</span>
+            }
+        }
+<span class="nc" id="L491">    }</span>
+
+    /**
+     * Selects the account with ID &lt;code&gt;parentAccountId&lt;/code&gt; in the default transfer account spinner
+     * @param defaultTransferAccountId Record ID of parent account to be selected
+     */
+    private void setDefaultTransferAccountSelection(long defaultTransferAccountId, boolean enableTransferAccount) {
+<span class="nc bnc" id="L498" title="All 2 branches missed.">        if (defaultTransferAccountId &gt; 0) {</span>
+<span class="nc" id="L499">            mDefaultTransferAccountCheckBox.setChecked(enableTransferAccount);</span>
+<span class="nc" id="L500">            mDefaultTransferAccountSpinner.setEnabled(enableTransferAccount);</span>
+        } else
+<span class="nc" id="L502">            return;</span>
+
+<span class="nc bnc" id="L504" title="All 2 branches missed.">        for (int pos = 0; pos &lt; mDefaultTransferAccountCursorAdapter.getCount(); pos++) {</span>
+<span class="nc bnc" id="L505" title="All 2 branches missed.">            if (mDefaultTransferAccountCursorAdapter.getItemId(pos) == defaultTransferAccountId) {</span>
+<span class="nc" id="L506">                mDefaultTransferAccountSpinner.setSelection(pos);</span>
+<span class="nc" id="L507">                break;</span>
+            }
+        }
+<span class="nc" id="L510">    }</span>
+
+    /**
+     * Returns an array of colors used for accounts.
+     * The array returned has the actual color values and not the resource ID.
+     * @return Integer array of colors used for accounts
+     */
+    private int[] getAccountColorOptions(){
+<span class="nc" id="L518">        Resources res = getResources();</span>
+<span class="nc" id="L519">        TypedArray colorTypedArray = res.obtainTypedArray(R.array.account_colors);</span>
+<span class="nc" id="L520">        int[] colorOptions = new int[colorTypedArray.length()];</span>
+<span class="nc bnc" id="L521" title="All 2 branches missed.">        for (int i = 0; i &lt; colorTypedArray.length(); i++) {</span>
+<span class="nc" id="L522">             int color = colorTypedArray.getColor(i, getResources().getColor(R.color.title_green));</span>
+<span class="nc" id="L523">             colorOptions[i] = color;</span>
+        }
+<span class="nc" id="L525">        colorTypedArray.recycle();</span>
+<span class="nc" id="L526">        return colorOptions;</span>
+    }
+    /**
+     * Shows the color picker dialog
+     */
+    private void showColorPickerDialog(){
+<span class="nc" id="L532">        FragmentManager fragmentManager = getActivity().getSupportFragmentManager();</span>
+<span class="nc" id="L533">        int currentColor = Color.LTGRAY;</span>
+<span class="nc bnc" id="L534" title="All 2 branches missed.">        if (mAccount != null){</span>
+<span class="nc" id="L535">            currentColor = mAccount.getColor();</span>
+        }
+
+<span class="nc" id="L538">        ColorPickerDialog colorPickerDialogFragment = ColorPickerDialog.newInstance(</span>
+                R.string.color_picker_default_title,
+<span class="nc" id="L540">                getAccountColorOptions(),</span>
+                currentColor, 4, 12);
+<span class="nc" id="L542">        colorPickerDialogFragment.setOnColorSelectedListener(mColorSelectedListener);</span>
+<span class="nc" id="L543">        colorPickerDialogFragment.show(fragmentManager, COLOR_PICKER_DIALOG_TAG);</span>
+<span class="nc" id="L544">    }</span>
+
+    @Override
+	public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+<span class="nc" id="L548">		super.onCreateOptionsMenu(menu, inflater);</span>
+<span class="nc" id="L549">		inflater.inflate(R.menu.default_save_actions, menu);</span>
+<span class="nc" id="L550">	}</span>
+	
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+<span class="nc bnc" id="L554" title="All 3 branches missed.">		switch (item.getItemId()) {</span>
+		case R.id.menu_save:
+<span class="nc" id="L556">			saveAccount();</span>
+<span class="nc" id="L557">			return true;</span>
+
+		case android.R.id.home:
+<span class="nc" id="L560">			finishFragment();</span>
+<span class="nc" id="L561">			return true;</span>
+		}
+		
+<span class="nc" id="L564">		return super.onOptionsItemSelected(item);</span>
+	}
+
+    /**
+     * Initializes the default transfer account spinner with eligible accounts
+     */
+    private void loadDefaultTransferAccountList(){
+<span class="nc" id="L571">        String condition = DatabaseSchema.AccountEntry.COLUMN_UID + &quot; != '&quot; + mAccountUID + &quot;' &quot; //when creating a new account mAccountUID is null, so don't use whereArgs</span>
+                + &quot; AND &quot; + DatabaseSchema.AccountEntry.COLUMN_PLACEHOLDER + &quot;=0&quot;
+                + &quot; AND &quot; + DatabaseSchema.AccountEntry.COLUMN_HIDDEN + &quot;=0&quot;
+                + &quot; AND &quot; + DatabaseSchema.AccountEntry.COLUMN_TYPE + &quot; != ?&quot;;
+
+<span class="nc" id="L576">        Cursor defaultTransferAccountCursor = mAccountsDbAdapter.fetchAccountsOrderedByFullName(condition,</span>
+<span class="nc" id="L577">                new String[]{AccountType.ROOT.name()});</span>
+
+<span class="nc bnc" id="L579" title="All 2 branches missed.">        if (mDefaultTransferAccountSpinner.getCount() &lt;= 0) {</span>
+<span class="nc" id="L580">            setDefaultTransferAccountInputsVisible(false);</span>
+        }
+
+<span class="nc" id="L583">        mDefaultTransferAccountCursorAdapter = new QualifiedAccountNameCursorAdapter(getActivity(),</span>
+                defaultTransferAccountCursor);
+<span class="nc" id="L585">        mDefaultTransferAccountSpinner.setAdapter(mDefaultTransferAccountCursorAdapter);</span>
+<span class="nc" id="L586">    }</span>
+
+    /**
+     * Loads the list of possible accounts which can be set as a parent account and initializes the spinner.
+     * The allowed parent accounts depends on the account type
+     * @param accountType AccountType of account whose allowed parent list is to be loaded
+     */
+	private void loadParentAccountList(AccountType accountType){
+<span class="nc" id="L594">        String condition = DatabaseSchema.SplitEntry.COLUMN_TYPE + &quot; IN (&quot;</span>
+<span class="nc" id="L595">                + getAllowedParentAccountTypes(accountType) + &quot;) AND &quot; + DatabaseSchema.AccountEntry.COLUMN_HIDDEN + &quot;!=1 &quot;;</span>
+
+<span class="nc bnc" id="L597" title="All 2 branches missed.">        if (mAccount != null){  //if editing an account</span>
+<span class="nc" id="L598">            mDescendantAccountUIDs = mAccountsDbAdapter.getDescendantAccountUIDs(mAccount.getUID(), null, null);</span>
+<span class="nc" id="L599">            String rootAccountUID = mAccountsDbAdapter.getOrCreateGnuCashRootAccountUID();</span>
+<span class="nc" id="L600">            List&lt;String&gt; descendantAccountUIDs = new ArrayList&lt;&gt;(mDescendantAccountUIDs);</span>
+<span class="nc bnc" id="L601" title="All 2 branches missed.">            if (rootAccountUID != null)</span>
+<span class="nc" id="L602">                descendantAccountUIDs.add(rootAccountUID);</span>
+            // limit cyclic account hierarchies.
+<span class="nc" id="L604">            condition += &quot; AND (&quot; + DatabaseSchema.AccountEntry.COLUMN_UID + &quot; NOT IN ( '&quot;</span>
+<span class="nc" id="L605">                    + TextUtils.join(&quot;','&quot;, descendantAccountUIDs) + &quot;','&quot; + mAccountUID + &quot;' ) )&quot;;</span>
+        }
+
+        //if we are reloading the list, close the previous cursor first
+<span class="nc bnc" id="L609" title="All 2 branches missed.">        if (mParentAccountCursor != null)</span>
+<span class="nc" id="L610">            mParentAccountCursor.close();</span>
+
+<span class="nc" id="L612">		mParentAccountCursor = mAccountsDbAdapter.fetchAccountsOrderedByFullName(condition, null);</span>
+<span class="nc" id="L613">        final View view = getView();</span>
+<span class="nc bnc" id="L614" title="All 4 branches missed.">        assert view != null;</span>
+<span class="nc bnc" id="L615" title="All 2 branches missed.">        if (mParentAccountCursor.getCount() &lt;= 0){</span>
+<span class="nc" id="L616">            mParentCheckBox.setChecked(false); //disable before hiding, else we can still read it when saving</span>
+<span class="nc" id="L617">            view.findViewById(R.id.layout_parent_account).setVisibility(View.GONE);</span>
+<span class="nc" id="L618">            view.findViewById(R.id.label_parent_account).setVisibility(View.GONE);</span>
+        } else {
+<span class="nc" id="L620">            view.findViewById(R.id.layout_parent_account).setVisibility(View.VISIBLE);</span>
+<span class="nc" id="L621">            view.findViewById(R.id.label_parent_account).setVisibility(View.VISIBLE);</span>
+        }
+
+<span class="nc" id="L624">		mParentAccountCursorAdapter = new QualifiedAccountNameCursorAdapter(</span>
+<span class="nc" id="L625">				getActivity(), mParentAccountCursor);</span>
+<span class="nc" id="L626">		mParentAccountSpinner.setAdapter(mParentAccountCursorAdapter);</span>
+<span class="nc" id="L627">	}</span>
+
+    /**
+     * Returns a comma separated list of account types which can be parent accounts for the specified &lt;code&gt;type&lt;/code&gt;.
+     * The strings in the list are the {@link org.gnucash.android.model.AccountType#name()}s of the different types.
+     * @param type {@link org.gnucash.android.model.AccountType}
+     * @return String comma separated list of account types
+     */
+    private String getAllowedParentAccountTypes(AccountType type) {
+
+<span class="nc bnc" id="L637" title="All 5 branches missed.">        switch (type) {</span>
+            case EQUITY:
+<span class="nc" id="L639">                return &quot;'&quot; + AccountType.EQUITY.name() + &quot;'&quot;;</span>
+
+            case INCOME:
+            case EXPENSE:
+<span class="nc" id="L643">                return &quot;'&quot; + AccountType.EXPENSE.name() + &quot;', '&quot; + AccountType.INCOME.name() + &quot;'&quot;;</span>
+
+            case CASH:
+            case BANK:
+            case CREDIT:
+            case ASSET:
+            case LIABILITY:
+            case PAYABLE:
+            case RECEIVABLE:
+            case CURRENCY:
+            case STOCK:
+            case MUTUAL: {
+<span class="nc" id="L655">                List&lt;String&gt; accountTypeStrings = getAccountTypeStringList();</span>
+<span class="nc" id="L656">                accountTypeStrings.remove(AccountType.EQUITY.name());</span>
+<span class="nc" id="L657">                accountTypeStrings.remove(AccountType.EXPENSE.name());</span>
+<span class="nc" id="L658">                accountTypeStrings.remove(AccountType.INCOME.name());</span>
+<span class="nc" id="L659">                accountTypeStrings.remove(AccountType.ROOT.name());</span>
+<span class="nc" id="L660">                return &quot;'&quot; + TextUtils.join(&quot;','&quot;, accountTypeStrings) + &quot;'&quot;;</span>
+            }
+
+            case TRADING:
+<span class="nc" id="L664">                return &quot;'&quot; + AccountType.TRADING.name() + &quot;'&quot;;</span>
+
+            case ROOT:
+            default:
+<span class="nc" id="L668">                return Arrays.toString(AccountType.values()).replaceAll(&quot;\\[|]&quot;, &quot;&quot;);</span>
+        }
+    }
+
+    /**
+     * Returns a list of all the available {@link org.gnucash.android.model.AccountType}s as strings
+     * @return String list of all account types
+     */
+    private List&lt;String&gt; getAccountTypeStringList(){
+<span class="nc" id="L677">        String[] accountTypes = Arrays.toString(AccountType.values()).replaceAll(&quot;\\[|]&quot;, &quot;&quot;).split(&quot;,&quot;);</span>
+<span class="nc" id="L678">        List&lt;String&gt; accountTypesList = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L679" title="All 2 branches missed.">        for (String accountType : accountTypes) {</span>
+<span class="nc" id="L680">            accountTypesList.add(accountType.trim());</span>
+        }
+
+<span class="nc" id="L683">        return accountTypesList;</span>
+    }
+    /**
+     * Loads the list of account types into the account type selector spinner
+     */
+    private void loadAccountTypesList(){
+<span class="nc" id="L689">        String[] accountTypes = getResources().getStringArray(R.array.account_type_entry_values);</span>
+<span class="nc" id="L690">        ArrayAdapter&lt;String&gt; accountTypesAdapter = new ArrayAdapter&lt;&gt;(</span>
+<span class="nc" id="L691">                getActivity(), android.R.layout.simple_list_item_1, accountTypes);</span>
+
+<span class="nc" id="L693">        accountTypesAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);</span>
+<span class="nc" id="L694">        mAccountTypeSpinner.setAdapter(accountTypesAdapter);</span>
+
+<span class="nc" id="L696">    }</span>
+
+	/**
+	 * Finishes the fragment appropriately.
+	 * Depends on how the fragment was loaded, it might have a backstack or not
+	 */
+	private void finishFragment() {
+<span class="nc" id="L703">		InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(</span>
+			      Context.INPUT_METHOD_SERVICE);
+<span class="nc" id="L705">			imm.hideSoftInputFromWindow(mNameEditText.getWindowToken(), 0);</span>
+
+<span class="nc" id="L707">        final String action = getActivity().getIntent().getAction();</span>
+<span class="nc bnc" id="L708" title="All 4 branches missed.">        if (action != null &amp;&amp; action.equals(Intent.ACTION_INSERT_OR_EDIT)){</span>
+<span class="nc" id="L709">            getActivity().setResult(Activity.RESULT_OK);</span>
+<span class="nc" id="L710">            getActivity().finish();</span>
+        } else {
+<span class="nc" id="L712">		    getActivity().getSupportFragmentManager().popBackStack();</span>
+        }
+<span class="nc" id="L714">	}</span>
+	
+	@Override
+	public void onDestroy() {
+<span class="nc" id="L718">		super.onDestroy();</span>
+<span class="nc bnc" id="L719" title="All 2 branches missed.">		if (mParentAccountCursor != null)</span>
+<span class="nc" id="L720">			mParentAccountCursor.close();</span>
+<span class="nc bnc" id="L721" title="All 2 branches missed.">        if (mDefaultTransferAccountCursorAdapter != null) {</span>
+<span class="nc" id="L722">            mDefaultTransferAccountCursorAdapter.getCursor().close();</span>
+        }
+<span class="nc" id="L724">	}</span>
+
+    /**
+     * Reads the fields from the account form and saves as a new account
+     */
+	private void saveAccount() {
+<span class="nc" id="L730">        Log.i(&quot;AccountFormFragment&quot;, &quot;Saving account&quot;);</span>
+<span class="nc bnc" id="L731" title="All 2 branches missed.">        if (mAccountsDbAdapter == null)</span>
+<span class="nc" id="L732">            mAccountsDbAdapter = AccountsDbAdapter.getInstance();</span>
+        // accounts to update, in case we're updating full names of a sub account tree
+<span class="nc" id="L734">        ArrayList&lt;Account&gt; accountsToUpdate = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L735">        boolean nameChanged = false;</span>
+<span class="nc bnc" id="L736" title="All 2 branches missed.">		if (mAccount == null){</span>
+<span class="nc" id="L737">			String name = getEnteredName();</span>
+<span class="nc bnc" id="L738" title="All 2 branches missed.">			if (name.length() == 0){</span>
+<span class="nc" id="L739">                mTextInputLayout.setErrorEnabled(true);</span>
+<span class="nc" id="L740">                mTextInputLayout.setError(getString(R.string.toast_no_account_name_entered));</span>
+<span class="nc" id="L741">				return;				</span>
+			}
+<span class="nc" id="L743">			mAccount = new Account(getEnteredName());</span>
+<span class="nc" id="L744">            mAccountsDbAdapter.addRecord(mAccount, DatabaseAdapter.UpdateMethod.insert); //new account, insert it</span>
+<span class="nc" id="L745">		}</span>
+		else {
+<span class="nc bnc" id="L747" title="All 2 branches missed.">            nameChanged = !mAccount.getName().equals(getEnteredName());</span>
+<span class="nc" id="L748">            mAccount.setName(getEnteredName());</span>
+        }
+
+<span class="nc" id="L751">        long commodityId = mCurrencySpinner.getSelectedItemId();</span>
+<span class="nc" id="L752">        Commodity commodity = CommoditiesDbAdapter.getInstance().getRecord(commodityId);</span>
+<span class="nc" id="L753">        mAccount.setCommodity(commodity);</span>
+
+<span class="nc" id="L755">        AccountType selectedAccountType = getSelectedAccountType();</span>
+<span class="nc" id="L756">        mAccount.setAccountType(selectedAccountType);</span>
+
+<span class="nc" id="L758">        mAccount.setDescription(mDescriptionEditText.getText().toString());</span>
+<span class="nc" id="L759">        mAccount.setPlaceHolderFlag(mPlaceholderCheckBox.isChecked());</span>
+<span class="nc" id="L760">        mAccount.setColor(mSelectedColor);</span>
+
+        long newParentAccountId;
+        String newParentAccountUID;
+<span class="nc bnc" id="L764" title="All 2 branches missed.">		if (mParentCheckBox.isChecked()) {</span>
+<span class="nc" id="L765">            newParentAccountId = mParentAccountSpinner.getSelectedItemId();</span>
+<span class="nc" id="L766">            newParentAccountUID = mAccountsDbAdapter.getUID(newParentAccountId);</span>
+<span class="nc" id="L767">            mAccount.setParentUID(newParentAccountUID);</span>
+        } else {
+            //need to do this explicitly in case user removes parent account
+<span class="nc" id="L770">            newParentAccountUID = mRootAccountUID;</span>
+<span class="nc" id="L771">            newParentAccountId = mRootAccountId;</span>
+		}
+<span class="nc" id="L773">        mAccount.setParentUID(newParentAccountUID);</span>
+
+<span class="nc bnc" id="L775" title="All 2 branches missed.">        if (mDefaultTransferAccountCheckBox.isChecked()</span>
+<span class="nc bnc" id="L776" title="All 2 branches missed.">                &amp;&amp; mDefaultTransferAccountSpinner.getSelectedItemId() != Spinner.INVALID_ROW_ID){</span>
+<span class="nc" id="L777">            long id = mDefaultTransferAccountSpinner.getSelectedItemId();</span>
+<span class="nc" id="L778">            mAccount.setDefaultTransferAccountUID(mAccountsDbAdapter.getUID(id));</span>
+<span class="nc" id="L779">        } else {</span>
+            //explicitly set in case of removal of default account
+<span class="nc" id="L781">            mAccount.setDefaultTransferAccountUID(null);</span>
+        }
+
+<span class="nc bnc" id="L784" title="All 2 branches missed.">        long parentAccountId = mParentAccountUID == null ? -1 : mAccountsDbAdapter.getID(mParentAccountUID);</span>
+        // update full names
+<span class="nc bnc" id="L786" title="All 6 branches missed.">        if (nameChanged || mDescendantAccountUIDs == null || newParentAccountId != parentAccountId) {</span>
+            // current account name changed or new Account or parent account changed
+            String newAccountFullName;
+<span class="nc bnc" id="L789" title="All 2 branches missed.">            if (newParentAccountId == mRootAccountId){</span>
+<span class="nc" id="L790">                newAccountFullName = mAccount.getName();</span>
+            }
+            else {
+<span class="nc" id="L793">                newAccountFullName = mAccountsDbAdapter.getAccountFullName(newParentAccountUID) +</span>
+<span class="nc" id="L794">                    AccountsDbAdapter.ACCOUNT_NAME_SEPARATOR + mAccount.getName();</span>
+            }
+<span class="nc" id="L796">            mAccount.setFullName(newAccountFullName);</span>
+<span class="nc bnc" id="L797" title="All 2 branches missed.">            if (mDescendantAccountUIDs != null) {</span>
+                // modifying existing account, e.t. name changed and/or parent changed
+<span class="nc bnc" id="L799" title="All 6 branches missed.">                if ((nameChanged || parentAccountId != newParentAccountId) &amp;&amp; mDescendantAccountUIDs.size() &gt; 0) {</span>
+                    // parent change, update all full names of descent accounts
+<span class="nc" id="L801">                    accountsToUpdate.addAll(mAccountsDbAdapter.getSimpleAccountList(</span>
+                            DatabaseSchema.AccountEntry.COLUMN_UID + &quot; IN ('&quot; +
+<span class="nc" id="L803">                                    TextUtils.join(&quot;','&quot;, mDescendantAccountUIDs) + &quot;')&quot;, null, null</span>
+                    ));
+                }
+<span class="nc" id="L806">                HashMap&lt;String, Account&gt; mapAccount = new HashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L807" title="All 2 branches missed.">                for (Account acct : accountsToUpdate) mapAccount.put(acct.getUID(), acct);</span>
+<span class="nc bnc" id="L808" title="All 2 branches missed.">                for (String uid: mDescendantAccountUIDs) {</span>
+                    // mAccountsDbAdapter.getDescendantAccountUIDs() will ensure a parent-child order
+<span class="nc" id="L810">                    Account acct = mapAccount.get(uid);</span>
+                    // mAccount cannot be root, so acct here cannot be top level account.
+<span class="nc bnc" id="L812" title="All 2 branches missed.">                    if (mAccount.getUID().equals(acct.getParentUID())) {</span>
+<span class="nc" id="L813">                        acct.setFullName(mAccount.getFullName() + AccountsDbAdapter.ACCOUNT_NAME_SEPARATOR + acct.getName());</span>
+                    }
+                    else {
+<span class="nc" id="L816">                        acct.setFullName(</span>
+<span class="nc" id="L817">                                mapAccount.get(acct.getParentUID()).getFullName() +</span>
+                                        AccountsDbAdapter.ACCOUNT_NAME_SEPARATOR +
+<span class="nc" id="L819">                                        acct.getName()</span>
+                        );
+                    }
+<span class="nc" id="L822">                }</span>
+            }
+        }
+<span class="nc" id="L825">        accountsToUpdate.add(mAccount);</span>
+
+        // bulk update, will not update transactions
+<span class="nc" id="L828">		mAccountsDbAdapter.bulkAddRecords(accountsToUpdate, DatabaseAdapter.UpdateMethod.update);</span>
+
+<span class="nc" id="L830">		finishFragment();</span>
+<span class="nc" id="L831">	}</span>
+
+    /**
+     * Returns the currently selected account type in the spinner
+     * @return {@link org.gnucash.android.model.AccountType} currently selected
+     */
+    private AccountType getSelectedAccountType() {
+<span class="nc" id="L838">        int selectedAccountTypeIndex = mAccountTypeSpinner.getSelectedItemPosition();</span>
+<span class="nc" id="L839">        String[] accountTypeEntries = getResources().getStringArray(R.array.key_account_type_entries);</span>
+<span class="nc" id="L840">        return AccountType.valueOf(accountTypeEntries[selectedAccountTypeIndex]);</span>
+    }
+
+    /**
+	 * Retrieves the name of the account which has been entered in the EditText
+	 * @return Name of the account which has been entered in the EditText
+	 */
+    private String getEnteredName(){
+<span class="nc" id="L848">		return mNameEditText.getText().toString().trim();</span>
+	}
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

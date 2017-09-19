@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PasscodePreferenceActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.ui.passcode</a> &gt; <span class="el_source">PasscodePreferenceActivity.java</span></div><h1>PasscodePreferenceActivity.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2014 - 2015 Oleksandr Tyshkovets &lt;olexandr.tyshkovets@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.ui.passcode;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.preference.PreferenceManager;
+import android.support.v7.app.AppCompatActivity;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import org.gnucash.android.R;
+import org.gnucash.android.ui.common.UxArgument;
+
+/**
+ * Activity for entering and confirming passcode
+ * @author Oleksandr Tyshkovets &lt;olexandr.tyshkovets@gmail.com&gt;
+ */
+<span class="nc" id="L33">public class PasscodePreferenceActivity extends AppCompatActivity</span>
+        implements KeyboardFragment.OnPasscodeEnteredListener {
+
+    private boolean mIsPassEnabled;
+<span class="nc" id="L37">    private boolean mReenter = false;</span>
+    private String mPasscode;
+
+    private TextView mPassTextView;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="nc" id="L44">        super.onCreate(savedInstanceState);</span>
+<span class="nc" id="L45">        setContentView(R.layout.passcode_lockscreen);</span>
+
+<span class="nc" id="L47">        mPassTextView = (TextView) findViewById(R.id.passcode_label);</span>
+
+<span class="nc" id="L49">        mIsPassEnabled = PreferenceManager.getDefaultSharedPreferences(getApplicationContext())</span>
+<span class="nc" id="L50">                .getBoolean(UxArgument.ENABLED_PASSCODE, false);</span>
+
+<span class="nc bnc" id="L52" title="All 2 branches missed.">        if (mIsPassEnabled) {</span>
+<span class="nc" id="L53">            mPassTextView.setText(R.string.label_old_passcode);</span>
+        }
+<span class="nc" id="L55">    }</span>
+
+    @Override
+    public void onPasscodeEntered(String pass) {
+<span class="nc" id="L59">        String passCode = PreferenceManager.getDefaultSharedPreferences(getApplicationContext())</span>
+<span class="nc" id="L60">                .getString(UxArgument.PASSCODE, &quot;&quot;);</span>
+
+<span class="nc bnc" id="L62" title="All 2 branches missed.">        if (mIsPassEnabled) {</span>
+<span class="nc bnc" id="L63" title="All 2 branches missed.">            if (pass.equals(passCode)) {</span>
+<span class="nc" id="L64">                mIsPassEnabled = false;</span>
+<span class="nc" id="L65">                mPassTextView.setText(R.string.label_new_passcode);</span>
+            } else {
+<span class="nc" id="L67">                Toast.makeText(this, R.string.toast_wrong_passcode, Toast.LENGTH_SHORT).show();</span>
+            }
+<span class="nc" id="L69">            return;</span>
+        }
+
+<span class="nc bnc" id="L72" title="All 2 branches missed.">        if (mReenter) {</span>
+<span class="nc bnc" id="L73" title="All 2 branches missed.">            if (mPasscode.equals(pass)) {</span>
+<span class="nc" id="L74">                setResult(RESULT_OK, new Intent().putExtra(UxArgument.PASSCODE, pass));</span>
+<span class="nc" id="L75">                finish();</span>
+            } else {
+<span class="nc" id="L77">                Toast.makeText(this, R.string.toast_invalid_passcode_confirmation, Toast.LENGTH_LONG).show();</span>
+            }
+        } else {
+<span class="nc" id="L80">            mPasscode = pass;</span>
+<span class="nc" id="L81">            mReenter = true;</span>
+<span class="nc" id="L82">            mPassTextView.setText(R.string.label_confirm_passcode);</span>
+        }
+<span class="nc" id="L84">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

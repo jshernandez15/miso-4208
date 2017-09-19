@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TimestampHelper.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.util</a> &gt; <span class="el_source">TimestampHelper.java</span></div><h1>TimestampHelper.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2016 Alceu Rodrigues Neto &lt;alceurneto@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.gnucash.android.util;
+
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
+
+import java.sql.Timestamp;
+
+/**
+ * A utility class to deal with {@link Timestamp} operations in a centralized way.
+ */
+public final class TimestampHelper {
+
+<span class="fc" id="L30">    public static final Timestamp EPOCH_ZERO_TIMESTAMP = new Timestamp(0);</span>
+
+    /**
+     * Should be not instantiated.
+     */
+<span class="nc" id="L35">    private TimestampHelper() {}</span>
+
+    /**
+     * We are using Joda Time classes because they are thread-safe.
+     */
+<span class="fc" id="L40">    private static final DateTimeZone UTC_TIME_ZONE = DateTimeZone.forID(&quot;UTC&quot;);</span>
+<span class="fc" id="L41">    private static final DateTimeFormatter UTC_DATE_FORMAT =</span>
+<span class="fc" id="L42">            DateTimeFormat.forPattern(&quot;yyyy-MM-dd HH:mm:ss&quot;);</span>
+<span class="fc" id="L43">    private static final DateTimeFormatter UTC_DATE_WITH_MILLISECONDS_FORMAT =</span>
+<span class="fc" id="L44">            DateTimeFormat.forPattern(&quot;yyyy-MM-dd HH:mm:ss.SSS&quot;);</span>
+
+    /**
+     * Get a {@link String} representing the {@link Timestamp}
+     * in UTC time zone and 'yyyy-MM-dd HH:mm:ss.SSS' format.
+     *
+     * @param timestamp The {@link Timestamp} to format.
+     * @return The formatted {@link String}.
+     */
+    public static String getUtcStringFromTimestamp(Timestamp timestamp) {
+<span class="nc" id="L54">        return UTC_DATE_WITH_MILLISECONDS_FORMAT.withZone(UTC_TIME_ZONE).print(timestamp.getTime());</span>
+    }
+
+    /**
+     * @return A {@link Timestamp} with time in milliseconds equals to zero.
+     */
+    public static Timestamp getTimestampFromEpochZero() {
+<span class="nc" id="L61">        return EPOCH_ZERO_TIMESTAMP;</span>
+    }
+
+    /**
+     * Get the {@link Timestamp} with the value of given UTC {@link String}.
+     * The {@link String} should be a representation in UTC time zone with the following format
+     * 'yyyy-MM-dd HH:mm:ss.SSS' OR 'yyyy-MM-dd HH:mm:ss' otherwise an IllegalArgumentException
+     * will be throw.
+     *
+     * @param utcString A {@link String} in UTC.
+     * @return A {@link Timestamp} for given utcString.
+     */
+    public static Timestamp getTimestampFromUtcString(String utcString) {
+        DateTime dateTime;
+        try {
+
+<span class="nc" id="L77">            dateTime = UTC_DATE_WITH_MILLISECONDS_FORMAT.withZone(UTC_TIME_ZONE).parseDateTime(utcString);</span>
+<span class="nc" id="L78">            return new Timestamp(dateTime.getMillis());</span>
+
+<span class="nc" id="L80">        } catch (IllegalArgumentException firstException) {</span>
+            try {
+                // In case of parsing of string without milliseconds.
+<span class="nc" id="L83">                dateTime = UTC_DATE_FORMAT.withZone(UTC_TIME_ZONE).parseDateTime(utcString);</span>
+<span class="nc" id="L84">                return new Timestamp(dateTime.getMillis());</span>
+
+<span class="nc" id="L86">            } catch (IllegalArgumentException secondException) {</span>
+                // If we are here:
+                // - The utcString has an invalid format OR
+                // - We are missing some relevant pattern.
+<span class="nc" id="L90">                throw new IllegalArgumentException(&quot;Unknown utcString = '&quot; + utcString + &quot;'.&quot;, secondException);</span>
+            }
+        }
+    }
+
+    /**
+     * @return A {@link Timestamp} initialized with the system current time.
+     */
+    public static Timestamp getTimestampFromNow() {
+<span class="fc" id="L99">        return new Timestamp(System.currentTimeMillis());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

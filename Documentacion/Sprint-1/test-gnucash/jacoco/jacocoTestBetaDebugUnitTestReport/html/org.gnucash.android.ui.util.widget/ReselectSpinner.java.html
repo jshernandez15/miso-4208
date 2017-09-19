@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ReselectSpinner.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.ui.util.widget</a> &gt; <span class="el_source">ReselectSpinner.java</span></div><h1>ReselectSpinner.java</h1><pre class="source lang-java linenums">package org.gnucash.android.ui.util.widget;
+
+import android.content.Context;
+import android.support.v7.widget.AppCompatSpinner;
+import android.util.AttributeSet;
+import android.view.View;
+import android.widget.AdapterView;
+
+import org.gnucash.android.ui.export.ExportFormFragment;
+
+/**
+ * Spinner which fires OnItemSelectedListener even when an item is reselected.
+ * Normal Spinners only fire item selected notifications when the selected item changes.
+ * &lt;p&gt;This is used in {@code ReportsActivity} for the time range and in the {@link ExportFormFragment}&lt;/p&gt;
+ * &lt;p&gt;It could happen that the selected item is fired twice especially if the item is the first in the list.
+ * The Android system does this internally. In order to capture the first one, check whether the view parameter
+ * of {@link android.widget.AdapterView.OnItemSelectedListener#onItemSelected(AdapterView, View, int, long)} is null.
+ * That would represent the first call during initialization of the views. This call can be ignored.
+ * See {@link ExportFormFragment#bindViewListeners()} for an example
+ * &lt;/p&gt;
+ */
+public class ReselectSpinner extends AppCompatSpinner {
+    public ReselectSpinner(Context context) {
+<span class="nc" id="L24">        super(context);</span>
+<span class="nc" id="L25">    }</span>
+
+    public ReselectSpinner(Context context, AttributeSet attrs) {
+<span class="nc" id="L28">        super(context, attrs);</span>
+<span class="nc" id="L29">    }</span>
+
+    public ReselectSpinner(Context context, AttributeSet attrs, int defStyleAttr) {
+<span class="nc" id="L32">        super(context, attrs, defStyleAttr);</span>
+<span class="nc" id="L33">    }</span>
+
+    @Override
+    public void setSelection(int position) {
+<span class="nc bnc" id="L37" title="All 2 branches missed.">        boolean sameSelected = getSelectedItemPosition() == position;</span>
+<span class="nc" id="L38">        super.setSelection(position);</span>
+<span class="nc bnc" id="L39" title="All 2 branches missed.">        if (sameSelected){</span>
+<span class="nc" id="L40">            OnItemSelectedListener listener = getOnItemSelectedListener();</span>
+<span class="nc bnc" id="L41" title="All 2 branches missed.">            if (listener != null)</span>
+<span class="nc" id="L42">                listener.onItemSelected(this, getSelectedView(), position, getSelectedItemId());</span>
+        }
+<span class="nc" id="L44">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

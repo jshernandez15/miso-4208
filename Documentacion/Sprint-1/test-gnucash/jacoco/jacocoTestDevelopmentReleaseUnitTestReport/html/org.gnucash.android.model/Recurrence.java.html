@@ -1,0 +1,490 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Recurrence.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.model</a> &gt; <span class="el_source">Recurrence.java</span></div><h1>Recurrence.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2015 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.model;
+
+import android.content.Context;
+import android.content.res.Resources;
+import android.support.annotation.NonNull;
+
+import org.gnucash.android.R;
+import org.gnucash.android.app.GnuCashApplication;
+import org.gnucash.android.ui.util.RecurrenceParser;
+import org.joda.time.Days;
+import org.joda.time.Hours;
+import org.joda.time.LocalDate;
+import org.joda.time.LocalDateTime;
+import org.joda.time.Months;
+import org.joda.time.ReadablePeriod;
+import org.joda.time.Weeks;
+import org.joda.time.Years;
+
+import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+
+/**
+ * Model for recurrences in the database
+ * &lt;p&gt;Basically a wrapper around {@link PeriodType}&lt;/p&gt;
+ */
+public class Recurrence extends BaseModel {
+
+    private PeriodType mPeriodType;
+
+    /**
+     * Start time of the recurrence
+     */
+    private Timestamp mPeriodStart;
+
+    /**
+     * End time of this recurrence
+     * &lt;p&gt;This value is not persisted to the database&lt;/p&gt;
+     */
+    private Timestamp mPeriodEnd;
+
+    /**
+     * Days of week on which to run the recurrence
+     */
+<span class="fc" id="L66">    private List&lt;Integer&gt; mByDays = Collections.emptyList();</span>
+
+<span class="fc" id="L68">    private int mMultiplier = 1; //multiplier for the period type</span>
+
+<span class="fc" id="L70">    public Recurrence(@NonNull PeriodType periodType){</span>
+<span class="fc" id="L71">        setPeriodType(periodType);</span>
+<span class="fc" id="L72">        mPeriodStart = new Timestamp(System.currentTimeMillis());</span>
+<span class="fc" id="L73">    }</span>
+
+    /**
+     * Return the PeriodType for this recurrence
+     * @return PeriodType for the recurrence
+     */
+    public PeriodType getPeriodType() {
+<span class="fc" id="L80">        return mPeriodType;</span>
+    }
+
+    /**
+     * Sets the period type for the recurrence
+     * @param periodType PeriodType
+     */
+    public void setPeriodType(PeriodType periodType) {
+<span class="fc" id="L88">        this.mPeriodType = periodType;</span>
+<span class="fc" id="L89">    }</span>
+
+    /**
+     * Return the start time for this recurrence
+     * @return Timestamp of start of recurrence
+     */
+    public Timestamp getPeriodStart() {
+<span class="fc" id="L96">        return mPeriodStart;</span>
+    }
+
+    /**
+     * Set the start time of this recurrence
+     * @param periodStart {@link Timestamp} of recurrence
+     */
+    public void setPeriodStart(Timestamp periodStart) {
+<span class="fc" id="L104">        this.mPeriodStart = periodStart;</span>
+<span class="fc" id="L105">    }</span>
+
+
+    /**
+     * Returns an approximate period for this recurrence
+     * &lt;p&gt;The period is approximate because months do not all have the same number of days,
+     * but that is assumed&lt;/p&gt;
+     * @return Milliseconds since Epoch representing the period
+     * @deprecated Do not use in new code. Uses fixed period values for months and years (which have variable units of time)
+     */
+    public long getPeriod(){
+<span class="nc" id="L116">        long baseMillis = 0;</span>
+<span class="pc bnc" id="L117" title="All 6 branches missed.">        switch (mPeriodType){</span>
+            case HOUR:
+<span class="nc" id="L119">                baseMillis = RecurrenceParser.HOUR_MILLIS;</span>
+<span class="nc" id="L120">                break;</span>
+            case DAY:
+<span class="nc" id="L122">                baseMillis = RecurrenceParser.DAY_MILLIS;</span>
+<span class="nc" id="L123">                break;</span>
+            case WEEK:
+<span class="nc" id="L125">                baseMillis = RecurrenceParser.WEEK_MILLIS;</span>
+<span class="nc" id="L126">                break;</span>
+            case MONTH:
+<span class="nc" id="L128">                baseMillis = RecurrenceParser.MONTH_MILLIS;</span>
+<span class="nc" id="L129">                break;</span>
+            case YEAR:
+<span class="nc" id="L131">                baseMillis = RecurrenceParser.YEAR_MILLIS;</span>
+                break;
+        }
+<span class="nc" id="L134">        return mMultiplier * baseMillis;</span>
+    }
+
+    /**
+     * Returns the event schedule (start, end and recurrence)
+     * @return String description of repeat schedule
+     */
+    public String getRepeatString(){
+<span class="nc" id="L142">        StringBuilder repeatBuilder = new StringBuilder(getFrequencyRepeatString());</span>
+<span class="nc" id="L143">        Context context = GnuCashApplication.getAppContext();</span>
+
+<span class="nc" id="L145">        String dayOfWeek = new SimpleDateFormat(&quot;EEEE&quot;, GnuCashApplication.getDefaultLocale())</span>
+<span class="nc" id="L146">                .format(new Date(mPeriodStart.getTime()));</span>
+<span class="nc bnc" id="L147" title="All 2 branches missed.">        if (mPeriodType == PeriodType.WEEK) {</span>
+<span class="nc" id="L148">            repeatBuilder.append(&quot; &quot;).</span>
+<span class="nc" id="L149">                    append(context.getString(R.string.repeat_on_weekday, dayOfWeek));</span>
+        }
+
+<span class="nc bnc" id="L152" title="All 2 branches missed.">        if (mPeriodEnd != null){</span>
+<span class="nc" id="L153">            String endDateString = SimpleDateFormat.getDateInstance().format(new Date(mPeriodEnd.getTime()));</span>
+<span class="nc" id="L154">            repeatBuilder.append(&quot;, &quot;).append(context.getString(R.string.repeat_until_date, endDateString));</span>
+        }
+<span class="nc" id="L156">        return repeatBuilder.toString();</span>
+    }
+
+    /**
+     * Creates an RFC 2445 string which describes this recurring event.
+     * &lt;p&gt;See http://recurrance.sourceforge.net/&lt;/p&gt;
+     * &lt;p&gt;The output of this method is not meant for human consumption&lt;/p&gt;
+     * @return String describing event
+     */
+    public String getRuleString(){
+<span class="nc" id="L166">        String separator = &quot;;&quot;;</span>
+
+<span class="nc" id="L168">        StringBuilder ruleBuilder = new StringBuilder();</span>
+
+//        =======================================================================
+        //This section complies with the formal rules, but the betterpickers library doesn't like/need it
+
+//        SimpleDateFormat startDateFormat = new SimpleDateFormat(&quot;'TZID'=zzzz':'yyyyMMdd'T'HHmmss&quot;, Locale.US);
+//        ruleBuilder.append(&quot;DTSTART;&quot;);
+//        ruleBuilder.append(startDateFormat.format(new Date(mStartDate)));
+//            ruleBuilder.append(&quot;\n&quot;);
+//        ruleBuilder.append(&quot;RRULE:&quot;);
+//        ========================================================================
+
+
+<span class="nc" id="L181">        ruleBuilder.append(&quot;FREQ=&quot;).append(mPeriodType.getFrequencyDescription()).append(separator);</span>
+<span class="nc" id="L182">        ruleBuilder.append(&quot;INTERVAL=&quot;).append(mMultiplier).append(separator);</span>
+<span class="nc bnc" id="L183" title="All 2 branches missed.">        if (getCount() &gt; 0)</span>
+<span class="nc" id="L184">            ruleBuilder.append(&quot;COUNT=&quot;).append(getCount()).append(separator);</span>
+<span class="nc" id="L185">        ruleBuilder.append(mPeriodType.getByParts(mPeriodStart.getTime())).append(separator);</span>
+
+<span class="nc" id="L187">        return ruleBuilder.toString();</span>
+    }
+
+    /**
+     * Return the number of days left in this period
+     * @return Number of days left in period
+     */
+    public int getDaysLeftInCurrentPeriod(){
+<span class="nc" id="L195">        LocalDateTime startDate = new LocalDateTime(System.currentTimeMillis());</span>
+<span class="nc" id="L196">        int interval = mMultiplier - 1;</span>
+<span class="nc" id="L197">        LocalDateTime endDate = null;</span>
+<span class="nc bnc" id="L198" title="All 6 branches missed.">        switch (mPeriodType){</span>
+            case HOUR:
+<span class="nc" id="L200">                endDate = new LocalDateTime(System.currentTimeMillis()).plusHours(interval);</span>
+<span class="nc" id="L201">                break;</span>
+            case DAY:
+<span class="nc" id="L203">                endDate = new LocalDateTime(System.currentTimeMillis()).plusDays(interval);</span>
+<span class="nc" id="L204">                break;</span>
+            case WEEK:
+<span class="nc" id="L206">                endDate = startDate.dayOfWeek().withMaximumValue().plusWeeks(interval);</span>
+<span class="nc" id="L207">                break;</span>
+            case MONTH:
+<span class="nc" id="L209">                endDate = startDate.dayOfMonth().withMaximumValue().plusMonths(interval);</span>
+<span class="nc" id="L210">                break;</span>
+            case YEAR:
+<span class="nc" id="L212">                endDate = startDate.dayOfYear().withMaximumValue().plusYears(interval);</span>
+                break;
+        }
+
+<span class="nc" id="L216">        return Days.daysBetween(startDate, endDate).getDays();</span>
+    }
+
+    /**
+     * Returns the number of periods from the start date of this recurrence until the end of the
+     * interval multiplier specified in the {@link PeriodType}
+     * //fixme: Improve the documentation
+     * @return Number of periods in this recurrence
+     */
+    public int getNumberOfPeriods(int numberOfPeriods) {
+<span class="nc" id="L226">        LocalDateTime startDate = new LocalDateTime(mPeriodStart.getTime());</span>
+        LocalDateTime endDate;
+<span class="nc" id="L228">        int interval = mMultiplier;</span>
+        //// TODO: 15.08.2016 Why do we add the number of periods. maybe rename method or param
+<span class="nc bnc" id="L230" title="All 6 branches missed.">        switch (mPeriodType){</span>
+            case HOUR: //this is not the droid you are looking for
+<span class="nc" id="L232">                endDate = startDate.plusHours(numberOfPeriods);</span>
+<span class="nc" id="L233">                return Hours.hoursBetween(startDate, endDate).getHours();</span>
+            case DAY:
+<span class="nc" id="L235">                endDate = startDate.plusDays(numberOfPeriods);</span>
+<span class="nc" id="L236">                return Days.daysBetween(startDate, endDate).getDays();</span>
+            case WEEK:
+<span class="nc" id="L238">                endDate = startDate.dayOfWeek().withMaximumValue().plusWeeks(numberOfPeriods);</span>
+<span class="nc" id="L239">                return Weeks.weeksBetween(startDate, endDate).getWeeks() / interval;</span>
+            case MONTH:
+<span class="nc" id="L241">                endDate = startDate.dayOfMonth().withMaximumValue().plusMonths(numberOfPeriods);</span>
+<span class="nc" id="L242">                return Months.monthsBetween(startDate, endDate).getMonths() / interval;</span>
+            case YEAR:
+<span class="nc" id="L244">                endDate = startDate.dayOfYear().withMaximumValue().plusYears(numberOfPeriods);</span>
+<span class="nc" id="L245">                return Years.yearsBetween(startDate, endDate).getYears() / interval;</span>
+        }
+
+<span class="nc" id="L248">        return 0;</span>
+    }
+
+    /**
+     * Return the name of the current period
+     * @return String of current period
+     */
+    public String getTextOfCurrentPeriod(int periodNum){
+<span class="nc" id="L256">        LocalDate startDate = new LocalDate(mPeriodStart.getTime());</span>
+<span class="nc bnc" id="L257" title="All 6 branches missed.">        switch (mPeriodType){</span>
+            case HOUR:
+                //nothing to see here. Just use default period designation
+<span class="nc" id="L260">                break;</span>
+            case DAY:
+<span class="nc" id="L262">                return startDate.dayOfWeek().getAsText();</span>
+            case WEEK:
+<span class="nc" id="L264">                return startDate.weekOfWeekyear().getAsText();</span>
+            case MONTH:
+<span class="nc" id="L266">                return startDate.monthOfYear().getAsText();</span>
+            case YEAR:
+<span class="nc" id="L268">                return startDate.year().getAsText();</span>
+        }
+<span class="nc" id="L270">        return &quot;Period &quot; + periodNum;</span>
+    }
+
+    /**
+     * Return the days of week on which to run the recurrence.
+     *
+     * &lt;p&gt;Days are expressed as defined in {@link java.util.Calendar}.
+     * For example, Calendar.MONDAY&lt;/p&gt;
+     *
+     * @return list of days of week on which to run the recurrence.
+     */
+    public @NonNull List&lt;Integer&gt; getByDays(){
+<span class="fc" id="L282">        return Collections.unmodifiableList(mByDays);</span>
+    }
+
+    /**
+     * Sets the days on which to run the recurrence.
+     *
+     * &lt;p&gt;Days must be expressed as defined in {@link java.util.Calendar}.
+     * For example, Calendar.MONDAY&lt;/p&gt;
+     *
+     * @param byDays list of days of week on which to run the recurrence.
+     */
+    public void setByDays(@NonNull List&lt;Integer&gt; byDays){
+<span class="fc" id="L294">        mByDays = new ArrayList&lt;&gt;(byDays);</span>
+<span class="fc" id="L295">    }</span>
+
+    /**
+     * Computes the number of occurrences of this recurrences between start and end date
+     * &lt;p&gt;If there is no end date or the PeriodType is unknown, it returns -1&lt;/p&gt;
+     * @return Number of occurrences, or -1 if there is no end date
+     */
+    public int getCount(){
+<span class="fc bfc" id="L303" title="All 2 branches covered.">        if (mPeriodEnd == null)</span>
+<span class="fc" id="L304">            return -1;</span>
+
+<span class="fc" id="L306">        int multiple = mMultiplier;</span>
+        ReadablePeriod jodaPeriod;
+<span class="pc bpc" id="L308" title="4 of 6 branches missed.">        switch (mPeriodType){</span>
+            case HOUR:
+<span class="nc" id="L310">                jodaPeriod = Hours.hours(multiple);</span>
+<span class="nc" id="L311">                break;</span>
+            case DAY:
+<span class="nc" id="L313">                jodaPeriod = Days.days(multiple);</span>
+<span class="nc" id="L314">                break;</span>
+            case WEEK:
+<span class="fc" id="L316">                jodaPeriod = Weeks.weeks(multiple);</span>
+<span class="fc" id="L317">                break;</span>
+            case MONTH:
+<span class="fc" id="L319">                jodaPeriod = Months.months(multiple);</span>
+<span class="fc" id="L320">                break;</span>
+            case YEAR:
+<span class="nc" id="L322">                jodaPeriod = Years.years(multiple);</span>
+<span class="nc" id="L323">                break;</span>
+            default:
+<span class="nc" id="L325">                jodaPeriod = Months.months(multiple);</span>
+        }
+<span class="fc" id="L327">        int count = 0;</span>
+<span class="fc" id="L328">        LocalDateTime startTime = new LocalDateTime(mPeriodStart.getTime());</span>
+<span class="fc bfc" id="L329" title="All 2 branches covered.">        while (startTime.toDateTime().getMillis() &lt; mPeriodEnd.getTime()){</span>
+<span class="fc" id="L330">            ++count;</span>
+<span class="fc" id="L331">            startTime = startTime.plus(jodaPeriod);</span>
+        }
+<span class="fc" id="L333">        return count;</span>
+
+/*
+        //this solution does not use looping, but is not very accurate
+
+        int multiplier = mMultiplier;
+        LocalDateTime startDate = new LocalDateTime(mPeriodStart.getTime());
+        LocalDateTime endDate = new LocalDateTime(mPeriodEnd.getTime());
+        switch (mPeriodType){
+            case DAY:
+                return Days.daysBetween(startDate, endDate).dividedBy(multiplier).getDays();
+            case WEEK:
+                return Weeks.weeksBetween(startDate, endDate).dividedBy(multiplier).getWeeks();
+            case MONTH:
+                return Months.monthsBetween(startDate, endDate).dividedBy(multiplier).getMonths();
+            case YEAR:
+                return Years.yearsBetween(startDate, endDate).dividedBy(multiplier).getYears();
+            default:
+                return -1;
+        }
+*/
+    }
+
+    /**
+     * Sets the end time of this recurrence by specifying the number of occurences
+     * @param numberOfOccurences Number of occurences from the start time
+     */
+    public void setPeriodEnd(int numberOfOccurences){
+<span class="fc" id="L361">        LocalDateTime localDate = new LocalDateTime(mPeriodStart.getTime());</span>
+        LocalDateTime endDate;
+<span class="fc" id="L363">        int occurrenceDuration = numberOfOccurences * mMultiplier;</span>
+<span class="pc bpc" id="L364" title="4 of 5 branches missed.">        switch (mPeriodType){</span>
+            case HOUR:
+<span class="nc" id="L366">                endDate = localDate.plusHours(occurrenceDuration);</span>
+<span class="nc" id="L367">                break;</span>
+            case DAY:
+<span class="nc" id="L369">                endDate = localDate.plusDays(occurrenceDuration);</span>
+<span class="nc" id="L370">                break;</span>
+            case WEEK:
+<span class="nc" id="L372">                endDate = localDate.plusWeeks(occurrenceDuration);</span>
+<span class="nc" id="L373">                break;</span>
+            default:
+            case MONTH:
+<span class="fc" id="L376">                endDate = localDate.plusMonths(occurrenceDuration);</span>
+<span class="fc" id="L377">                break;</span>
+            case YEAR:
+<span class="nc" id="L379">                endDate = localDate.plusYears(occurrenceDuration);</span>
+                break;
+        }
+<span class="fc" id="L382">        mPeriodEnd = new Timestamp(endDate.toDateTime().getMillis());</span>
+<span class="fc" id="L383">    }</span>
+
+    /**
+     * Return the end date of the period in milliseconds
+     * @return End date of the recurrence period
+     */
+    public Timestamp getPeriodEnd(){
+<span class="fc" id="L390">        return mPeriodEnd;</span>
+    }
+
+    /**
+     * Set period end date
+     * @param endTimestamp End time in milliseconds
+     */
+    public void setPeriodEnd(Timestamp endTimestamp){
+<span class="fc" id="L398">        mPeriodEnd = endTimestamp;</span>
+<span class="fc" id="L399">    }</span>
+
+    /**
+     * Returns the multiplier for the period type. The default multiplier is 1.
+     * e.g. bi-weekly actions have period type {@link PeriodType#WEEK} and multiplier 2.
+     *
+     * @return  Multiplier for the period type
+     */
+    public int getMultiplier(){
+<span class="fc" id="L408">        return mMultiplier;</span>
+    }
+
+    /**
+     * Sets the multiplier for the period type.
+     * e.g. bi-weekly actions have period type {@link PeriodType#WEEK} and multiplier 2.
+     *
+     * @param multiplier Multiplier for the period type
+     */
+    public void setMultiplier(int multiplier){
+<span class="fc" id="L418">        mMultiplier = multiplier;</span>
+<span class="fc" id="L419">    }</span>
+
+    /**
+     * Returns a localized string describing the period type's frequency.
+     *
+     * @return String describing the period type
+     */
+    private String getFrequencyRepeatString(){
+<span class="nc" id="L427">        Resources res = GnuCashApplication.getAppContext().getResources();</span>
+<span class="nc bnc" id="L428" title="All 6 branches missed.">        switch (mPeriodType) {</span>
+            case HOUR:
+<span class="nc" id="L430">                return res.getQuantityString(R.plurals.label_every_x_hours, mMultiplier, mMultiplier);</span>
+            case DAY:
+<span class="nc" id="L432">                return res.getQuantityString(R.plurals.label_every_x_days, mMultiplier, mMultiplier);</span>
+            case WEEK:
+<span class="nc" id="L434">                return res.getQuantityString(R.plurals.label_every_x_weeks, mMultiplier, mMultiplier);</span>
+            case MONTH:
+<span class="nc" id="L436">                return res.getQuantityString(R.plurals.label_every_x_months, mMultiplier, mMultiplier);</span>
+            case YEAR:
+<span class="nc" id="L438">                return res.getQuantityString(R.plurals.label_every_x_years, mMultiplier, mMultiplier);</span>
+            default:
+<span class="nc" id="L440">                return &quot;&quot;;</span>
+        }
+    }
+
+    /**
+     * Returns a new {@link Recurrence} with the {@link PeriodType} specified in the old format.
+     *
+     * @param period Period in milliseconds since Epoch (old format to define a period)
+     * @return Recurrence with the specified period.
+     */
+    public static Recurrence fromLegacyPeriod(long period) {
+<span class="nc" id="L451">        int result = (int) (period/RecurrenceParser.YEAR_MILLIS);</span>
+<span class="nc bnc" id="L452" title="All 2 branches missed.">        if (result &gt; 0) {</span>
+<span class="nc" id="L453">            Recurrence recurrence = new Recurrence(PeriodType.YEAR);</span>
+<span class="nc" id="L454">            recurrence.setMultiplier(result);</span>
+<span class="nc" id="L455">            return recurrence;</span>
+        }
+
+<span class="nc" id="L458">        result = (int) (period/RecurrenceParser.MONTH_MILLIS);</span>
+<span class="nc bnc" id="L459" title="All 2 branches missed.">        if (result &gt; 0) {</span>
+<span class="nc" id="L460">            Recurrence recurrence = new Recurrence(PeriodType.MONTH);</span>
+<span class="nc" id="L461">            recurrence.setMultiplier(result);</span>
+<span class="nc" id="L462">            return recurrence;</span>
+        }
+
+<span class="nc" id="L465">        result = (int) (period/RecurrenceParser.WEEK_MILLIS);</span>
+<span class="nc bnc" id="L466" title="All 2 branches missed.">        if (result &gt; 0) {</span>
+<span class="nc" id="L467">            Recurrence recurrence = new Recurrence(PeriodType.WEEK);</span>
+<span class="nc" id="L468">            recurrence.setMultiplier(result);</span>
+<span class="nc" id="L469">            return recurrence;</span>
+        }
+
+<span class="nc" id="L472">        result = (int) (period/RecurrenceParser.DAY_MILLIS);</span>
+<span class="nc bnc" id="L473" title="All 2 branches missed.">        if (result &gt; 0) {</span>
+<span class="nc" id="L474">            Recurrence recurrence = new Recurrence(PeriodType.DAY);</span>
+<span class="nc" id="L475">            recurrence.setMultiplier(result);</span>
+<span class="nc" id="L476">            return recurrence;</span>
+        }
+
+<span class="nc" id="L479">        result = (int) (period/RecurrenceParser.HOUR_MILLIS);</span>
+<span class="nc bnc" id="L480" title="All 2 branches missed.">        if (result &gt; 0) {</span>
+<span class="nc" id="L481">            Recurrence recurrence = new Recurrence(PeriodType.HOUR);</span>
+<span class="nc" id="L482">            recurrence.setMultiplier(result);</span>
+<span class="nc" id="L483">            return recurrence;</span>
+        }
+
+
+<span class="nc" id="L487">        return new Recurrence(PeriodType.DAY);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

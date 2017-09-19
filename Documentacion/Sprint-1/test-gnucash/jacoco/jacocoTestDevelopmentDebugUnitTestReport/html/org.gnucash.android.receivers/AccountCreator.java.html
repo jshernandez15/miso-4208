@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AccountCreator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.receivers</a> &gt; <span class="el_source">AccountCreator.java</span></div><h1>AccountCreator.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2012 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.receivers;
+
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.os.Bundle;
+import android.util.Log;
+
+import org.gnucash.android.db.adapter.AccountsDbAdapter;
+import org.gnucash.android.db.adapter.DatabaseAdapter;
+import org.gnucash.android.model.Account;
+import org.gnucash.android.model.Commodity;
+
+/**
+ * Broadcast receiver responsible for creating {@link Account}s received through intents.
+ * In order to create an &lt;code&gt;Account&lt;/code&gt;, you need to broadcast an {@link Intent} with arguments
+ * for the name, currency and optionally, a unique identifier for the account (which should be unique to Gnucash)
+ * of the Account to be created. Also remember to set the right mime type so that Android can properly route the Intent
+ * &lt;b&gt;Note&lt;/b&gt; This Broadcast receiver requires the permission &quot;org.gnucash.android.permission.CREATE_ACCOUNT&quot;
+ * in order to be able to use Intents to create accounts. So remember to declare it in your manifest
+ *
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ * @see {@link Account#EXTRA_CURRENCY_CODE}, {@link Account#MIME_TYPE} {@link Intent#EXTRA_TITLE}, {@link Intent#EXTRA_UID}
+ */
+<span class="nc" id="L41">public class AccountCreator extends BroadcastReceiver {</span>
+
+    @Override
+    public void onReceive(Context context, Intent intent) {
+<span class="nc" id="L45">        Log.i(&quot;Gnucash&quot;, &quot;Received account creation intent&quot;);</span>
+<span class="nc" id="L46">        Bundle args = intent.getExtras();</span>
+
+<span class="nc" id="L48">        Account account = new Account(args.getString(Intent.EXTRA_TITLE));</span>
+<span class="nc" id="L49">        account.setParentUID(args.getString(Account.EXTRA_PARENT_UID));</span>
+
+<span class="nc" id="L51">        String currencyCode = args.getString(Account.EXTRA_CURRENCY_CODE);</span>
+<span class="nc bnc" id="L52" title="All 2 branches missed.">        if (currencyCode != null) {</span>
+<span class="nc" id="L53">            Commodity commodity = Commodity.getInstance(currencyCode);</span>
+<span class="nc bnc" id="L54" title="All 2 branches missed.">            if (commodity != null) {</span>
+<span class="nc" id="L55">                account.setCommodity(commodity);</span>
+            } else {
+<span class="nc" id="L57">                throw new IllegalArgumentException(&quot;Commodity with '&quot; + currencyCode</span>
+                                        + &quot;' currency code not found in the database&quot;);
+            }
+        }
+
+<span class="nc" id="L62">        String uid = args.getString(Intent.EXTRA_UID);</span>
+<span class="nc bnc" id="L63" title="All 2 branches missed.">        if (uid != null)</span>
+<span class="nc" id="L64">            account.setUID(uid);</span>
+
+<span class="nc" id="L66">        AccountsDbAdapter.getInstance().addRecord(account, DatabaseAdapter.UpdateMethod.insert);</span>
+<span class="nc" id="L67">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

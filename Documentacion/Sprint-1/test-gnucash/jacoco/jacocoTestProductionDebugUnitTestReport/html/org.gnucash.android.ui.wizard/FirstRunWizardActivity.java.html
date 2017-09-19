@@ -1,0 +1,396 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FirstRunWizardActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.ui.wizard</a> &gt; <span class="el_source">FirstRunWizardActivity.java</span></div><h1>FirstRunWizardActivity.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2012 Roman Nurik
+ * Copyright 2012 Ngewi Fet
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.ui.wizard;
+
+import android.Manifest;
+import android.app.Activity;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.content.res.Resources;
+import android.graphics.drawable.ColorDrawable;
+import android.os.Build;
+import android.os.Bundle;
+import android.preference.PreferenceManager;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentStatePagerAdapter;
+import android.support.v4.view.ViewPager;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.AppCompatButton;
+import android.util.TypedValue;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+
+import com.tech.freak.wizardpager.model.AbstractWizardModel;
+import com.tech.freak.wizardpager.model.ModelCallbacks;
+import com.tech.freak.wizardpager.model.Page;
+import com.tech.freak.wizardpager.model.ReviewItem;
+import com.tech.freak.wizardpager.ui.PageFragmentCallbacks;
+import com.tech.freak.wizardpager.ui.ReviewFragment;
+import com.tech.freak.wizardpager.ui.StepPagerStrip;
+
+import org.gnucash.android.R;
+import org.gnucash.android.app.GnuCashApplication;
+import org.gnucash.android.db.adapter.BooksDbAdapter;
+import org.gnucash.android.ui.account.AccountsActivity;
+import org.gnucash.android.ui.util.TaskDelegate;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import butterknife.BindView;
+import butterknife.ButterKnife;
+
+/**
+ * Activity for managing the wizard displayed upon first run of the application
+ */
+<span class="nc" id="L64">public class FirstRunWizardActivity extends AppCompatActivity implements</span>
+        PageFragmentCallbacks, ReviewFragment.Callbacks, ModelCallbacks {
+
+    @BindView(R.id.pager) ViewPager mPager;
+    private MyPagerAdapter mPagerAdapter;
+
+    private boolean mEditingAfterReview;
+
+    private AbstractWizardModel mWizardModel;
+
+    private boolean mConsumePageSelectedEvent;
+
+    @BindView(R.id.btn_save)    AppCompatButton mNextButton;
+    @BindView(R.id.btn_cancel)  Button mPrevButton;
+    @BindView(R.id.strip)       StepPagerStrip mStepPagerStrip;
+
+    private List&lt;Page&gt; mCurrentPageSequence;
+    private String mAccountOptions;
+    private String mCurrencyCode;
+
+
+    public void onCreate(Bundle savedInstanceState) {
+        // we need to construct the wizard model before we call super.onCreate, because it's used in
+        // onGetPage (which is indirectly called through super.onCreate if savedInstanceState is not
+        // null)
+<span class="nc" id="L89">        mWizardModel = createWizardModel(savedInstanceState);</span>
+
+<span class="nc" id="L91">        super.onCreate(savedInstanceState);</span>
+<span class="nc" id="L92">        setContentView(R.layout.activity_first_run_wizard);</span>
+<span class="nc" id="L93">        ButterKnife.bind(this);</span>
+
+<span class="nc" id="L95">        setTitle(getString(R.string.title_setup_gnucash));</span>
+
+<span class="nc" id="L97">        mPagerAdapter = new MyPagerAdapter(getSupportFragmentManager());</span>
+<span class="nc" id="L98">        mPager.setAdapter(mPagerAdapter);</span>
+<span class="nc" id="L99">        mStepPagerStrip</span>
+<span class="nc" id="L100">                .setOnPageSelectedListener(new StepPagerStrip.OnPageSelectedListener() {</span>
+                    @Override
+                    public void onPageStripSelected(int position) {
+<span class="nc" id="L103">                        position = Math.min(mPagerAdapter.getCount() - 1,</span>
+                                position);
+<span class="nc bnc" id="L105" title="All 2 branches missed.">                        if (mPager.getCurrentItem() != position) {</span>
+<span class="nc" id="L106">                            mPager.setCurrentItem(position);</span>
+                        }
+<span class="nc" id="L108">                    }</span>
+                });
+
+
+<span class="nc" id="L112">        mPager.setOnPageChangeListener(new ViewPager.SimpleOnPageChangeListener() {</span>
+            @Override
+            public void onPageSelected(int position) {
+<span class="nc" id="L115">                mStepPagerStrip.setCurrentPage(position);</span>
+
+<span class="nc bnc" id="L117" title="All 2 branches missed.">                if (mConsumePageSelectedEvent) {</span>
+<span class="nc" id="L118">                    mConsumePageSelectedEvent = false;</span>
+<span class="nc" id="L119">                    return;</span>
+                }
+
+<span class="nc" id="L122">                mEditingAfterReview = false;</span>
+<span class="nc" id="L123">                updateBottomBar();</span>
+<span class="nc" id="L124">            }</span>
+        });
+
+<span class="nc" id="L127">        mNextButton.setOnClickListener(new View.OnClickListener() {</span>
+            @Override
+            public void onClick(View view) {
+<span class="nc bnc" id="L130" title="All 2 branches missed.">                if (mPager.getCurrentItem() == mCurrentPageSequence.size()) {</span>
+<span class="nc" id="L131">                    ArrayList&lt;ReviewItem&gt; reviewItems = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L132" title="All 2 branches missed.">                    for (Page page : mCurrentPageSequence) {</span>
+<span class="nc" id="L133">                        page.getReviewItems(reviewItems);</span>
+<span class="nc" id="L134">                    }</span>
+
+<span class="nc" id="L136">                    mCurrencyCode = GnuCashApplication.getDefaultCurrencyCode();</span>
+<span class="nc" id="L137">                    mAccountOptions = getString(R.string.wizard_option_let_me_handle_it); //default value, do nothing</span>
+<span class="nc" id="L138">                    String feedbackOption = getString(R.string.wizard_option_disable_crash_reports);</span>
+<span class="nc bnc" id="L139" title="All 2 branches missed.">                    for (ReviewItem reviewItem : reviewItems) {</span>
+<span class="nc" id="L140">                        String title = reviewItem.getTitle();</span>
+<span class="nc bnc" id="L141" title="All 2 branches missed.">                        if (title.equals(getString(R.string.wizard_title_default_currency))){</span>
+<span class="nc" id="L142">                            mCurrencyCode = reviewItem.getDisplayValue();</span>
+<span class="nc bnc" id="L143" title="All 2 branches missed.">                        } else if (title.equals(getString(R.string.wizard_title_select_currency))){</span>
+<span class="nc" id="L144">                            mCurrencyCode = reviewItem.getDisplayValue();</span>
+<span class="nc bnc" id="L145" title="All 2 branches missed.">                        } else if (title.equals(getString(R.string.wizard_title_account_setup))){</span>
+<span class="nc" id="L146">                            mAccountOptions = reviewItem.getDisplayValue();</span>
+<span class="nc bnc" id="L147" title="All 2 branches missed.">                        } else if (title.equals(getString(R.string.wizard_title_feedback_options))){</span>
+<span class="nc" id="L148">                            feedbackOption = reviewItem.getDisplayValue();</span>
+                        }
+<span class="nc" id="L150">                    }</span>
+
+<span class="nc" id="L152">                    GnuCashApplication.setDefaultCurrencyCode(mCurrencyCode);</span>
+<span class="nc" id="L153">                    SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(FirstRunWizardActivity.this);</span>
+<span class="nc" id="L154">                    SharedPreferences.Editor preferenceEditor = preferences.edit();</span>
+
+<span class="nc bnc" id="L156" title="All 2 branches missed.">                    if (feedbackOption.equals(getString(R.string.wizard_option_auto_send_crash_reports))){</span>
+<span class="nc" id="L157">                        preferenceEditor.putBoolean(getString(R.string.key_enable_crashlytics), true);</span>
+                    } else {
+<span class="nc" id="L159">                        preferenceEditor.putBoolean(getString(R.string.key_enable_crashlytics), false);</span>
+                    }
+<span class="nc" id="L161">                    preferenceEditor.apply();</span>
+
+<span class="nc" id="L163">                    createAccountsAndFinish();</span>
+<span class="nc" id="L164">                } else {</span>
+<span class="nc bnc" id="L165" title="All 2 branches missed.">                    if (mEditingAfterReview) {</span>
+<span class="nc" id="L166">                        mPager.setCurrentItem(mPagerAdapter.getCount() - 1);</span>
+                    } else {
+<span class="nc" id="L168">                        mPager.setCurrentItem(mPager.getCurrentItem() + 1);</span>
+                    }
+                }
+<span class="nc" id="L171">            }</span>
+        });
+
+<span class="nc" id="L174">        mPrevButton.setText(R.string.wizard_btn_back);</span>
+<span class="nc" id="L175">        TypedValue v = new TypedValue();</span>
+<span class="nc" id="L176">        getTheme().resolveAttribute(android.R.attr.textAppearanceMedium, v,</span>
+                true);
+<span class="nc" id="L178">        mPrevButton.setTextAppearance(this, v.resourceId);</span>
+<span class="nc" id="L179">        mNextButton.setTextAppearance(this, v.resourceId);</span>
+
+<span class="nc" id="L181">        mPrevButton.setOnClickListener(new View.OnClickListener() {</span>
+            @Override
+            public void onClick(View view) {
+<span class="nc" id="L184">                mPager.setCurrentItem(mPager.getCurrentItem() - 1);</span>
+<span class="nc" id="L185">            }</span>
+        });
+
+<span class="nc" id="L188">        onPageTreeChanged();</span>
+<span class="nc" id="L189">        updateBottomBar();</span>
+<span class="nc" id="L190">    }</span>
+
+    /**
+     * Create the wizard model for the activity, taking into accoun the savedInstanceState if it
+     * exists (and if it contains a &quot;model&quot; key that we can use).
+     * @param savedInstanceState    the instance state available in {{@link #onCreate(Bundle)}}
+     * @return  an appropriate wizard model for this activity
+     */
+    private AbstractWizardModel createWizardModel(Bundle savedInstanceState) {
+<span class="nc" id="L199">        AbstractWizardModel model = new FirstRunWizardModel(this);</span>
+<span class="nc bnc" id="L200" title="All 2 branches missed.">        if (savedInstanceState != null) {</span>
+<span class="nc" id="L201">            Bundle wizardModel = savedInstanceState.getBundle(&quot;model&quot;);</span>
+<span class="nc bnc" id="L202" title="All 2 branches missed.">            if (wizardModel != null) {</span>
+<span class="nc" id="L203">                model.load(wizardModel);</span>
+            }
+        }
+<span class="nc" id="L206">        model.registerListener(this);</span>
+<span class="nc" id="L207">        return model;</span>
+    }
+
+    /**
+     * Create accounts depending on the user preference (import or default set) and finish this activity
+     * &lt;p&gt;This method also removes the first run flag from the application&lt;/p&gt;
+     */
+    private void createAccountsAndFinish() {
+<span class="nc" id="L215">        AccountsActivity.removeFirstRunFlag();</span>
+
+<span class="nc bnc" id="L217" title="All 2 branches missed.">        if (mAccountOptions.equals(getString(R.string.wizard_option_create_default_accounts))){</span>
+            //save the UID of the active book, and then delete it after successful import
+<span class="nc" id="L219">            String bookUID = BooksDbAdapter.getInstance().getActiveBookUID();</span>
+<span class="nc" id="L220">            AccountsActivity.createDefaultAccounts(mCurrencyCode, FirstRunWizardActivity.this);</span>
+<span class="nc" id="L221">            BooksDbAdapter.getInstance().deleteBook(bookUID); //a default book is usually created</span>
+<span class="nc" id="L222">            finish();</span>
+<span class="nc bnc" id="L223" title="All 2 branches missed.">        } else if (mAccountOptions.equals(getString(R.string.wizard_option_import_my_accounts))){</span>
+<span class="nc" id="L224">            AccountsActivity.startXmlFileChooser(this);</span>
+        } else { //user prefers to handle account creation themselves
+<span class="nc" id="L226">            AccountsActivity.start(this);</span>
+<span class="nc" id="L227">            finish();</span>
+        }
+<span class="nc" id="L229">    }</span>
+
+    @Override
+    public void onPageTreeChanged() {
+<span class="nc" id="L233">        mCurrentPageSequence = mWizardModel.getCurrentPageSequence();</span>
+<span class="nc" id="L234">        recalculateCutOffPage();</span>
+<span class="nc" id="L235">        mStepPagerStrip.setPageCount(mCurrentPageSequence.size() + 1); // + 1 =</span>
+        // review
+        // step
+<span class="nc" id="L238">        mPagerAdapter.notifyDataSetChanged();</span>
+<span class="nc" id="L239">        updateBottomBar();</span>
+<span class="nc" id="L240">    }</span>
+
+    private void updateBottomBar() {
+<span class="nc" id="L243">        int position = mPager.getCurrentItem();</span>
+<span class="nc" id="L244">        final Resources res = getResources();</span>
+<span class="nc bnc" id="L245" title="All 2 branches missed.">        if (position == mCurrentPageSequence.size()) {</span>
+<span class="nc" id="L246">            mNextButton.setText(R.string.btn_wizard_finish);</span>
+
+<span class="nc" id="L248">            mNextButton.setBackgroundDrawable(new ColorDrawable(res.getColor(R.color.theme_accent)));</span>
+<span class="nc" id="L249">            mNextButton.setTextColor(res.getColor(android.R.color.white));</span>
+        } else {
+<span class="nc bnc" id="L251" title="All 2 branches missed.">            mNextButton.setText(mEditingAfterReview ? R.string.review</span>
+                    : R.string.btn_wizard_next);
+<span class="nc" id="L253">            mNextButton</span>
+<span class="nc" id="L254">                    .setBackgroundDrawable(new ColorDrawable(res.getColor(android.R.color.transparent)));</span>
+<span class="nc" id="L255">            mNextButton.setTextColor(res.getColor(R.color.theme_accent));</span>
+<span class="nc bnc" id="L256" title="All 2 branches missed.">            mNextButton.setEnabled(position != mPagerAdapter.getCutOffPage());</span>
+        }
+
+<span class="nc bnc" id="L259" title="All 2 branches missed.">        mPrevButton</span>
+<span class="nc" id="L260">                .setVisibility(position &lt;= 0 ? View.INVISIBLE : View.VISIBLE);</span>
+<span class="nc" id="L261">    }</span>
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+<span class="nc bnc" id="L265" title="All 2 branches missed.">        switch (requestCode){</span>
+            case AccountsActivity.REQUEST_PICK_ACCOUNTS_FILE:
+<span class="nc bnc" id="L267" title="All 4 branches missed.">                if (resultCode == Activity.RESULT_OK &amp;&amp; data != null) {</span>
+<span class="nc" id="L268">                    AccountsActivity.importXmlFileFromIntent(this, data, new TaskDelegate() {</span>
+                        @Override
+                        public void onTaskComplete() {
+<span class="nc" id="L271">                            finish();</span>
+<span class="nc" id="L272">                        }</span>
+                    });
+                }
+                break;
+        }
+<span class="nc" id="L277">    }</span>
+
+    @Override
+    protected void onDestroy() {
+<span class="nc" id="L281">        super.onDestroy();</span>
+<span class="nc" id="L282">        mWizardModel.unregisterListener(this);</span>
+<span class="nc" id="L283">    }</span>
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+<span class="nc" id="L287">        super.onSaveInstanceState(outState);</span>
+<span class="nc" id="L288">        outState.putBundle(&quot;model&quot;, mWizardModel.save());</span>
+<span class="nc" id="L289">    }</span>
+
+    @Override
+    public AbstractWizardModel onGetModel() {
+<span class="nc" id="L293">        return mWizardModel;</span>
+    }
+
+    @Override
+    public void onEditScreenAfterReview(String key) {
+<span class="nc bnc" id="L298" title="All 2 branches missed.">        for (int i = mCurrentPageSequence.size() - 1; i &gt;= 0; i--) {</span>
+<span class="nc bnc" id="L299" title="All 2 branches missed.">            if (mCurrentPageSequence.get(i).getKey().equals(key)) {</span>
+<span class="nc" id="L300">                mConsumePageSelectedEvent = true;</span>
+<span class="nc" id="L301">                mEditingAfterReview = true;</span>
+<span class="nc" id="L302">                mPager.setCurrentItem(i);</span>
+<span class="nc" id="L303">                updateBottomBar();</span>
+<span class="nc" id="L304">                break;</span>
+            }
+        }
+<span class="nc" id="L307">    }</span>
+
+    @Override
+    public void onPageDataChanged(Page page) {
+<span class="nc bnc" id="L311" title="All 2 branches missed.">        if (page.isRequired()) {</span>
+<span class="nc bnc" id="L312" title="All 2 branches missed.">            if (recalculateCutOffPage()) {</span>
+<span class="nc" id="L313">                mPagerAdapter.notifyDataSetChanged();</span>
+<span class="nc" id="L314">                updateBottomBar();</span>
+            }
+        }
+<span class="nc" id="L317">    }</span>
+
+    @Override
+    public Page onGetPage(String key) {
+<span class="nc" id="L321">        return mWizardModel.findByKey(key);</span>
+    }
+
+    private boolean recalculateCutOffPage() {
+        // Cut off the pager adapter at first required page that isn't completed
+<span class="nc" id="L326">        int cutOffPage = mCurrentPageSequence.size() + 1;</span>
+<span class="nc bnc" id="L327" title="All 2 branches missed.">        for (int i = 0; i &lt; mCurrentPageSequence.size(); i++) {</span>
+<span class="nc" id="L328">            Page page = mCurrentPageSequence.get(i);</span>
+<span class="nc bnc" id="L329" title="All 4 branches missed.">            if (page.isRequired() &amp;&amp; !page.isCompleted()) {</span>
+<span class="nc" id="L330">                cutOffPage = i;</span>
+<span class="nc" id="L331">                break;</span>
+            }
+        }
+
+<span class="nc bnc" id="L335" title="All 2 branches missed.">        if (mPagerAdapter.getCutOffPage() != cutOffPage) {</span>
+<span class="nc" id="L336">            mPagerAdapter.setCutOffPage(cutOffPage);</span>
+<span class="nc" id="L337">            return true;</span>
+        }
+
+<span class="nc" id="L340">        return false;</span>
+    }
+
+    public class MyPagerAdapter extends FragmentStatePagerAdapter {
+        private int mCutOffPage;
+        private Fragment mPrimaryItem;
+
+<span class="nc" id="L347">        public MyPagerAdapter(FragmentManager fm) {</span>
+<span class="nc" id="L348">            super(fm);</span>
+<span class="nc" id="L349">        }</span>
+
+        @Override
+        public Fragment getItem(int i) {
+<span class="nc bnc" id="L353" title="All 2 branches missed.">            if (i &gt;= mCurrentPageSequence.size()) {</span>
+<span class="nc" id="L354">                return new ReviewFragment();</span>
+            }
+
+<span class="nc" id="L357">            return mCurrentPageSequence.get(i).createFragment();</span>
+        }
+
+        @Override
+        public int getItemPosition(Object object) {
+            // TODO: be smarter about this
+<span class="nc bnc" id="L363" title="All 2 branches missed.">            if (object == mPrimaryItem) {</span>
+                // Re-use the current fragment (its position never changes)
+<span class="nc" id="L365">                return POSITION_UNCHANGED;</span>
+            }
+
+<span class="nc" id="L368">            return POSITION_NONE;</span>
+        }
+
+        @Override
+        public void setPrimaryItem(ViewGroup container, int position,
+                                   Object object) {
+<span class="nc" id="L374">            super.setPrimaryItem(container, position, object);</span>
+<span class="nc" id="L375">            mPrimaryItem = (Fragment) object;</span>
+<span class="nc" id="L376">        }</span>
+
+        @Override
+        public int getCount() {
+<span class="nc bnc" id="L380" title="All 2 branches missed.">            return Math.min(mCutOffPage + 1, mCurrentPageSequence == null ? 1</span>
+<span class="nc" id="L381">                    : mCurrentPageSequence.size() + 1);</span>
+        }
+
+        public void setCutOffPage(int cutOffPage) {
+<span class="nc bnc" id="L385" title="All 2 branches missed.">            if (cutOffPage &lt; 0) {</span>
+<span class="nc" id="L386">                cutOffPage = Integer.MAX_VALUE;</span>
+            }
+<span class="nc" id="L388">            mCutOffPage = cutOffPage;</span>
+<span class="nc" id="L389">        }</span>
+
+        public int getCutOffPage() {
+<span class="nc" id="L392">            return mCutOffPage;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

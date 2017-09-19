@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BaseModel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.model</a> &gt; <span class="el_source">BaseModel.java</span></div><h1>BaseModel.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2015 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.model;
+
+import org.gnucash.android.util.TimestampHelper;
+
+import java.sql.Timestamp;
+import java.util.UUID;
+
+/**
+ * Abstract class representing the base data model which is persisted to the database.
+ * All other models should extend this base model.
+ */
+public abstract class BaseModel {
+    /**
+     * Unique identifier of this model instance.
+     * &lt;p&gt;It is declared private because it is generated only on-demand. Sub-classes should use the accessor methods to read and write this value&lt;/p&gt;
+     * @see #getUID()
+     * @see #setUID(String)
+     */
+    private String mUID;
+    protected Timestamp mCreatedTimestamp;
+    protected Timestamp mModifiedTimestamp;
+
+    /**
+     * Initializes the model attributes.
+     * &lt;p&gt;A GUID for this model is not generated in the constructor.
+     * A unique ID will be generated on demand with a call to {@link #getUID()}&lt;/p&gt;
+     */
+<span class="fc" id="L44">    public BaseModel(){</span>
+<span class="fc" id="L45">        mCreatedTimestamp = TimestampHelper.getTimestampFromNow();</span>
+<span class="fc" id="L46">        mModifiedTimestamp = TimestampHelper.getTimestampFromNow();</span>
+<span class="fc" id="L47">    }</span>
+
+    /**
+     * Method for generating the Global Unique ID for the model object
+     * @return Random GUID for the model object
+     */
+    public static String generateUID(){
+<span class="fc" id="L54">        return UUID.randomUUID().toString().replaceAll(&quot;-&quot;, &quot;&quot;);</span>
+    }
+
+    /**
+     * Returns a unique string identifier for this model instance
+     * @return GUID for this model
+     */
+    public String getUID() {
+<span class="fc bfc" id="L62" title="All 2 branches covered.">        if (mUID == null)</span>
+        {
+<span class="fc" id="L64">            mUID = generateUID();</span>
+        }
+<span class="fc" id="L66">        return mUID;</span>
+    }
+
+    /**
+     * Sets the GUID of the model.
+     * &lt;p&gt;A new GUID can be generated with a call to {@link #generateUID()}&lt;/p&gt;
+     * @param uid String unique ID
+     */
+    public void setUID(String uid) {
+<span class="nc" id="L75">        this.mUID = uid;</span>
+<span class="nc" id="L76">    }</span>
+
+    /**8
+     * Returns the timestamp when this model entry was created in the database
+     * @return Timestamp of creation of model
+     */
+    public Timestamp getCreatedTimestamp() {
+<span class="nc" id="L83">        return mCreatedTimestamp;</span>
+    }
+
+    /**
+     * Sets the timestamp when the model was created
+     * @param createdTimestamp Timestamp of model creation
+     */
+    public void setCreatedTimestamp(Timestamp createdTimestamp) {
+<span class="nc" id="L91">        this.mCreatedTimestamp = createdTimestamp;</span>
+<span class="nc" id="L92">    }</span>
+
+    /**
+     * Returns the timestamp when the model record in the database was last modified.
+     * @return Timestamp of last modification
+     */
+    public Timestamp getModifiedTimestamp() {
+<span class="nc" id="L99">        return mModifiedTimestamp;</span>
+    }
+
+    /**
+     * Sets the timestamp when the model was last modified in the database
+     * &lt;p&gt;Although the database automatically has triggers for entering the timestamp,
+     * when SQL INSERT OR REPLACE syntax is used, it is possible to override the modified timestamp.
+     * &lt;br/&gt;In that case, it has to be explicitly set in the SQL statement.&lt;/p&gt;
+     * @param modifiedTimestamp Timestamp of last modification
+     */
+    public void setModifiedTimestamp(Timestamp modifiedTimestamp) {
+<span class="nc" id="L110">        this.mModifiedTimestamp = modifiedTimestamp;</span>
+<span class="nc" id="L111">    }</span>
+
+    /**
+     * Two instances are considered equal if their GUID's are the same
+     * @param o BaseModel instance to compare
+     * @return {@code true} if both instances are equal, {@code false} otherwise
+     */
+    @Override
+    public boolean equals(Object o) {
+<span class="pc bpc" id="L120" title="1 of 2 branches missed.">        if (this == o) return true;</span>
+<span class="nc bnc" id="L121" title="All 2 branches missed.">        if (!(o instanceof BaseModel)) return false;</span>
+
+<span class="nc" id="L123">        BaseModel baseModel = (BaseModel) o;</span>
+
+<span class="nc" id="L125">        return getUID().equals(baseModel.getUID());</span>
+
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L131">        return getUID().hashCode();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

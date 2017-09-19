@@ -1,0 +1,962 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GncXmlExporter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.export.xml</a> &gt; <span class="el_source">GncXmlExporter.java</span></div><h1>GncXmlExporter.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2014 - 2015 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ * Copyright (c) 2014 Yongxin Wang &lt;fefe.wyx@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.export.xml;
+
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.net.Uri;
+import android.util.Log;
+
+import com.crashlytics.android.Crashlytics;
+
+import org.gnucash.android.app.GnuCashApplication;
+import org.gnucash.android.db.DatabaseSchema;
+import org.gnucash.android.db.adapter.BooksDbAdapter;
+import org.gnucash.android.db.adapter.CommoditiesDbAdapter;
+import org.gnucash.android.db.adapter.RecurrenceDbAdapter;
+import org.gnucash.android.db.adapter.TransactionsDbAdapter;
+import org.gnucash.android.export.ExportFormat;
+import org.gnucash.android.export.ExportParams;
+import org.gnucash.android.export.Exporter;
+import org.gnucash.android.model.Account;
+import org.gnucash.android.model.AccountType;
+import org.gnucash.android.model.BaseModel;
+import org.gnucash.android.model.Book;
+import org.gnucash.android.model.Budget;
+import org.gnucash.android.model.BudgetAmount;
+import org.gnucash.android.model.Commodity;
+import org.gnucash.android.model.Money;
+import org.gnucash.android.model.PeriodType;
+import org.gnucash.android.model.Recurrence;
+import org.gnucash.android.model.ScheduledAction;
+import org.gnucash.android.model.TransactionType;
+import org.gnucash.android.util.BookUtils;
+import org.gnucash.android.util.TimestampHelper;
+import org.xmlpull.v1.XmlPullParserFactory;
+import org.xmlpull.v1.XmlSerializer;
+
+import java.io.BufferedOutputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.math.BigDecimal;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.zip.GZIPOutputStream;
+
+import static org.gnucash.android.db.DatabaseSchema.ScheduledActionEntry;
+import static org.gnucash.android.db.DatabaseSchema.SplitEntry;
+import static org.gnucash.android.db.DatabaseSchema.TransactionEntry;
+
+/**
+ * Creates a GnuCash XML representation of the accounts and transactions
+ *
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ * @author Yongxin Wang &lt;fefe.wyx@gmail.com&gt;
+ */
+public class GncXmlExporter extends Exporter{
+
+    /**
+     * Root account for template accounts
+     */
+    private Account mRootTemplateAccount;
+<span class="nc" id="L84">    private Map&lt;String, Account&gt; mTransactionToTemplateAccountMap = new TreeMap&lt;&gt;();</span>
+
+    /**
+     * Construct a new exporter with export parameters
+     * @param params Parameters for the export
+     */
+    public GncXmlExporter(ExportParams params) {
+<span class="nc" id="L91">        super(params, null);</span>
+<span class="nc" id="L92">        LOG_TAG = &quot;GncXmlExporter&quot;;</span>
+<span class="nc" id="L93">    }</span>
+
+    /**
+     * Overloaded constructor.
+     * Creates an exporter with an already open database instance.
+     * @param params Parameters for the export
+     * @param db SQLite database
+     */
+    public GncXmlExporter(ExportParams params, SQLiteDatabase db) {
+<span class="nc" id="L102">        super(params, db);</span>
+<span class="nc" id="L103">        LOG_TAG = &quot;GncXmlExporter&quot;;</span>
+<span class="nc" id="L104">    }</span>
+
+    private void exportSlots(XmlSerializer xmlSerializer,
+                             List&lt;String&gt; slotKey,
+                             List&lt;String&gt; slotType,
+                             List&lt;String&gt; slotValue) throws IOException {
+<span class="nc bnc" id="L110" title="All 6 branches missed.">        if (slotKey == null || slotType == null || slotValue == null ||</span>
+<span class="nc bnc" id="L111" title="All 6 branches missed.">                slotKey.size() == 0 || slotType.size() != slotKey.size() || slotValue.size() != slotKey.size()) {</span>
+<span class="nc" id="L112">            return;</span>
+        }
+
+<span class="nc bnc" id="L115" title="All 2 branches missed.">        for (int i = 0; i &lt; slotKey.size(); i++) {</span>
+<span class="nc" id="L116">            xmlSerializer.startTag(null, GncXmlHelper.TAG_SLOT);</span>
+<span class="nc" id="L117">            xmlSerializer.startTag(null, GncXmlHelper.TAG_SLOT_KEY);</span>
+<span class="nc" id="L118">            xmlSerializer.text(slotKey.get(i));</span>
+<span class="nc" id="L119">            xmlSerializer.endTag(null, GncXmlHelper.TAG_SLOT_KEY);</span>
+<span class="nc" id="L120">            xmlSerializer.startTag(null, GncXmlHelper.TAG_SLOT_VALUE);</span>
+<span class="nc" id="L121">            xmlSerializer.attribute(null, GncXmlHelper.ATTR_KEY_TYPE, slotType.get(i));</span>
+<span class="nc" id="L122">            xmlSerializer.text(slotValue.get(i));</span>
+<span class="nc" id="L123">            xmlSerializer.endTag(null, GncXmlHelper.TAG_SLOT_VALUE);</span>
+<span class="nc" id="L124">            xmlSerializer.endTag(null, GncXmlHelper.TAG_SLOT);</span>
+        }
+<span class="nc" id="L126">    }</span>
+
+    private void exportAccounts(XmlSerializer xmlSerializer) throws IOException {
+        // gnucash desktop requires that parent account appears before its descendants.
+        // sort by full-name to fulfill the request
+<span class="nc" id="L131">        Cursor cursor = mAccountsDbAdapter.fetchAccounts(null, null, DatabaseSchema.AccountEntry.COLUMN_FULL_NAME + &quot; ASC&quot;);</span>
+<span class="nc bnc" id="L132" title="All 2 branches missed.">        while (cursor.moveToNext()) {</span>
+            // write account
+<span class="nc" id="L134">            xmlSerializer.startTag(null, GncXmlHelper.TAG_ACCOUNT);</span>
+<span class="nc" id="L135">            xmlSerializer.attribute(null, GncXmlHelper.ATTR_KEY_VERSION, GncXmlHelper.BOOK_VERSION);</span>
+            // account name
+<span class="nc" id="L137">            xmlSerializer.startTag(null, GncXmlHelper.TAG_ACCT_NAME);</span>
+<span class="nc" id="L138">            xmlSerializer.text(cursor.getString(cursor.getColumnIndexOrThrow(DatabaseSchema.AccountEntry.COLUMN_NAME)));</span>
+<span class="nc" id="L139">            xmlSerializer.endTag(null, GncXmlHelper.TAG_ACCT_NAME);</span>
+            // account guid
+<span class="nc" id="L141">            xmlSerializer.startTag(null, GncXmlHelper.TAG_ACCT_ID);</span>
+<span class="nc" id="L142">            xmlSerializer.attribute(null, GncXmlHelper.ATTR_KEY_TYPE, GncXmlHelper.ATTR_VALUE_GUID);</span>
+<span class="nc" id="L143">            xmlSerializer.text(cursor.getString(cursor.getColumnIndexOrThrow(DatabaseSchema.AccountEntry.COLUMN_UID)));</span>
+<span class="nc" id="L144">            xmlSerializer.endTag(null, GncXmlHelper.TAG_ACCT_ID);</span>
+            // account type
+<span class="nc" id="L146">            xmlSerializer.startTag(null, GncXmlHelper.TAG_ACCT_TYPE);</span>
+<span class="nc" id="L147">            String acct_type = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseSchema.AccountEntry.COLUMN_TYPE));</span>
+<span class="nc" id="L148">            xmlSerializer.text(acct_type);</span>
+<span class="nc" id="L149">            xmlSerializer.endTag(null, GncXmlHelper.TAG_ACCT_TYPE);</span>
+            // commodity
+<span class="nc" id="L151">            xmlSerializer.startTag(null, GncXmlHelper.TAG_ACCT_COMMODITY);</span>
+<span class="nc" id="L152">            xmlSerializer.startTag(null, GncXmlHelper.TAG_COMMODITY_SPACE);</span>
+<span class="nc" id="L153">            xmlSerializer.text(&quot;ISO4217&quot;);</span>
+<span class="nc" id="L154">            xmlSerializer.endTag(null, GncXmlHelper.TAG_COMMODITY_SPACE);</span>
+<span class="nc" id="L155">            xmlSerializer.startTag(null, GncXmlHelper.TAG_COMMODITY_ID);</span>
+<span class="nc" id="L156">            String acctCurrencyCode = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseSchema.AccountEntry.COLUMN_CURRENCY));</span>
+<span class="nc" id="L157">            xmlSerializer.text(acctCurrencyCode);</span>
+<span class="nc" id="L158">            xmlSerializer.endTag(null, GncXmlHelper.TAG_COMMODITY_ID);</span>
+<span class="nc" id="L159">            xmlSerializer.endTag(null, GncXmlHelper.TAG_ACCT_COMMODITY);</span>
+            // commodity scu
+<span class="nc" id="L161">            Commodity commodity = CommoditiesDbAdapter.getInstance().getCommodity(acctCurrencyCode);</span>
+<span class="nc" id="L162">            xmlSerializer.startTag(null, GncXmlHelper.TAG_COMMODITY_SCU);</span>
+<span class="nc" id="L163">            xmlSerializer.text(Integer.toString(commodity.getSmallestFraction()));</span>
+<span class="nc" id="L164">            xmlSerializer.endTag(null, GncXmlHelper.TAG_COMMODITY_SCU);</span>
+            // account description
+<span class="nc" id="L166">            String description = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseSchema.AccountEntry.COLUMN_DESCRIPTION));</span>
+<span class="nc bnc" id="L167" title="All 4 branches missed.">            if (description != null &amp;&amp; !description.equals(&quot;&quot;)) {</span>
+<span class="nc" id="L168">                xmlSerializer.startTag(null, GncXmlHelper.TAG_ACCT_DESCRIPTION);</span>
+<span class="nc" id="L169">                xmlSerializer.text(description);</span>
+<span class="nc" id="L170">                xmlSerializer.endTag(null, GncXmlHelper.TAG_ACCT_DESCRIPTION);</span>
+            }
+            // account slots, color, placeholder, default transfer account, favorite
+<span class="nc" id="L173">            ArrayList&lt;String&gt; slotKey = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L174">            ArrayList&lt;String&gt; slotType = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L175">            ArrayList&lt;String&gt; slotValue = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L176">            slotKey.add(GncXmlHelper.KEY_PLACEHOLDER);</span>
+<span class="nc" id="L177">            slotType.add(GncXmlHelper.ATTR_VALUE_STRING);</span>
+<span class="nc bnc" id="L178" title="All 2 branches missed.">            slotValue.add(Boolean.toString(cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseSchema.AccountEntry.COLUMN_PLACEHOLDER)) != 0));</span>
+
+<span class="nc" id="L180">            String color = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseSchema.AccountEntry.COLUMN_COLOR_CODE));</span>
+<span class="nc bnc" id="L181" title="All 4 branches missed.">            if (color != null &amp;&amp; color.length() &gt; 0) {</span>
+<span class="nc" id="L182">                slotKey.add(GncXmlHelper.KEY_COLOR);</span>
+<span class="nc" id="L183">                slotType.add(GncXmlHelper.ATTR_VALUE_STRING);</span>
+<span class="nc" id="L184">                slotValue.add(color);</span>
+            }
+
+<span class="nc" id="L187">            String defaultTransferAcctUID = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseSchema.AccountEntry.COLUMN_DEFAULT_TRANSFER_ACCOUNT_UID));</span>
+<span class="nc bnc" id="L188" title="All 4 branches missed.">            if (defaultTransferAcctUID != null &amp;&amp; defaultTransferAcctUID.length() &gt; 0) {</span>
+<span class="nc" id="L189">                slotKey.add(GncXmlHelper.KEY_DEFAULT_TRANSFER_ACCOUNT);</span>
+<span class="nc" id="L190">                slotType.add(GncXmlHelper.ATTR_VALUE_STRING);</span>
+<span class="nc" id="L191">                slotValue.add(defaultTransferAcctUID);</span>
+            }
+
+<span class="nc" id="L194">            slotKey.add(GncXmlHelper.KEY_FAVORITE);</span>
+<span class="nc" id="L195">            slotType.add(GncXmlHelper.ATTR_VALUE_STRING);</span>
+<span class="nc bnc" id="L196" title="All 2 branches missed.">            slotValue.add(Boolean.toString(cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseSchema.AccountEntry.COLUMN_FAVORITE)) != 0));</span>
+
+<span class="nc" id="L198">            xmlSerializer.startTag(null, GncXmlHelper.TAG_ACCT_SLOTS);</span>
+<span class="nc" id="L199">            exportSlots(xmlSerializer, slotKey, slotType, slotValue);</span>
+<span class="nc" id="L200">            xmlSerializer.endTag(null, GncXmlHelper.TAG_ACCT_SLOTS);</span>
+
+            // parent uid
+<span class="nc" id="L203">            String parentUID = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseSchema.AccountEntry.COLUMN_PARENT_ACCOUNT_UID));</span>
+<span class="nc bnc" id="L204" title="All 6 branches missed.">            if (!acct_type.equals(&quot;ROOT&quot;) &amp;&amp; parentUID != null &amp;&amp; parentUID.length() &gt; 0) {</span>
+<span class="nc" id="L205">                xmlSerializer.startTag(null, GncXmlHelper.TAG_PARENT_UID);</span>
+<span class="nc" id="L206">                xmlSerializer.attribute(null, GncXmlHelper.ATTR_KEY_TYPE, GncXmlHelper.ATTR_VALUE_GUID);</span>
+<span class="nc" id="L207">                xmlSerializer.text(parentUID);</span>
+<span class="nc" id="L208">                xmlSerializer.endTag(null, GncXmlHelper.TAG_PARENT_UID);</span>
+            } else {
+<span class="nc" id="L210">                Log.d(&quot;export&quot;, &quot;root account : &quot; + cursor.getString(cursor.getColumnIndexOrThrow(DatabaseSchema.AccountEntry.COLUMN_UID)));</span>
+            }
+<span class="nc" id="L212">            xmlSerializer.endTag(null, GncXmlHelper.TAG_ACCOUNT);</span>
+<span class="nc" id="L213">        }</span>
+<span class="nc" id="L214">        cursor.close();</span>
+<span class="nc" id="L215">    }</span>
+
+    /**
+     * Exports template accounts
+     * &lt;p&gt;Template accounts are just dummy accounts created for use with template transactions&lt;/p&gt;
+     * @param xmlSerializer XML serializer
+     * @param accountList List of template accounts
+     * @throws IOException if could not write XML to output stream
+     */
+    private void exportTemplateAccounts(XmlSerializer xmlSerializer, Collection&lt;Account&gt; accountList) throws IOException {
+<span class="nc bnc" id="L225" title="All 2 branches missed.">        for (Account account : accountList) {</span>
+<span class="nc" id="L226">            xmlSerializer.startTag(null, GncXmlHelper.TAG_ACCOUNT);</span>
+<span class="nc" id="L227">            xmlSerializer.attribute(null, GncXmlHelper.ATTR_KEY_VERSION, GncXmlHelper.BOOK_VERSION);</span>
+            // account name
+<span class="nc" id="L229">            xmlSerializer.startTag(null, GncXmlHelper.TAG_ACCT_NAME);</span>
+<span class="nc" id="L230">            xmlSerializer.text(account.getName());</span>
+<span class="nc" id="L231">            xmlSerializer.endTag(null, GncXmlHelper.TAG_ACCT_NAME);</span>
+            // account guid
+<span class="nc" id="L233">            xmlSerializer.startTag(null, GncXmlHelper.TAG_ACCT_ID);</span>
+<span class="nc" id="L234">            xmlSerializer.attribute(null, GncXmlHelper.ATTR_KEY_TYPE, GncXmlHelper.ATTR_VALUE_GUID);</span>
+<span class="nc" id="L235">            xmlSerializer.text(account.getUID());</span>
+<span class="nc" id="L236">            xmlSerializer.endTag(null, GncXmlHelper.TAG_ACCT_ID);</span>
+            // account type
+<span class="nc" id="L238">            xmlSerializer.startTag(null, GncXmlHelper.TAG_ACCT_TYPE);</span>
+<span class="nc" id="L239">            xmlSerializer.text(account.getAccountType().name());</span>
+<span class="nc" id="L240">            xmlSerializer.endTag(null, GncXmlHelper.TAG_ACCT_TYPE);</span>
+            // commodity
+<span class="nc" id="L242">            xmlSerializer.startTag(null, GncXmlHelper.TAG_ACCT_COMMODITY);</span>
+<span class="nc" id="L243">            xmlSerializer.startTag(null, GncXmlHelper.TAG_COMMODITY_SPACE);</span>
+<span class="nc" id="L244">            xmlSerializer.text(&quot;template&quot;);</span>
+<span class="nc" id="L245">            xmlSerializer.endTag(null, GncXmlHelper.TAG_COMMODITY_SPACE);</span>
+<span class="nc" id="L246">            xmlSerializer.startTag(null, GncXmlHelper.TAG_COMMODITY_ID);</span>
+<span class="nc" id="L247">            String acctCurrencyCode = &quot;template&quot;;</span>
+<span class="nc" id="L248">            xmlSerializer.text(acctCurrencyCode);</span>
+<span class="nc" id="L249">            xmlSerializer.endTag(null, GncXmlHelper.TAG_COMMODITY_ID);</span>
+<span class="nc" id="L250">            xmlSerializer.endTag(null, GncXmlHelper.TAG_ACCT_COMMODITY);</span>
+            // commodity scu
+<span class="nc" id="L252">            xmlSerializer.startTag(null, GncXmlHelper.TAG_COMMODITY_SCU);</span>
+<span class="nc" id="L253">            xmlSerializer.text(&quot;1&quot;);</span>
+<span class="nc" id="L254">            xmlSerializer.endTag(null, GncXmlHelper.TAG_COMMODITY_SCU);</span>
+
+<span class="nc bnc" id="L256" title="All 4 branches missed.">            if (account.getAccountType() != AccountType.ROOT &amp;&amp; mRootTemplateAccount != null) {</span>
+<span class="nc" id="L257">                xmlSerializer.startTag(null, GncXmlHelper.TAG_PARENT_UID);</span>
+<span class="nc" id="L258">                xmlSerializer.attribute(null, GncXmlHelper.ATTR_KEY_TYPE, GncXmlHelper.ATTR_VALUE_GUID);</span>
+<span class="nc" id="L259">                xmlSerializer.text(mRootTemplateAccount.getUID());</span>
+<span class="nc" id="L260">                xmlSerializer.endTag(null, GncXmlHelper.TAG_PARENT_UID);</span>
+            }
+<span class="nc" id="L262">            xmlSerializer.endTag(null, GncXmlHelper.TAG_ACCOUNT);</span>
+<span class="nc" id="L263">        }</span>
+<span class="nc" id="L264">    }</span>
+
+    /**
+     * Serializes transactions from the database to XML
+     * @param xmlSerializer XML serializer
+     * @param exportTemplates Flag whether to export templates or normal transactions
+     * @throws IOException if the XML serializer cannot be written to
+     */
+    private void exportTransactions(XmlSerializer xmlSerializer, boolean exportTemplates) throws IOException {
+<span class="nc" id="L273">        String where = TransactionEntry.TABLE_NAME + &quot;.&quot; + TransactionEntry.COLUMN_TEMPLATE + &quot;=0&quot;;</span>
+<span class="nc bnc" id="L274" title="All 2 branches missed.">        if (exportTemplates) {</span>
+<span class="nc" id="L275">            where = TransactionEntry.TABLE_NAME + &quot;.&quot; + TransactionEntry.COLUMN_TEMPLATE + &quot;=1&quot;;</span>
+        }
+<span class="nc" id="L277">        Cursor cursor = mTransactionsDbAdapter.fetchTransactionsWithSplits(</span>
+                new String[]{
+                        TransactionEntry.TABLE_NAME+&quot;.&quot;+ TransactionEntry.COLUMN_UID + &quot; AS trans_uid&quot;,
+                        TransactionEntry.TABLE_NAME+&quot;.&quot;+ TransactionEntry.COLUMN_DESCRIPTION + &quot; AS trans_desc&quot;,
+                        TransactionEntry.TABLE_NAME+&quot;.&quot;+ TransactionEntry.COLUMN_NOTES + &quot; AS trans_notes&quot;,
+                        TransactionEntry.TABLE_NAME+&quot;.&quot;+ TransactionEntry.COLUMN_TIMESTAMP + &quot; AS trans_time&quot;,
+                        TransactionEntry.TABLE_NAME+&quot;.&quot;+ TransactionEntry.COLUMN_EXPORTED + &quot; AS trans_exported&quot;,
+                        TransactionEntry.TABLE_NAME+&quot;.&quot;+ TransactionEntry.COLUMN_CURRENCY + &quot; AS trans_currency&quot;,
+                        TransactionEntry.TABLE_NAME+&quot;.&quot;+ TransactionEntry.COLUMN_CREATED_AT + &quot; AS trans_date_posted&quot;,
+                        TransactionEntry.TABLE_NAME+&quot;.&quot;+ TransactionEntry.COLUMN_SCHEDX_ACTION_UID + &quot; AS trans_from_sched_action&quot;,
+                        SplitEntry.TABLE_NAME+&quot;.&quot;+ SplitEntry.COLUMN_UID + &quot; AS split_uid&quot;,
+                        SplitEntry.TABLE_NAME+&quot;.&quot;+ SplitEntry.COLUMN_MEMO + &quot; AS split_memo&quot;,
+                        SplitEntry.TABLE_NAME+&quot;.&quot;+ SplitEntry.COLUMN_TYPE + &quot; AS split_type&quot;,
+                        SplitEntry.TABLE_NAME+&quot;.&quot;+ SplitEntry.COLUMN_VALUE_NUM + &quot; AS split_value_num&quot;,
+                        SplitEntry.TABLE_NAME+&quot;.&quot;+ SplitEntry.COLUMN_VALUE_DENOM + &quot; AS split_value_denom&quot;,
+                        SplitEntry.TABLE_NAME+&quot;.&quot;+ SplitEntry.COLUMN_QUANTITY_NUM + &quot; AS split_quantity_num&quot;,
+                        SplitEntry.TABLE_NAME+&quot;.&quot;+ SplitEntry.COLUMN_QUANTITY_DENOM + &quot; AS split_quantity_denom&quot;,                        SplitEntry.TABLE_NAME+&quot;.&quot;+ SplitEntry.COLUMN_ACCOUNT_UID + &quot; AS split_acct_uid&quot;},
+                        where, null,
+                        TransactionEntry.TABLE_NAME + &quot;.&quot; + TransactionEntry.COLUMN_TIMESTAMP + &quot; ASC , &quot; +
+                        TransactionEntry.TABLE_NAME + &quot;.&quot; + TransactionEntry.COLUMN_UID + &quot; ASC &quot;);
+<span class="nc" id="L297">        String lastTrxUID = &quot;&quot;;</span>
+<span class="nc" id="L298">        Commodity trnCommodity = null;</span>
+<span class="nc" id="L299">        String denomString = &quot;100&quot;;</span>
+
+<span class="nc bnc" id="L301" title="All 2 branches missed.">        if (exportTemplates) {</span>
+<span class="nc" id="L302">            mRootTemplateAccount = new Account(&quot;Template Root&quot;);</span>
+<span class="nc" id="L303">            mRootTemplateAccount.setAccountType(AccountType.ROOT);</span>
+<span class="nc" id="L304">            mTransactionToTemplateAccountMap.put(&quot; &quot;, mRootTemplateAccount);</span>
+
+            //FIXME: Retrieve the template account GUIDs from the scheduled action table and create accounts with that
+            //this will allow use to maintain the template account GUID when we import from the desktop and also use the same for the splits
+<span class="nc bnc" id="L308" title="All 2 branches missed.">            while (cursor.moveToNext()) {</span>
+<span class="nc" id="L309">                Account account = new Account(BaseModel.generateUID());</span>
+<span class="nc" id="L310">                account.setAccountType(AccountType.BANK);</span>
+<span class="nc" id="L311">                String trnUID = cursor.getString(cursor.getColumnIndexOrThrow(&quot;trans_uid&quot;));</span>
+<span class="nc" id="L312">                mTransactionToTemplateAccountMap.put(trnUID, account);</span>
+<span class="nc" id="L313">            }</span>
+
+<span class="nc" id="L315">            exportTemplateAccounts(xmlSerializer, mTransactionToTemplateAccountMap.values());</span>
+            //push cursor back to before the beginning
+<span class="nc" id="L317">            cursor.moveToFirst();</span>
+<span class="nc" id="L318">            cursor.moveToPrevious();</span>
+        }
+
+        //// FIXME: 12.10.2015 export split reconciled_state and reconciled_date to the export
+<span class="nc bnc" id="L322" title="All 2 branches missed.">        while (cursor.moveToNext()){</span>
+<span class="nc" id="L323">            String curTrxUID = cursor.getString(cursor.getColumnIndexOrThrow(&quot;trans_uid&quot;));</span>
+<span class="nc bnc" id="L324" title="All 2 branches missed.">            if (!lastTrxUID.equals(curTrxUID)) { // new transaction starts</span>
+<span class="nc bnc" id="L325" title="All 2 branches missed.">                if (!lastTrxUID.equals(&quot;&quot;)) { // there's an old transaction, close it</span>
+<span class="nc" id="L326">                    xmlSerializer.endTag(null, GncXmlHelper.TAG_TRN_SPLITS);</span>
+<span class="nc" id="L327">                    xmlSerializer.endTag(null, GncXmlHelper.TAG_TRANSACTION);</span>
+                }
+                // new transaction
+<span class="nc" id="L330">                xmlSerializer.startTag(null, GncXmlHelper.TAG_TRANSACTION);</span>
+<span class="nc" id="L331">                xmlSerializer.attribute(null, GncXmlHelper.ATTR_KEY_VERSION, GncXmlHelper.BOOK_VERSION);</span>
+                // transaction id
+<span class="nc" id="L333">                xmlSerializer.startTag(null, GncXmlHelper.TAG_TRX_ID);</span>
+<span class="nc" id="L334">                xmlSerializer.attribute(null, GncXmlHelper.ATTR_KEY_TYPE, GncXmlHelper.ATTR_VALUE_GUID);</span>
+<span class="nc" id="L335">                xmlSerializer.text(curTrxUID);</span>
+<span class="nc" id="L336">                xmlSerializer.endTag(null, GncXmlHelper.TAG_TRX_ID);</span>
+                // currency
+<span class="nc" id="L338">                String currencyCode = cursor.getString(cursor.getColumnIndexOrThrow(&quot;trans_currency&quot;));</span>
+<span class="nc" id="L339">                trnCommodity = CommoditiesDbAdapter.getInstance().getCommodity(currencyCode);//Currency.getInstance(currencyCode);</span>
+<span class="nc" id="L340">                xmlSerializer.startTag(null, GncXmlHelper.TAG_TRX_CURRENCY);</span>
+<span class="nc" id="L341">                xmlSerializer.startTag(null, GncXmlHelper.TAG_COMMODITY_SPACE);</span>
+<span class="nc" id="L342">                xmlSerializer.text(&quot;ISO4217&quot;);</span>
+<span class="nc" id="L343">                xmlSerializer.endTag(null, GncXmlHelper.TAG_COMMODITY_SPACE);</span>
+<span class="nc" id="L344">                xmlSerializer.startTag(null, GncXmlHelper.TAG_COMMODITY_ID);</span>
+<span class="nc" id="L345">                xmlSerializer.text(currencyCode);</span>
+<span class="nc" id="L346">                xmlSerializer.endTag(null, GncXmlHelper.TAG_COMMODITY_ID);</span>
+<span class="nc" id="L347">                xmlSerializer.endTag(null, GncXmlHelper.TAG_TRX_CURRENCY);</span>
+                // date posted, time which user put on the transaction
+<span class="nc" id="L349">                String strDate = GncXmlHelper.formatDate(cursor.getLong(cursor.getColumnIndexOrThrow(&quot;trans_time&quot;)));</span>
+<span class="nc" id="L350">                xmlSerializer.startTag(null, GncXmlHelper.TAG_DATE_POSTED);</span>
+<span class="nc" id="L351">                xmlSerializer.startTag(null, GncXmlHelper.TAG_TS_DATE);</span>
+<span class="nc" id="L352">                xmlSerializer.text(strDate);</span>
+<span class="nc" id="L353">                xmlSerializer.endTag(null, GncXmlHelper.TAG_TS_DATE);</span>
+<span class="nc" id="L354">                xmlSerializer.endTag(null, GncXmlHelper.TAG_DATE_POSTED);</span>
+
+                // date entered, time when the transaction was actually created
+<span class="nc" id="L357">                Timestamp timeEntered = TimestampHelper.getTimestampFromUtcString(cursor.getString(cursor.getColumnIndexOrThrow(&quot;trans_date_posted&quot;)));</span>
+<span class="nc" id="L358">                String dateEntered = GncXmlHelper.formatDate(timeEntered.getTime());</span>
+<span class="nc" id="L359">                xmlSerializer.startTag(null, GncXmlHelper.TAG_DATE_ENTERED);</span>
+<span class="nc" id="L360">                xmlSerializer.startTag(null, GncXmlHelper.TAG_TS_DATE);</span>
+<span class="nc" id="L361">                xmlSerializer.text(dateEntered);</span>
+<span class="nc" id="L362">                xmlSerializer.endTag(null, GncXmlHelper.TAG_TS_DATE);</span>
+<span class="nc" id="L363">                xmlSerializer.endTag(null, GncXmlHelper.TAG_DATE_ENTERED);</span>
+
+                // description
+<span class="nc" id="L366">                xmlSerializer.startTag(null, GncXmlHelper.TAG_TRN_DESCRIPTION);</span>
+<span class="nc" id="L367">                xmlSerializer.text(cursor.getString(cursor.getColumnIndexOrThrow(&quot;trans_desc&quot;)));</span>
+<span class="nc" id="L368">                xmlSerializer.endTag(null, GncXmlHelper.TAG_TRN_DESCRIPTION);</span>
+<span class="nc" id="L369">                lastTrxUID = curTrxUID;</span>
+                // slots
+<span class="nc" id="L371">                ArrayList&lt;String&gt; slotKey = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L372">                ArrayList&lt;String&gt; slotType = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L373">                ArrayList&lt;String&gt; slotValue = new ArrayList&lt;&gt;();</span>
+
+<span class="nc" id="L375">                String notes = cursor.getString(cursor.getColumnIndexOrThrow(&quot;trans_notes&quot;));</span>
+<span class="nc bnc" id="L376" title="All 4 branches missed.">                if (notes != null &amp;&amp; notes.length() &gt; 0) {</span>
+<span class="nc" id="L377">                    slotKey.add(GncXmlHelper.KEY_NOTES);</span>
+<span class="nc" id="L378">                    slotType.add(GncXmlHelper.ATTR_VALUE_STRING);</span>
+<span class="nc" id="L379">                    slotValue.add(notes);</span>
+                }
+
+<span class="nc" id="L382">                String scheduledActionUID = cursor.getString(cursor.getColumnIndexOrThrow(&quot;trans_from_sched_action&quot;));</span>
+<span class="nc bnc" id="L383" title="All 4 branches missed.">                if (scheduledActionUID != null &amp;&amp; !scheduledActionUID.isEmpty()){</span>
+<span class="nc" id="L384">                    slotKey.add(GncXmlHelper.KEY_FROM_SCHED_ACTION);</span>
+<span class="nc" id="L385">                    slotType.add(GncXmlHelper.ATTR_VALUE_GUID);</span>
+<span class="nc" id="L386">                    slotValue.add(scheduledActionUID);</span>
+                }
+<span class="nc" id="L388">                xmlSerializer.startTag(null, GncXmlHelper.TAG_TRN_SLOTS);</span>
+<span class="nc" id="L389">                exportSlots(xmlSerializer, slotKey, slotType, slotValue);</span>
+<span class="nc" id="L390">                xmlSerializer.endTag(null, GncXmlHelper.TAG_TRN_SLOTS);</span>
+
+                // splits start
+<span class="nc" id="L393">                xmlSerializer.startTag(null, GncXmlHelper.TAG_TRN_SPLITS);</span>
+            }
+<span class="nc" id="L395">            xmlSerializer.startTag(null, GncXmlHelper.TAG_TRN_SPLIT);</span>
+            // split id
+<span class="nc" id="L397">            xmlSerializer.startTag(null, GncXmlHelper.TAG_SPLIT_ID);</span>
+<span class="nc" id="L398">            xmlSerializer.attribute(null, GncXmlHelper.ATTR_KEY_TYPE, GncXmlHelper.ATTR_VALUE_GUID);</span>
+<span class="nc" id="L399">            xmlSerializer.text(cursor.getString(cursor.getColumnIndexOrThrow(&quot;split_uid&quot;)));</span>
+<span class="nc" id="L400">            xmlSerializer.endTag(null, GncXmlHelper.TAG_SPLIT_ID);</span>
+            // memo
+<span class="nc" id="L402">            String memo = cursor.getString(cursor.getColumnIndexOrThrow(&quot;split_memo&quot;));</span>
+<span class="nc bnc" id="L403" title="All 4 branches missed.">            if (memo != null &amp;&amp; memo.length() &gt; 0){</span>
+<span class="nc" id="L404">                xmlSerializer.startTag(null, GncXmlHelper.TAG_SPLIT_MEMO);</span>
+<span class="nc" id="L405">                xmlSerializer.text(memo);</span>
+<span class="nc" id="L406">                xmlSerializer.endTag(null, GncXmlHelper.TAG_SPLIT_MEMO);</span>
+            }
+            // reconciled
+<span class="nc" id="L409">            xmlSerializer.startTag(null, GncXmlHelper.TAG_RECONCILED_STATE);</span>
+<span class="nc" id="L410">            xmlSerializer.text(&quot;n&quot;); //fixme: retrieve reconciled state from the split in the db</span>
+<span class="nc" id="L411">            xmlSerializer.endTag(null, GncXmlHelper.TAG_RECONCILED_STATE);</span>
+            //todo: if split is reconciled, add reconciled date
+            // value, in the transaction's currency
+<span class="nc" id="L414">            String trxType = cursor.getString(cursor.getColumnIndexOrThrow(&quot;split_type&quot;));</span>
+<span class="nc" id="L415">            int splitValueNum = cursor.getInt(cursor.getColumnIndexOrThrow(&quot;split_value_num&quot;));</span>
+<span class="nc" id="L416">            int splitValueDenom = cursor.getInt(cursor.getColumnIndexOrThrow(&quot;split_value_denom&quot;));</span>
+<span class="nc" id="L417">            BigDecimal splitAmount = Money.getBigDecimal(splitValueNum, splitValueDenom);</span>
+<span class="nc" id="L418">            String strValue = &quot;0/&quot; + denomString;</span>
+<span class="nc bnc" id="L419" title="All 2 branches missed.">            if (!exportTemplates) { //when doing normal transaction export</span>
+<span class="nc bnc" id="L420" title="All 2 branches missed.">                strValue = (trxType.equals(&quot;CREDIT&quot;) ? &quot;-&quot; : &quot;&quot;) + splitValueNum + &quot;/&quot; + splitValueDenom;</span>
+            }
+<span class="nc" id="L422">            xmlSerializer.startTag(null, GncXmlHelper.TAG_SPLIT_VALUE);</span>
+<span class="nc" id="L423">            xmlSerializer.text(strValue);</span>
+<span class="nc" id="L424">            xmlSerializer.endTag(null, GncXmlHelper.TAG_SPLIT_VALUE);</span>
+            // quantity, in the split account's currency
+<span class="nc" id="L426">            String splitQuantityNum = cursor.getString(cursor.getColumnIndexOrThrow(&quot;split_quantity_num&quot;));</span>
+<span class="nc" id="L427">            String splitQuantityDenom = cursor.getString(cursor.getColumnIndexOrThrow(&quot;split_quantity_denom&quot;));</span>
+<span class="nc bnc" id="L428" title="All 2 branches missed.">            if (!exportTemplates) {</span>
+<span class="nc bnc" id="L429" title="All 2 branches missed.">                strValue = (trxType.equals(&quot;CREDIT&quot;) ? &quot;-&quot; : &quot;&quot;) + splitQuantityNum + &quot;/&quot; + splitQuantityDenom;</span>
+            }
+<span class="nc" id="L431">            xmlSerializer.startTag(null, GncXmlHelper.TAG_SPLIT_QUANTITY);</span>
+<span class="nc" id="L432">            xmlSerializer.text(strValue);</span>
+<span class="nc" id="L433">            xmlSerializer.endTag(null, GncXmlHelper.TAG_SPLIT_QUANTITY);</span>
+            // account guid
+<span class="nc" id="L435">            xmlSerializer.startTag(null, GncXmlHelper.TAG_SPLIT_ACCOUNT);</span>
+<span class="nc" id="L436">            xmlSerializer.attribute(null, GncXmlHelper.ATTR_KEY_TYPE, GncXmlHelper.ATTR_VALUE_GUID);</span>
+            String splitAccountUID;
+<span class="nc bnc" id="L438" title="All 2 branches missed.">            if (exportTemplates){</span>
+                //get the UID of the template account
+<span class="nc" id="L440">                 splitAccountUID = mTransactionToTemplateAccountMap.get(curTrxUID).getUID();</span>
+            } else {
+<span class="nc" id="L442">                splitAccountUID = cursor.getString(cursor.getColumnIndexOrThrow(&quot;split_acct_uid&quot;));</span>
+            }
+<span class="nc" id="L444">            xmlSerializer.text(splitAccountUID);</span>
+<span class="nc" id="L445">            xmlSerializer.endTag(null, GncXmlHelper.TAG_SPLIT_ACCOUNT);</span>
+
+            //if we are exporting a template transaction, then we need to add some extra slots
+<span class="nc bnc" id="L448" title="All 2 branches missed.">            if (exportTemplates){</span>
+<span class="nc" id="L449">                xmlSerializer.startTag(null, GncXmlHelper.TAG_SPLIT_SLOTS);</span>
+<span class="nc" id="L450">                xmlSerializer.startTag(null, GncXmlHelper.TAG_SLOT);</span>
+<span class="nc" id="L451">                xmlSerializer.startTag(null, GncXmlHelper.TAG_SLOT_KEY);</span>
+<span class="nc" id="L452">                xmlSerializer.text(GncXmlHelper.KEY_SCHEDX_ACTION); //FIXME: not all templates may be scheduled actions</span>
+<span class="nc" id="L453">                xmlSerializer.endTag(null, GncXmlHelper.TAG_SLOT_KEY);</span>
+<span class="nc" id="L454">                xmlSerializer.startTag(null, GncXmlHelper.TAG_SLOT_VALUE);</span>
+<span class="nc" id="L455">                xmlSerializer.attribute(null, GncXmlHelper.ATTR_KEY_TYPE, &quot;frame&quot;);</span>
+
+<span class="nc" id="L457">                List&lt;String&gt; slotKeys = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L458">                List&lt;String&gt; slotTypes = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L459">                List&lt;String&gt; slotValues = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L460">                slotKeys.add(GncXmlHelper.KEY_SPLIT_ACCOUNT_SLOT);</span>
+<span class="nc" id="L461">                slotTypes.add(GncXmlHelper.ATTR_VALUE_GUID);</span>
+<span class="nc" id="L462">                slotValues.add(cursor.getString(cursor.getColumnIndexOrThrow(&quot;split_acct_uid&quot;)));</span>
+<span class="nc" id="L463">                TransactionType type = TransactionType.valueOf(trxType);</span>
+<span class="nc bnc" id="L464" title="All 2 branches missed.">                if (type == TransactionType.CREDIT){</span>
+<span class="nc" id="L465">                    slotKeys.add(GncXmlHelper.KEY_CREDIT_FORMULA);</span>
+<span class="nc" id="L466">                    slotTypes.add(GncXmlHelper.ATTR_VALUE_STRING);</span>
+<span class="nc" id="L467">                    slotValues.add(GncXmlHelper.formatTemplateSplitAmount(splitAmount));</span>
+<span class="nc" id="L468">                    slotKeys.add(GncXmlHelper.KEY_CREDIT_NUMERIC);</span>
+<span class="nc" id="L469">                    slotTypes.add(GncXmlHelper.ATTR_VALUE_NUMERIC);</span>
+<span class="nc" id="L470">                    slotValues.add(GncXmlHelper.formatSplitAmount(splitAmount, trnCommodity));</span>
+                } else {
+<span class="nc" id="L472">                    slotKeys.add(GncXmlHelper.KEY_DEBIT_FORMULA);</span>
+<span class="nc" id="L473">                    slotTypes.add(GncXmlHelper.ATTR_VALUE_STRING);</span>
+<span class="nc" id="L474">                    slotValues.add(GncXmlHelper.formatTemplateSplitAmount(splitAmount));</span>
+<span class="nc" id="L475">                    slotKeys.add(GncXmlHelper.KEY_DEBIT_NUMERIC);</span>
+<span class="nc" id="L476">                    slotTypes.add(GncXmlHelper.ATTR_VALUE_NUMERIC);</span>
+<span class="nc" id="L477">                    slotValues.add(GncXmlHelper.formatSplitAmount(splitAmount, trnCommodity));</span>
+                }
+
+<span class="nc" id="L480">                exportSlots(xmlSerializer, slotKeys, slotTypes, slotValues);</span>
+
+<span class="nc" id="L482">                xmlSerializer.endTag(null, GncXmlHelper.TAG_SLOT_VALUE);</span>
+<span class="nc" id="L483">                xmlSerializer.endTag(null, GncXmlHelper.TAG_SLOT);</span>
+<span class="nc" id="L484">                xmlSerializer.endTag(null, GncXmlHelper.TAG_SPLIT_SLOTS);</span>
+            }
+
+<span class="nc" id="L487">            xmlSerializer.endTag(null, GncXmlHelper.TAG_TRN_SPLIT);</span>
+<span class="nc" id="L488">        }</span>
+<span class="nc bnc" id="L489" title="All 2 branches missed.">        if (!lastTrxUID.equals(&quot;&quot;)){ // there's an unfinished transaction, close it</span>
+<span class="nc" id="L490">            xmlSerializer.endTag(null,GncXmlHelper.TAG_TRN_SPLITS);</span>
+<span class="nc" id="L491">            xmlSerializer.endTag(null, GncXmlHelper.TAG_TRANSACTION);</span>
+        }
+<span class="nc" id="L493">        cursor.close();</span>
+<span class="nc" id="L494">    }</span>
+
+    /**
+     * Serializes {@link ScheduledAction}s from the database to XML
+     * @param xmlSerializer XML serializer
+     * @throws IOException
+     */
+    private void exportScheduledTransactions(XmlSerializer xmlSerializer) throws IOException{
+        //for now we will export only scheduled transactions to XML
+<span class="nc" id="L503">        Cursor cursor = mScheduledActionDbAdapter.fetchAllRecords(</span>
+<span class="nc" id="L504">                ScheduledActionEntry.COLUMN_TYPE + &quot;=?&quot;, new String[]{ScheduledAction.ActionType.TRANSACTION.name()}, null);</span>
+
+<span class="nc bnc" id="L506" title="All 2 branches missed.">        while (cursor.moveToNext()) {</span>
+<span class="nc" id="L507">            ScheduledAction scheduledAction = mScheduledActionDbAdapter.buildModelInstance(cursor);</span>
+<span class="nc" id="L508">            String actionUID = scheduledAction.getActionUID();</span>
+<span class="nc" id="L509">            Account accountUID = mTransactionToTemplateAccountMap.get(actionUID);</span>
+
+<span class="nc bnc" id="L511" title="All 2 branches missed.">            if (accountUID == null) //if the action UID does not belong to a transaction we've seen before, skip it</span>
+<span class="nc" id="L512">                continue;</span>
+
+<span class="nc" id="L514">            xmlSerializer.startTag(null, GncXmlHelper.TAG_SCHEDULED_ACTION);</span>
+<span class="nc" id="L515">            xmlSerializer.attribute(null, GncXmlHelper.ATTR_KEY_VERSION, GncXmlHelper.BOOK_VERSION);</span>
+<span class="nc" id="L516">            xmlSerializer.startTag(null, GncXmlHelper.TAG_SX_ID);</span>
+
+<span class="nc" id="L518">            String nameUID = accountUID.getName();</span>
+<span class="nc" id="L519">            xmlSerializer.attribute(null, GncXmlHelper.ATTR_KEY_TYPE, GncXmlHelper.ATTR_VALUE_GUID);</span>
+<span class="nc" id="L520">            xmlSerializer.text(nameUID);</span>
+<span class="nc" id="L521">            xmlSerializer.endTag(null, GncXmlHelper.TAG_SX_ID);</span>
+<span class="nc" id="L522">            xmlSerializer.startTag(null, GncXmlHelper.TAG_SX_NAME);</span>
+
+<span class="nc" id="L524">            ScheduledAction.ActionType actionType = scheduledAction.getActionType();</span>
+<span class="nc bnc" id="L525" title="All 2 branches missed.">            if (actionType == ScheduledAction.ActionType.TRANSACTION) {</span>
+<span class="nc" id="L526">                String description = TransactionsDbAdapter.getInstance().getAttribute(actionUID, TransactionEntry.COLUMN_DESCRIPTION);</span>
+<span class="nc" id="L527">                xmlSerializer.text(description);</span>
+<span class="nc" id="L528">            } else {</span>
+<span class="nc" id="L529">                xmlSerializer.text(actionType.name());</span>
+            }
+<span class="nc" id="L531">            xmlSerializer.endTag(null, GncXmlHelper.TAG_SX_NAME);</span>
+<span class="nc" id="L532">            xmlSerializer.startTag(null, GncXmlHelper.TAG_SX_ENABLED);</span>
+<span class="nc bnc" id="L533" title="All 2 branches missed.">            xmlSerializer.text(scheduledAction.isEnabled() ? &quot;y&quot; : &quot;n&quot;);</span>
+<span class="nc" id="L534">            xmlSerializer.endTag(null, GncXmlHelper.TAG_SX_ENABLED);</span>
+<span class="nc" id="L535">            xmlSerializer.startTag(null, GncXmlHelper.TAG_SX_AUTO_CREATE);</span>
+<span class="nc bnc" id="L536" title="All 2 branches missed.">            xmlSerializer.text(scheduledAction.shouldAutoCreate() ? &quot;y&quot; : &quot;n&quot;);</span>
+<span class="nc" id="L537">            xmlSerializer.endTag(null, GncXmlHelper.TAG_SX_AUTO_CREATE);</span>
+<span class="nc" id="L538">            xmlSerializer.startTag(null, GncXmlHelper.TAG_SX_AUTO_CREATE_NOTIFY);</span>
+<span class="nc bnc" id="L539" title="All 2 branches missed.">            xmlSerializer.text(scheduledAction.shouldAutoNotify() ? &quot;y&quot; : &quot;n&quot;);</span>
+<span class="nc" id="L540">            xmlSerializer.endTag(null, GncXmlHelper.TAG_SX_AUTO_CREATE_NOTIFY);</span>
+<span class="nc" id="L541">            xmlSerializer.startTag(null, GncXmlHelper.TAG_SX_ADVANCE_CREATE_DAYS);</span>
+<span class="nc" id="L542">            xmlSerializer.text(Integer.toString(scheduledAction.getAdvanceCreateDays()));</span>
+<span class="nc" id="L543">            xmlSerializer.endTag(null, GncXmlHelper.TAG_SX_ADVANCE_CREATE_DAYS);</span>
+<span class="nc" id="L544">            xmlSerializer.startTag(null, GncXmlHelper.TAG_SX_ADVANCE_REMIND_DAYS);</span>
+<span class="nc" id="L545">            xmlSerializer.text(Integer.toString(scheduledAction.getAdvanceNotifyDays()));</span>
+<span class="nc" id="L546">            xmlSerializer.endTag(null, GncXmlHelper.TAG_SX_ADVANCE_REMIND_DAYS);</span>
+<span class="nc" id="L547">            xmlSerializer.startTag(null, GncXmlHelper.TAG_SX_INSTANCE_COUNT);</span>
+<span class="nc" id="L548">            String scheduledActionUID = cursor.getString(cursor.getColumnIndexOrThrow(ScheduledActionEntry.COLUMN_UID));</span>
+<span class="nc" id="L549">            long instanceCount = mScheduledActionDbAdapter.getActionInstanceCount(scheduledActionUID);</span>
+<span class="nc" id="L550">            xmlSerializer.text(Long.toString(instanceCount));</span>
+<span class="nc" id="L551">            xmlSerializer.endTag(null, GncXmlHelper.TAG_SX_INSTANCE_COUNT);</span>
+
+            //start date
+<span class="nc" id="L554">            String createdTimestamp = cursor.getString(cursor.getColumnIndexOrThrow(ScheduledActionEntry.COLUMN_CREATED_AT));</span>
+<span class="nc" id="L555">            long scheduleStartTime = TimestampHelper.getTimestampFromUtcString(createdTimestamp).getTime();</span>
+<span class="nc" id="L556">            serializeDate(xmlSerializer, GncXmlHelper.TAG_SX_START, scheduleStartTime);</span>
+
+<span class="nc" id="L558">            long lastRunTime = cursor.getLong(cursor.getColumnIndexOrThrow(ScheduledActionEntry.COLUMN_LAST_RUN));</span>
+<span class="nc bnc" id="L559" title="All 2 branches missed.">            if (lastRunTime &gt; 0){</span>
+<span class="nc" id="L560">                serializeDate(xmlSerializer, GncXmlHelper.TAG_SX_LAST, lastRunTime);</span>
+            }
+
+<span class="nc" id="L563">            long endTime = cursor.getLong(cursor.getColumnIndexOrThrow(ScheduledActionEntry.COLUMN_END_TIME));</span>
+<span class="nc bnc" id="L564" title="All 2 branches missed.">            if (endTime &gt; 0) {</span>
+                //end date
+<span class="nc" id="L566">                serializeDate(xmlSerializer, GncXmlHelper.TAG_SX_END, endTime);</span>
+            } else { //add number of occurrences
+<span class="nc" id="L568">                int totalFrequency = cursor.getInt(cursor.getColumnIndexOrThrow(ScheduledActionEntry.COLUMN_TOTAL_FREQUENCY));</span>
+<span class="nc" id="L569">                xmlSerializer.startTag(null, GncXmlHelper.TAG_SX_NUM_OCCUR);</span>
+<span class="nc" id="L570">                xmlSerializer.text(Integer.toString(totalFrequency));</span>
+<span class="nc" id="L571">                xmlSerializer.endTag(null, GncXmlHelper.TAG_SX_NUM_OCCUR);</span>
+
+                //remaining occurrences
+<span class="nc" id="L574">                int executionCount = cursor.getInt(cursor.getColumnIndexOrThrow(ScheduledActionEntry.COLUMN_EXECUTION_COUNT));</span>
+<span class="nc" id="L575">                xmlSerializer.startTag(null, GncXmlHelper.TAG_SX_REM_OCCUR);</span>
+<span class="nc" id="L576">                xmlSerializer.text(Integer.toString(totalFrequency - executionCount));</span>
+<span class="nc" id="L577">                xmlSerializer.endTag(null, GncXmlHelper.TAG_SX_REM_OCCUR);</span>
+            }
+
+<span class="nc" id="L580">            String tag = cursor.getString(cursor.getColumnIndexOrThrow(ScheduledActionEntry.COLUMN_TAG));</span>
+<span class="nc bnc" id="L581" title="All 4 branches missed.">            if (tag != null &amp;&amp; !tag.isEmpty()){</span>
+<span class="nc" id="L582">                xmlSerializer.startTag(null, GncXmlHelper.TAG_SX_TAG);</span>
+<span class="nc" id="L583">                xmlSerializer.text(tag);</span>
+<span class="nc" id="L584">                xmlSerializer.endTag(null, GncXmlHelper.TAG_SX_TAG);</span>
+            }
+
+<span class="nc" id="L587">            xmlSerializer.startTag(null, GncXmlHelper.TAG_SX_TEMPL_ACCOUNT);</span>
+<span class="nc" id="L588">            xmlSerializer.attribute(null, GncXmlHelper.ATTR_KEY_TYPE, GncXmlHelper.ATTR_VALUE_GUID);</span>
+<span class="nc" id="L589">            xmlSerializer.text(accountUID.getUID());</span>
+<span class="nc" id="L590">            xmlSerializer.endTag(null, GncXmlHelper.TAG_SX_TEMPL_ACCOUNT);</span>
+
+            //// FIXME: 11.10.2015 Retrieve the information for this section from the recurrence table
+<span class="nc" id="L593">            xmlSerializer.startTag(null, GncXmlHelper.TAG_SX_SCHEDULE);</span>
+<span class="nc" id="L594">            xmlSerializer.startTag(null, GncXmlHelper.TAG_GNC_RECURRENCE);</span>
+<span class="nc" id="L595">            xmlSerializer.attribute(null, GncXmlHelper.ATTR_KEY_VERSION, GncXmlHelper.RECURRENCE_VERSION);</span>
+
+<span class="nc" id="L597">            String recurrenceUID = cursor.getString(cursor.getColumnIndexOrThrow(ScheduledActionEntry.COLUMN_RECURRENCE_UID));</span>
+<span class="nc" id="L598">            Recurrence recurrence = RecurrenceDbAdapter.getInstance().getRecord(recurrenceUID);</span>
+<span class="nc" id="L599">            exportRecurrence(xmlSerializer, recurrence);</span>
+<span class="nc" id="L600">            xmlSerializer.endTag(null, GncXmlHelper.TAG_GNC_RECURRENCE);</span>
+<span class="nc" id="L601">            xmlSerializer.endTag(null, GncXmlHelper.TAG_SX_SCHEDULE);</span>
+
+<span class="nc" id="L603">            xmlSerializer.endTag(null, GncXmlHelper.TAG_SCHEDULED_ACTION);</span>
+<span class="nc" id="L604">        }</span>
+<span class="nc" id="L605">    }</span>
+
+    /**
+     * Serializes a date as a {@code tag} which has a nested {@link GncXmlHelper#TAG_GDATE} which
+     * has the date as a text element formatted using {@link GncXmlHelper#DATE_FORMATTER}
+     * @param xmlSerializer XML serializer
+     * @param tag Enclosing tag
+     * @param timeMillis Date to be formatted and output
+     * @throws IOException
+     */
+    private void serializeDate(XmlSerializer xmlSerializer, String tag, long timeMillis) throws IOException {
+<span class="nc" id="L616">        xmlSerializer.startTag(null, tag);</span>
+<span class="nc" id="L617">        xmlSerializer.startTag(null, GncXmlHelper.TAG_GDATE);</span>
+<span class="nc" id="L618">        xmlSerializer.text(GncXmlHelper.DATE_FORMATTER.format(timeMillis));</span>
+<span class="nc" id="L619">        xmlSerializer.endTag(null, GncXmlHelper.TAG_GDATE);</span>
+<span class="nc" id="L620">        xmlSerializer.endTag(null, tag);</span>
+<span class="nc" id="L621">    }</span>
+
+    private void exportCommodities(XmlSerializer xmlSerializer, List&lt;Commodity&gt; commodities) throws IOException {
+<span class="nc bnc" id="L624" title="All 2 branches missed.">        for (Commodity commodity : commodities) {</span>
+<span class="nc" id="L625">            xmlSerializer.startTag(null, GncXmlHelper.TAG_COMMODITY);</span>
+<span class="nc" id="L626">            xmlSerializer.attribute(null, GncXmlHelper.ATTR_KEY_VERSION, GncXmlHelper.BOOK_VERSION);</span>
+<span class="nc" id="L627">            xmlSerializer.startTag(null, GncXmlHelper.TAG_COMMODITY_SPACE);</span>
+<span class="nc" id="L628">            xmlSerializer.text(&quot;ISO4217&quot;);</span>
+<span class="nc" id="L629">            xmlSerializer.endTag(null, GncXmlHelper.TAG_COMMODITY_SPACE);</span>
+<span class="nc" id="L630">            xmlSerializer.startTag(null, GncXmlHelper.TAG_COMMODITY_ID);</span>
+<span class="nc" id="L631">            xmlSerializer.text(commodity.getCurrencyCode());</span>
+<span class="nc" id="L632">            xmlSerializer.endTag(null, GncXmlHelper.TAG_COMMODITY_ID);</span>
+<span class="nc" id="L633">            xmlSerializer.endTag(null, GncXmlHelper.TAG_COMMODITY);</span>
+<span class="nc" id="L634">        }</span>
+<span class="nc" id="L635">    }</span>
+
+    private void exportPrices(XmlSerializer xmlSerializer) throws IOException {
+<span class="nc" id="L638">        xmlSerializer.startTag(null, GncXmlHelper.TAG_PRICEDB);</span>
+<span class="nc" id="L639">        xmlSerializer.attribute(null, GncXmlHelper.ATTR_KEY_VERSION, &quot;1&quot;);</span>
+<span class="nc" id="L640">        Cursor cursor = mPricesDbAdapter.fetchAllRecords();</span>
+        try {
+<span class="nc bnc" id="L642" title="All 2 branches missed.">            while(cursor.moveToNext()) {</span>
+<span class="nc" id="L643">                xmlSerializer.startTag(null, GncXmlHelper.TAG_PRICE);</span>
+                // GUID
+<span class="nc" id="L645">                xmlSerializer.startTag(null, GncXmlHelper.TAG_PRICE_ID);</span>
+<span class="nc" id="L646">                xmlSerializer.attribute(null, GncXmlHelper.ATTR_KEY_TYPE, GncXmlHelper.ATTR_VALUE_GUID);</span>
+<span class="nc" id="L647">                xmlSerializer.text(cursor.getString(cursor.getColumnIndexOrThrow(DatabaseSchema.CommonColumns.COLUMN_UID)));</span>
+<span class="nc" id="L648">                xmlSerializer.endTag(null, GncXmlHelper.TAG_PRICE_ID);</span>
+                // commodity
+<span class="nc" id="L650">                xmlSerializer.startTag(null, GncXmlHelper.TAG_PRICE_COMMODITY);</span>
+<span class="nc" id="L651">                xmlSerializer.startTag(null, GncXmlHelper.TAG_COMMODITY_SPACE);</span>
+<span class="nc" id="L652">                xmlSerializer.text(&quot;ISO4217&quot;);</span>
+<span class="nc" id="L653">                xmlSerializer.endTag(null, GncXmlHelper.TAG_COMMODITY_SPACE);</span>
+<span class="nc" id="L654">                xmlSerializer.startTag(null, GncXmlHelper.TAG_COMMODITY_ID);</span>
+<span class="nc" id="L655">                xmlSerializer.text(mCommoditiesDbAdapter.getCurrencyCode(cursor.getString(cursor.getColumnIndexOrThrow(DatabaseSchema.PriceEntry.COLUMN_COMMODITY_UID))));</span>
+<span class="nc" id="L656">                xmlSerializer.endTag(null, GncXmlHelper.TAG_COMMODITY_ID);</span>
+<span class="nc" id="L657">                xmlSerializer.endTag(null, GncXmlHelper.TAG_PRICE_COMMODITY);</span>
+                // currency
+<span class="nc" id="L659">                xmlSerializer.startTag(null, GncXmlHelper.TAG_PRICE_CURRENCY);</span>
+<span class="nc" id="L660">                xmlSerializer.startTag(null, GncXmlHelper.TAG_COMMODITY_SPACE);</span>
+<span class="nc" id="L661">                xmlSerializer.text(&quot;ISO4217&quot;);</span>
+<span class="nc" id="L662">                xmlSerializer.endTag(null, GncXmlHelper.TAG_COMMODITY_SPACE);</span>
+<span class="nc" id="L663">                xmlSerializer.startTag(null, GncXmlHelper.TAG_COMMODITY_ID);</span>
+<span class="nc" id="L664">                xmlSerializer.text(mCommoditiesDbAdapter.getCurrencyCode(cursor.getString(cursor.getColumnIndexOrThrow(DatabaseSchema.PriceEntry.COLUMN_CURRENCY_UID))));</span>
+<span class="nc" id="L665">                xmlSerializer.endTag(null, GncXmlHelper.TAG_COMMODITY_ID);</span>
+<span class="nc" id="L666">                xmlSerializer.endTag(null, GncXmlHelper.TAG_PRICE_CURRENCY);</span>
+                // time
+<span class="nc" id="L668">                String strDate = GncXmlHelper.formatDate(TimestampHelper.getTimestampFromUtcString(cursor.getString(cursor.getColumnIndexOrThrow(DatabaseSchema.PriceEntry.COLUMN_DATE))).getTime());</span>
+<span class="nc" id="L669">                xmlSerializer.startTag(null, GncXmlHelper.TAG_PRICE_TIME);</span>
+<span class="nc" id="L670">                xmlSerializer.startTag(null, GncXmlHelper.TAG_TS_DATE);</span>
+<span class="nc" id="L671">                xmlSerializer.text(strDate);</span>
+<span class="nc" id="L672">                xmlSerializer.endTag(null, GncXmlHelper.TAG_TS_DATE);</span>
+<span class="nc" id="L673">                xmlSerializer.endTag(null, GncXmlHelper.TAG_PRICE_TIME);</span>
+                // source
+<span class="nc" id="L675">                xmlSerializer.startTag(null, GncXmlHelper.TAG_PRICE_SOURCE);</span>
+<span class="nc" id="L676">                xmlSerializer.text(cursor.getString(cursor.getColumnIndexOrThrow(DatabaseSchema.PriceEntry.COLUMN_SOURCE)));</span>
+<span class="nc" id="L677">                xmlSerializer.endTag(null, GncXmlHelper.TAG_PRICE_SOURCE);</span>
+                // type, optional
+<span class="nc" id="L679">                String type = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseSchema.PriceEntry.COLUMN_TYPE));</span>
+<span class="nc bnc" id="L680" title="All 4 branches missed.">                if (type != null &amp;&amp; !type.equals(&quot;&quot;)) {</span>
+<span class="nc" id="L681">                    xmlSerializer.startTag(null, GncXmlHelper.TAG_PRICE_TYPE);</span>
+<span class="nc" id="L682">                    xmlSerializer.text(type);</span>
+<span class="nc" id="L683">                    xmlSerializer.endTag(null, GncXmlHelper.TAG_PRICE_TYPE);</span>
+                }
+                // value
+<span class="nc" id="L686">                xmlSerializer.startTag(null, GncXmlHelper.TAG_PRICE_VALUE);</span>
+<span class="nc" id="L687">                xmlSerializer.text(cursor.getLong(cursor.getColumnIndexOrThrow(DatabaseSchema.PriceEntry.COLUMN_VALUE_NUM))</span>
+<span class="nc" id="L688">                                + &quot;/&quot; + cursor.getLong(cursor.getColumnIndexOrThrow(DatabaseSchema.PriceEntry.COLUMN_VALUE_DENOM)));</span>
+<span class="nc" id="L689">                xmlSerializer.endTag(null, GncXmlHelper.TAG_PRICE_VALUE);</span>
+<span class="nc" id="L690">                xmlSerializer.endTag(null, GncXmlHelper.TAG_PRICE);</span>
+<span class="nc" id="L691">            }</span>
+        } finally {
+<span class="nc" id="L693">            cursor.close();</span>
+<span class="nc" id="L694">        }</span>
+<span class="nc" id="L695">        xmlSerializer.endTag(null, GncXmlHelper.TAG_PRICEDB);</span>
+<span class="nc" id="L696">    }</span>
+
+    /**
+     * Exports the recurrence to GnuCash XML, except the recurrence tags itself i.e. the actual recurrence attributes only
+     * &lt;p&gt;This is because there are different recurrence start tags for transactions and budgets.&lt;br&gt;
+     *     So make sure to write the recurrence start/closing tags before/after calling this method.&lt;/p&gt;
+     * @param xmlSerializer XML serializer
+     * @param recurrence Recurrence object
+     */
+    private void exportRecurrence(XmlSerializer xmlSerializer, Recurrence recurrence) throws IOException{
+<span class="nc" id="L706">        PeriodType periodType = recurrence.getPeriodType();</span>
+<span class="nc" id="L707">        xmlSerializer.startTag(null, GncXmlHelper.TAG_RX_MULT);</span>
+<span class="nc" id="L708">        xmlSerializer.text(String.valueOf(recurrence.getMultiplier()));</span>
+<span class="nc" id="L709">        xmlSerializer.endTag(null, GncXmlHelper.TAG_RX_MULT);</span>
+<span class="nc" id="L710">        xmlSerializer.startTag(null, GncXmlHelper.TAG_RX_PERIOD_TYPE);</span>
+<span class="nc" id="L711">        xmlSerializer.text(periodType.name().toLowerCase());</span>
+<span class="nc" id="L712">        xmlSerializer.endTag(null, GncXmlHelper.TAG_RX_PERIOD_TYPE);</span>
+
+<span class="nc" id="L714">        long recurrenceStartTime = recurrence.getPeriodStart().getTime();</span>
+<span class="nc" id="L715">        serializeDate(xmlSerializer, GncXmlHelper.TAG_RX_START, recurrenceStartTime);</span>
+<span class="nc" id="L716">    }</span>
+
+    private void exportBudgets(XmlSerializer xmlSerializer) throws IOException {
+<span class="nc" id="L719">        Cursor cursor = mBudgetsDbAdapter.fetchAllRecords();</span>
+<span class="nc bnc" id="L720" title="All 2 branches missed.">        while(cursor.moveToNext()) {</span>
+<span class="nc" id="L721">            Budget budget = mBudgetsDbAdapter.buildModelInstance(cursor);</span>
+<span class="nc" id="L722">            xmlSerializer.startTag(null,    GncXmlHelper.TAG_BUDGET);</span>
+<span class="nc" id="L723">            xmlSerializer.attribute(null,   GncXmlHelper.ATTR_KEY_VERSION, GncXmlHelper.BOOK_VERSION);</span>
+<span class="nc" id="L724">            xmlSerializer.startTag(null,    GncXmlHelper.TAG_BUDGET_ID);</span>
+<span class="nc" id="L725">            xmlSerializer.attribute(null,   GncXmlHelper.ATTR_KEY_TYPE, GncXmlHelper.ATTR_VALUE_GUID);</span>
+<span class="nc" id="L726">            xmlSerializer.text(budget.getUID());</span>
+<span class="nc" id="L727">            xmlSerializer.endTag(null,      GncXmlHelper.TAG_BUDGET_ID);</span>
+<span class="nc" id="L728">            xmlSerializer.startTag(null,    GncXmlHelper.TAG_BUDGET_NAME);</span>
+<span class="nc" id="L729">            xmlSerializer.text(budget.getName());</span>
+<span class="nc" id="L730">            xmlSerializer.endTag(null,      GncXmlHelper.TAG_BUDGET_NAME);</span>
+<span class="nc" id="L731">            xmlSerializer.startTag(null,    GncXmlHelper.TAG_BUDGET_DESCRIPTION);</span>
+<span class="nc bnc" id="L732" title="All 2 branches missed.">            xmlSerializer.text(budget.getDescription() == null ? &quot;&quot; : budget.getDescription());</span>
+<span class="nc" id="L733">            xmlSerializer.endTag(null,      GncXmlHelper.TAG_BUDGET_DESCRIPTION);</span>
+<span class="nc" id="L734">            xmlSerializer.startTag(null,    GncXmlHelper.TAG_BUDGET_NUM_PERIODS);</span>
+<span class="nc" id="L735">            xmlSerializer.text(Long.toString(budget.getNumberOfPeriods()));</span>
+<span class="nc" id="L736">            xmlSerializer.endTag(null,      GncXmlHelper.TAG_BUDGET_NUM_PERIODS);</span>
+<span class="nc" id="L737">            xmlSerializer.startTag(null,    GncXmlHelper.TAG_BUDGET_RECURRENCE);</span>
+<span class="nc" id="L738">            exportRecurrence(xmlSerializer, budget.getRecurrence());</span>
+<span class="nc" id="L739">            xmlSerializer.endTag(null,      GncXmlHelper.TAG_BUDGET_RECURRENCE);</span>
+
+            //export budget slots
+<span class="nc" id="L742">            ArrayList&lt;String&gt; slotKey = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L743">            ArrayList&lt;String&gt; slotType = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L744">            ArrayList&lt;String&gt; slotValue = new ArrayList&lt;&gt;();</span>
+
+<span class="nc" id="L746">            xmlSerializer.startTag(null, GncXmlHelper.TAG_BUDGET_SLOTS);</span>
+<span class="nc bnc" id="L747" title="All 2 branches missed.">            for (BudgetAmount budgetAmount : budget.getExpandedBudgetAmounts()) {</span>
+<span class="nc" id="L748">                xmlSerializer.startTag(null, GncXmlHelper.TAG_SLOT);</span>
+<span class="nc" id="L749">                xmlSerializer.startTag(null, GncXmlHelper.TAG_SLOT_KEY);</span>
+<span class="nc" id="L750">                xmlSerializer.text(budgetAmount.getAccountUID());</span>
+<span class="nc" id="L751">                xmlSerializer.endTag(null, GncXmlHelper.TAG_SLOT_KEY);</span>
+
+<span class="nc" id="L753">                Money amount = budgetAmount.getAmount();</span>
+<span class="nc" id="L754">                slotKey.clear();</span>
+<span class="nc" id="L755">                slotType.clear();</span>
+<span class="nc" id="L756">                slotValue.clear();</span>
+<span class="nc bnc" id="L757" title="All 2 branches missed.">                for (int period = 0; period &lt; budget.getNumberOfPeriods(); period++) {</span>
+<span class="nc" id="L758">                    slotKey.add(String.valueOf(period));</span>
+<span class="nc" id="L759">                    slotType.add(GncXmlHelper.ATTR_VALUE_NUMERIC);</span>
+<span class="nc" id="L760">                    slotValue.add(amount.getNumerator() + &quot;/&quot; + amount.getDenominator());</span>
+                }
+                //budget slots
+
+<span class="nc" id="L764">                xmlSerializer.startTag(null, GncXmlHelper.TAG_SLOT_VALUE);</span>
+<span class="nc" id="L765">                xmlSerializer.attribute(null, GncXmlHelper.ATTR_KEY_TYPE, GncXmlHelper.ATTR_VALUE_FRAME);</span>
+<span class="nc" id="L766">                exportSlots(xmlSerializer, slotKey, slotType, slotValue);</span>
+<span class="nc" id="L767">                xmlSerializer.endTag(null, GncXmlHelper.TAG_SLOT_VALUE);</span>
+<span class="nc" id="L768">                xmlSerializer.endTag(null, GncXmlHelper.TAG_SLOT);</span>
+<span class="nc" id="L769">            }</span>
+
+<span class="nc" id="L771">            xmlSerializer.endTag(null, GncXmlHelper.TAG_BUDGET_SLOTS);</span>
+<span class="nc" id="L772">            xmlSerializer.endTag(null, GncXmlHelper.TAG_BUDGET);</span>
+<span class="nc" id="L773">        }</span>
+<span class="nc" id="L774">        cursor.close();</span>
+<span class="nc" id="L775">    }</span>
+
+    @Override
+    public List&lt;String&gt; generateExport() throws ExporterException {
+<span class="nc" id="L779">        OutputStreamWriter writer = null;</span>
+<span class="nc" id="L780">        String outputFile = getExportCacheFilePath();</span>
+        try {
+<span class="nc" id="L782">            FileOutputStream fileOutputStream = new FileOutputStream(outputFile);</span>
+<span class="nc" id="L783">            BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);</span>
+<span class="nc" id="L784">            writer = new OutputStreamWriter(bufferedOutputStream);</span>
+
+<span class="nc" id="L786">            generateExport(writer);</span>
+<span class="nc" id="L787">        } catch (IOException ex){</span>
+<span class="nc" id="L788">            Crashlytics.log(&quot;Error exporting XML&quot;);</span>
+<span class="nc" id="L789">            Crashlytics.logException(ex);</span>
+        } finally {
+<span class="nc bnc" id="L791" title="All 6 branches missed.">            if (writer != null) {</span>
+                try {
+<span class="nc" id="L793">                    writer.close();</span>
+<span class="nc" id="L794">                } catch (IOException e) {</span>
+<span class="nc" id="L795">                    throw new ExporterException(mExportParams, e);</span>
+<span class="nc" id="L796">                }</span>
+            }
+        }
+
+<span class="nc" id="L800">        List&lt;String&gt; exportedFiles = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L801">        exportedFiles.add(outputFile);</span>
+
+<span class="nc" id="L803">        return exportedFiles;</span>
+    }
+
+    /**
+     * Generates an XML export of the database and writes it to the {@code writer} output stream
+     * @param writer Output stream
+     * @throws ExporterException
+     */
+    public void generateExport(Writer writer) throws ExporterException {
+        try {
+<span class="nc" id="L813">            String[] namespaces = new String[]{&quot;gnc&quot;, &quot;act&quot;, &quot;book&quot;, &quot;cd&quot;, &quot;cmdty&quot;, &quot;price&quot;, &quot;slot&quot;,</span>
+                    &quot;split&quot;, &quot;trn&quot;, &quot;ts&quot;, &quot;sx&quot;, &quot;bgt&quot;, &quot;recurrence&quot;};
+<span class="nc" id="L815">            XmlSerializer xmlSerializer = XmlPullParserFactory.newInstance().newSerializer();</span>
+            try {
+<span class="nc" id="L817">                xmlSerializer.setFeature(&quot;http://xmlpull.org/v1/doc/features.html#indent-output&quot;, true);</span>
+<span class="nc" id="L818">            } catch (IllegalStateException e) {</span>
+                // Feature not supported. No problem
+<span class="nc" id="L820">            }</span>
+<span class="nc" id="L821">            xmlSerializer.setOutput(writer);</span>
+<span class="nc" id="L822">            xmlSerializer.startDocument(&quot;utf-8&quot;, true);</span>
+            // root tag
+<span class="nc" id="L824">            xmlSerializer.startTag(null, GncXmlHelper.TAG_ROOT);</span>
+<span class="nc bnc" id="L825" title="All 2 branches missed.">            for (String ns : namespaces) {</span>
+<span class="nc" id="L826">                xmlSerializer.attribute(null, &quot;xmlns:&quot; + ns, &quot;http://www.gnucash.org/XML/&quot; + ns);</span>
+            }
+            // book count
+<span class="nc" id="L829">            xmlSerializer.startTag(null, GncXmlHelper.TAG_COUNT_DATA);</span>
+<span class="nc" id="L830">            xmlSerializer.attribute(null, GncXmlHelper.ATTR_KEY_CD_TYPE, GncXmlHelper.ATTR_VALUE_BOOK);</span>
+<span class="nc" id="L831">            xmlSerializer.text(&quot;1&quot;);</span>
+<span class="nc" id="L832">            xmlSerializer.endTag(null, GncXmlHelper.TAG_COUNT_DATA);</span>
+            // book
+<span class="nc" id="L834">            xmlSerializer.startTag(null, GncXmlHelper.TAG_BOOK);</span>
+<span class="nc" id="L835">            xmlSerializer.attribute(null, GncXmlHelper.ATTR_KEY_VERSION, GncXmlHelper.BOOK_VERSION);</span>
+            // book_id
+<span class="nc" id="L837">            xmlSerializer.startTag(null, GncXmlHelper.TAG_BOOK_ID);</span>
+<span class="nc" id="L838">            xmlSerializer.attribute(null, GncXmlHelper.ATTR_KEY_TYPE, GncXmlHelper.ATTR_VALUE_GUID);</span>
+<span class="nc" id="L839">            xmlSerializer.text(BaseModel.generateUID());</span>
+<span class="nc" id="L840">            xmlSerializer.endTag(null, GncXmlHelper.TAG_BOOK_ID);</span>
+            //commodity count
+<span class="nc" id="L842">            List&lt;Commodity&gt; commodities = mAccountsDbAdapter.getCommoditiesInUse();</span>
+<span class="nc bnc" id="L843" title="All 2 branches missed.">            for (int i = 0; i &lt; commodities.size(); i++) {</span>
+<span class="nc bnc" id="L844" title="All 2 branches missed.">                if (commodities.get(i).getCurrencyCode().equals(&quot;XXX&quot;)) {</span>
+<span class="nc" id="L845">                    commodities.remove(i);</span>
+                }
+            }
+<span class="nc" id="L848">            xmlSerializer.startTag(null, GncXmlHelper.TAG_COUNT_DATA);</span>
+<span class="nc" id="L849">            xmlSerializer.attribute(null, GncXmlHelper.ATTR_KEY_CD_TYPE, &quot;commodity&quot;);</span>
+<span class="nc" id="L850">            xmlSerializer.text(commodities.size() + &quot;&quot;);</span>
+<span class="nc" id="L851">            xmlSerializer.endTag(null, GncXmlHelper.TAG_COUNT_DATA);</span>
+            //account count
+<span class="nc" id="L853">            xmlSerializer.startTag(null, GncXmlHelper.TAG_COUNT_DATA);</span>
+<span class="nc" id="L854">            xmlSerializer.attribute(null, GncXmlHelper.ATTR_KEY_CD_TYPE, &quot;account&quot;);</span>
+<span class="nc" id="L855">            xmlSerializer.text(mAccountsDbAdapter.getRecordsCount() + &quot;&quot;);</span>
+<span class="nc" id="L856">            xmlSerializer.endTag(null, GncXmlHelper.TAG_COUNT_DATA);</span>
+            //transaction count
+<span class="nc" id="L858">            xmlSerializer.startTag(null, GncXmlHelper.TAG_COUNT_DATA);</span>
+<span class="nc" id="L859">            xmlSerializer.attribute(null, GncXmlHelper.ATTR_KEY_CD_TYPE, &quot;transaction&quot;);</span>
+<span class="nc" id="L860">            xmlSerializer.text(mTransactionsDbAdapter.getRecordsCount() + &quot;&quot;);</span>
+<span class="nc" id="L861">            xmlSerializer.endTag(null, GncXmlHelper.TAG_COUNT_DATA);</span>
+            //price count
+<span class="nc" id="L863">            long priceCount = mPricesDbAdapter.getRecordsCount();</span>
+<span class="nc bnc" id="L864" title="All 2 branches missed.">            if (priceCount &gt; 0) {</span>
+<span class="nc" id="L865">                xmlSerializer.startTag(null, GncXmlHelper.TAG_COUNT_DATA);</span>
+<span class="nc" id="L866">                xmlSerializer.attribute(null, GncXmlHelper.ATTR_KEY_CD_TYPE, &quot;price&quot;);</span>
+<span class="nc" id="L867">                xmlSerializer.text(priceCount + &quot;&quot;);</span>
+<span class="nc" id="L868">                xmlSerializer.endTag(null, GncXmlHelper.TAG_COUNT_DATA);</span>
+            }
+            // export the commodities used in the DB
+<span class="nc" id="L871">            exportCommodities(xmlSerializer, commodities);</span>
+            // prices
+<span class="nc bnc" id="L873" title="All 2 branches missed.">            if (priceCount &gt; 0) {</span>
+<span class="nc" id="L874">                exportPrices(xmlSerializer);</span>
+            }
+            // accounts.
+<span class="nc" id="L877">            exportAccounts(xmlSerializer);</span>
+            // transactions.
+<span class="nc" id="L879">            exportTransactions(xmlSerializer, false);</span>
+
+            //transaction templates
+<span class="nc bnc" id="L882" title="All 2 branches missed.">            if (mTransactionsDbAdapter.getTemplateTransactionsCount() &gt; 0) {</span>
+<span class="nc" id="L883">                xmlSerializer.startTag(null, GncXmlHelper.TAG_TEMPLATE_TRANSACTIONS);</span>
+<span class="nc" id="L884">                exportTransactions(xmlSerializer, true);</span>
+<span class="nc" id="L885">                xmlSerializer.endTag(null, GncXmlHelper.TAG_TEMPLATE_TRANSACTIONS);</span>
+            }
+            //scheduled actions
+<span class="nc" id="L888">            exportScheduledTransactions(xmlSerializer);</span>
+
+            //budgets
+<span class="nc" id="L891">            exportBudgets(xmlSerializer);</span>
+
+<span class="nc" id="L893">            xmlSerializer.endTag(null, GncXmlHelper.TAG_BOOK);</span>
+<span class="nc" id="L894">            xmlSerializer.endTag(null, GncXmlHelper.TAG_ROOT);</span>
+<span class="nc" id="L895">            xmlSerializer.endDocument();</span>
+<span class="nc" id="L896">            xmlSerializer.flush();</span>
+<span class="nc" id="L897">        } catch (Exception e) {</span>
+<span class="nc" id="L898">            Crashlytics.logException(e);</span>
+<span class="nc" id="L899">            throw new ExporterException(mExportParams, e);</span>
+<span class="nc" id="L900">        }</span>
+<span class="nc" id="L901">    }</span>
+
+    /**
+     * Returns the MIME type for this exporter.
+     * @return MIME type as string
+     */
+    public String getExportMimeType(){
+<span class="nc" id="L908">        return &quot;text/xml&quot;;</span>
+    }
+
+    /**
+     * Creates a backup of current database contents to the directory {@link Exporter#getBackupFolderPath(String)}
+     * @return {@code true} if backup was successful, {@code false} otherwise
+     */
+    public static boolean createBackup(){
+<span class="nc" id="L916">        return createBackup(BooksDbAdapter.getInstance().getActiveBookUID());</span>
+    }
+
+    /**
+     * Create a backup of the book in the default backup location
+     * @param bookUID Unique ID of the book
+     * @return {@code true} if backup was successful, {@code false} otherwise
+     */
+    public static boolean createBackup(String bookUID){
+        OutputStream outputStream;
+        try {
+<span class="nc" id="L927">            String backupFile = BookUtils.getBookBackupFileUri(bookUID);</span>
+<span class="nc bnc" id="L928" title="All 2 branches missed.">            if (backupFile != null){</span>
+<span class="nc" id="L929">                outputStream = GnuCashApplication.getAppContext().getContentResolver().openOutputStream(Uri.parse(backupFile));</span>
+            } else { //no Uri set by user, use default location on SD card
+<span class="nc" id="L931">                backupFile = getBackupFilePath(bookUID);</span>
+<span class="nc" id="L932">                outputStream = new FileOutputStream(backupFile);</span>
+            }
+
+<span class="nc" id="L935">            BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(outputStream);</span>
+<span class="nc" id="L936">            GZIPOutputStream gzipOutputStream = new GZIPOutputStream(bufferedOutputStream);</span>
+<span class="nc" id="L937">            OutputStreamWriter writer = new OutputStreamWriter(gzipOutputStream);</span>
+
+<span class="nc" id="L939">            ExportParams params = new ExportParams(ExportFormat.XML);</span>
+<span class="nc" id="L940">            new GncXmlExporter(params).generateExport(writer);</span>
+<span class="nc" id="L941">            writer.close();</span>
+<span class="nc" id="L942">            return true;</span>
+<span class="nc" id="L943">        } catch (IOException | ExporterException e) {</span>
+<span class="nc" id="L944">            Crashlytics.logException(e);</span>
+<span class="nc" id="L945">            Log.e(&quot;GncXmlExporter&quot;, &quot;Error creating XML  backup&quot;, e);</span>
+<span class="nc" id="L946">            return false;</span>
+        }
+    }
+
+    /**
+     * Returns the full path of a file to make database backup of the specified book
+     * Backups are done in XML format and are zipped (with &quot;.zip&quot; extension).
+     * @param bookUID GUID of the book
+     * @return the file path for backups of the database.
+     * @see #getBackupFolderPath(String)
+     */
+    private static String getBackupFilePath(String bookUID){
+<span class="nc" id="L958">        Book book = BooksDbAdapter.getInstance().getRecord(bookUID);</span>
+<span class="nc" id="L959">        return Exporter.getBackupFolderPath(book.getUID()) + buildExportFilename(ExportFormat.XML, book.getDisplayName()) + &quot;.zip&quot;;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

@@ -1,0 +1,507 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Money.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.model</a> &gt; <span class="el_source">Money.java</span></div><h1>Money.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2012 - 2014 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.model;
+
+
+import android.support.annotation.NonNull;
+import android.util.Log;
+
+import com.crashlytics.android.Crashlytics;
+
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.text.NumberFormat;
+import java.util.Currency;
+import java.util.Locale;
+
+/**
+ * Money represents a money amount and a corresponding currency.
+ * Money internally uses {@link BigDecimal} to represent the amounts, which enables it 
+ * to maintain high precision afforded by BigDecimal. Money objects are immutable and
+ * most operations return new Money objects.
+ * Money String constructors should not be passed any locale-formatted numbers. Only
+ * {@link Locale#US} is supported e.g. &quot;2.45&quot; will be parsed as 2.45 meanwhile 
+ * &quot;2,45&quot; will be parsed to 245 although that could be a decimal in {@link Locale#GERMAN}
+ * 
+ * @author Ngewi Fet&lt;ngewif@gmail.com&gt;
+ *
+ */
+public final class Money implements Comparable&lt;Money&gt;{
+
+	/**
+	 * Currency of the account
+	 */
+	private Commodity mCommodity;
+
+	/**
+	 * Amount value held by this object
+	 */
+	private BigDecimal mAmount;
+
+	/**
+	 * Rounding mode to be applied when performing operations
+	 * Defaults to {@link RoundingMode#HALF_EVEN}
+	 */
+<span class="pc" id="L62">	protected RoundingMode ROUNDING_MODE = RoundingMode.HALF_EVEN;</span>
+
+	/**
+	 * Default currency code (according ISO 4217) 
+	 * This is typically initialized to the currency of the device default locale,
+	 * otherwise US dollars are used
+	 */
+<span class="fc" id="L69">	public static String DEFAULT_CURRENCY_CODE 	= &quot;USD&quot;;</span>
+
+    /**
+     * A zero instance with the currency of the default locale.
+     * This can be used anywhere where a starting amount is required without having to create a new object
+     */
+    private static Money sDefaultZero;
+
+    /**
+     * Returns a Money instance initialized to the local currency and value 0
+     * @return Money instance of value 0 in locale currency
+     */
+    public static Money getZeroInstance(){
+<span class="fc bfc" id="L82" title="All 2 branches covered.">		if (sDefaultZero == null) {</span>
+<span class="fc" id="L83">			sDefaultZero = new Money(BigDecimal.ZERO, Commodity.DEFAULT_COMMODITY);</span>
+		}
+<span class="fc" id="L85">		return sDefaultZero;</span>
+    }
+
+	/**
+	 * Returns the {@link BigDecimal} from the {@code numerator} and {@code denominator}
+	 * @param numerator Number of the fraction
+	 * @param denominator Denominator of the fraction
+	 * @return BigDecimal representation of the number
+	 */
+	public static BigDecimal getBigDecimal(long numerator, long denominator) {
+		int scale;
+<span class="nc bnc" id="L96" title="All 4 branches missed.">		if (numerator == 0 &amp;&amp; denominator == 0) {</span>
+<span class="nc" id="L97">			denominator = 1;</span>
+		}
+
+<span class="nc" id="L100">		scale = Integer.numberOfTrailingZeros((int)denominator);</span>
+<span class="nc" id="L101">		return new BigDecimal(BigInteger.valueOf(numerator), scale);</span>
+	}
+
+	/**
+	 * Creates a new money amount
+	 * @param amount Value of the amount
+	 * @param commodity Commodity of the money
+	 */
+<span class="fc" id="L109">	public Money(BigDecimal amount, Commodity commodity){</span>
+<span class="fc" id="L110">		this.mCommodity = commodity;</span>
+<span class="fc" id="L111">		setAmount(amount); //commodity has to be set first. Because we use it's scale</span>
+<span class="fc" id="L112">	}</span>
+
+	/**
+	 * Overloaded constructor.
+	 * Accepts strings as arguments and parses them to create the Money object
+	 * @param amount Numerical value of the Money
+	 * @param currencyCode Currency code as specified by ISO 4217
+	 */
+<span class="fc" id="L120">	public Money(String amount, String currencyCode){</span>
+		//commodity has to be set first
+<span class="fc" id="L122">		mCommodity = Commodity.getInstance(currencyCode);</span>
+<span class="fc" id="L123">		setAmount(new BigDecimal(amount));</span>
+<span class="fc" id="L124">	}</span>
+
+	/**
+	 * Constructs a new money amount given the numerator and denominator of the amount.
+	 * The rounding mode used for the division is {@link BigDecimal#ROUND_HALF_EVEN}
+	 * @param numerator Numerator as integer
+	 * @param denominator Denominator as integer
+	 * @param currencyCode 3-character currency code string
+	 */
+<span class="nc" id="L133">	public Money(long numerator, long denominator, String currencyCode){</span>
+<span class="nc" id="L134">		mAmount = getBigDecimal(numerator, denominator);</span>
+<span class="nc" id="L135">		setCommodity(currencyCode);</span>
+<span class="nc" id="L136">	}</span>
+
+    /**
+     * Copy constructor.
+     * Creates a new Money object which is a clone of &lt;code&gt;money&lt;/code&gt;
+     * @param money Money instance to be cloned
+     */
+<span class="nc" id="L143">    public Money(Money money){</span>
+<span class="nc" id="L144">		setCommodity(money.getCommodity());</span>
+<span class="nc" id="L145">		setAmount(money.asBigDecimal());</span>
+<span class="nc" id="L146">    }</span>
+
+    /**
+     * Creates a new Money instance with 0 amount and the &lt;code&gt;currencyCode&lt;/code&gt;
+     * @param currencyCode Currency to use for this money instance
+     * @return Money object with value 0 and currency &lt;code&gt;currencyCode&lt;/code&gt;
+     */
+    public static Money createZeroInstance(@NonNull String currencyCode){
+<span class="nc" id="L154">		Commodity commodity = Commodity.getInstance(currencyCode);</span>
+<span class="nc" id="L155">        return new Money(BigDecimal.ZERO, commodity);</span>
+    }
+
+	/**
+	 * Returns the commodity used by the Money
+	 * @return Instance of commodity
+	 */
+	public Commodity getCommodity(){
+<span class="nc" id="L163">		return mCommodity;</span>
+	}
+
+	/**
+	 * Returns a new &lt;code&gt;Money&lt;/code&gt; object the currency specified by &lt;code&gt;currency&lt;/code&gt; 
+	 * and the same value as this one. No value exchange between the currencies is performed.
+	 * @param commodity {@link Commodity} to assign to new &lt;code&gt;Money&lt;/code&gt; object
+	 * @return {@link Money} object with same value as current object, but with new &lt;code&gt;currency&lt;/code&gt;
+	 */
+    public Money withCurrency(@NonNull Commodity commodity){
+<span class="nc" id="L173">		return new Money(mAmount, commodity);</span>
+	}
+
+	/**
+	 * Sets the commodity for the Money
+	 * &lt;p&gt;No currency conversion is performed&lt;/p&gt;
+	 * @param commodity Commodity instance
+	 */
+	private void setCommodity(@NonNull Commodity commodity){
+<span class="nc" id="L182">		this.mCommodity = commodity;</span>
+<span class="nc" id="L183">	}</span>
+
+	/**
+	 * Sets the commodity for the Money
+	 * @param currencyCode ISO 4217 currency code
+	 */
+	private void setCommodity(@NonNull String currencyCode){
+<span class="nc" id="L190">		mCommodity = Commodity.getInstance(currencyCode);</span>
+<span class="nc" id="L191">	}</span>
+
+	/**
+	 * Returns the GnuCash format numerator for this amount.
+	 * &lt;p&gt;Example: Given an amount 32.50$, the numerator will be 3250&lt;/p&gt;
+	 * @return GnuCash numerator for this amount
+	 */
+	public long getNumerator() {
+		try {
+<span class="nc" id="L200">			return mAmount.scaleByPowerOfTen(getScale()).longValueExact();</span>
+<span class="nc" id="L201">		} catch (ArithmeticException e) {</span>
+<span class="nc" id="L202">			String msg = &quot;Currency &quot; + mCommodity.getCurrencyCode() +</span>
+<span class="nc" id="L203">					&quot; with scale &quot; + getScale() +</span>
+<span class="nc" id="L204">					&quot; has amount &quot; + mAmount.toString();</span>
+<span class="nc" id="L205">			Crashlytics.log(msg);</span>
+<span class="nc" id="L206">			Log.e(getClass().getName(), msg);</span>
+<span class="nc" id="L207">			throw e;</span>
+		}
+	}
+
+	/**
+	 * Returns the GnuCash amount format denominator for this amount
+	 * &lt;p&gt;The denominator is 10 raised to the power of number of fractional digits in the currency&lt;/p&gt;
+	 * @return GnuCash format denominator
+	 */
+	public long getDenominator() {
+<span class="nc" id="L217">		int scale = getScale();</span>
+<span class="nc" id="L218">		return BigDecimal.ONE.scaleByPowerOfTen(scale).longValueExact();</span>
+	}
+
+	/**
+	 * Returns the scale (precision) used for the decimal places of this amount.
+	 * &lt;p&gt;The scale used depends on the commodity&lt;/p&gt;
+	 * @return Scale of amount as integer
+	 */
+	private int getScale() {
+<span class="nc" id="L227">		int scale = mCommodity.getSmallestFractionDigits();</span>
+<span class="nc bnc" id="L228" title="All 2 branches missed.">		if (scale &lt; 0) {</span>
+<span class="nc" id="L229">			scale = mAmount.scale();</span>
+		}
+<span class="nc bnc" id="L231" title="All 2 branches missed.">		if (scale &lt; 0) {</span>
+<span class="nc" id="L232">			scale = 0;</span>
+		}
+<span class="nc" id="L234">		return scale;</span>
+	}
+
+	/**
+	 * Returns the amount represented by this Money object
+	 * &lt;p&gt;The scale and rounding mode of the returned value are set to that of this Money object&lt;/p&gt;
+	 * @return {@link BigDecimal} valure of amount in object
+	 */
+	public BigDecimal asBigDecimal() {
+<span class="fc" id="L243">		return mAmount.setScale(mCommodity.getSmallestFractionDigits(), RoundingMode.HALF_EVEN);</span>
+	}
+	
+	/**
+	 * Returns the amount this object
+	 * @return Double value of the amount in the object
+	 */
+	public double asDouble(){
+<span class="nc" id="L251">		return mAmount.doubleValue();</span>
+	}
+
+	/**
+	 * An alias for {@link #toPlainString()}
+	 * @return Money formatted as a string (excludes the currency)
+	 */
+	public String asString(){
+<span class="nc" id="L259">		return toPlainString();</span>
+	}
+	
+	/**
+	 * Returns a string representation of the Money object formatted according to 
+	 * the &lt;code&gt;locale&lt;/code&gt; and includes the currency symbol. 
+	 * The output precision is limited to the number of fractional digits supported by the currency
+	 * @param locale Locale to use when formatting the object
+	 * @return String containing formatted Money representation
+	 */
+    public String formattedString(Locale locale){
+
+<span class="nc" id="L271">		NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(locale);</span>
+
+		String symbol;
+		//if we want to show US Dollars for locales which also use Dollars, for example, Canada
+<span class="nc bnc" id="L275" title="All 4 branches missed.">		if (mCommodity.equals(Commodity.USD) &amp;&amp; !locale.equals(Locale.US)) {</span>
+<span class="nc" id="L276">			symbol = &quot;US$&quot;;</span>
+		} else {
+<span class="nc" id="L278">			symbol = mCommodity.getSymbol();</span>
+		}
+<span class="nc" id="L280">		DecimalFormatSymbols decimalFormatSymbols = ((DecimalFormat)currencyFormat).getDecimalFormatSymbols();</span>
+<span class="nc" id="L281">		decimalFormatSymbols.setCurrencySymbol(symbol);</span>
+<span class="nc" id="L282">		((DecimalFormat)currencyFormat).setDecimalFormatSymbols(decimalFormatSymbols);</span>
+<span class="nc" id="L283">		currencyFormat.setMinimumFractionDigits(mCommodity.getSmallestFractionDigits());</span>
+<span class="nc" id="L284">		currencyFormat.setMaximumFractionDigits(mCommodity.getSmallestFractionDigits());</span>
+
+<span class="nc" id="L286">		return currencyFormat.format(asDouble());</span>
+/*
+// 	old currency formatting code
+		NumberFormat formatter = NumberFormat.getInstance(locale);
+		formatter.setMinimumFractionDigits(mCommodity.getSmallestFractionDigits());
+		formatter.setMaximumFractionDigits(mCommodity.getSmallestFractionDigits());
+		Currency currency = Currency.getInstance(mCommodity.getCurrencyCode());
+		return formatter.format(asDouble()) + &quot; &quot; + currency.getSymbol(locale);
+*/
+	}
+
+    /**
+     * Equivalent to calling formattedString(Locale.getDefault())
+     * @return String formatted Money representation in default locale
+     */
+    public String formattedString(){
+<span class="nc" id="L302">        return formattedString(Locale.getDefault());</span>
+    }
+
+	/**
+	 * Returns a new Money object whose amount is the negated value of this object amount.
+	 * The original &lt;code&gt;Money&lt;/code&gt; object remains unchanged.
+	 * @return Negated &lt;code&gt;Money&lt;/code&gt; object
+	 */
+    public Money negate(){
+<span class="nc" id="L311">		return new Money(mAmount.negate(), mCommodity);</span>
+	}
+	
+	/**
+	 * Sets the amount value of this &lt;code&gt;Money&lt;/code&gt; object
+	 * @param amount {@link BigDecimal} amount to be set
+	 */
+	private void setAmount(@NonNull BigDecimal amount) {
+<span class="fc" id="L319">		mAmount = amount.setScale(mCommodity.getSmallestFractionDigits(), ROUNDING_MODE);</span>
+<span class="fc" id="L320">	}</span>
+
+	/**
+	 * Returns a new &lt;code&gt;Money&lt;/code&gt; object whose value is the sum of the values of 
+	 * this object and &lt;code&gt;addend&lt;/code&gt;.
+	 * 
+	 * @param addend Second operand in the addition.
+	 * @return Money object whose value is the sum of this object and &lt;code&gt;money&lt;/code&gt;
+	 * @throws CurrencyMismatchException if the &lt;code&gt;Money&lt;/code&gt; objects to be added have different Currencies
+	 */
+    public Money add(Money addend){
+<span class="pc bpc" id="L331" title="1 of 2 branches missed.">		if (!mCommodity.equals(addend.mCommodity))</span>
+<span class="nc" id="L332">			throw new CurrencyMismatchException();</span>
+		
+<span class="fc" id="L334">		BigDecimal bigD = mAmount.add(addend.mAmount);</span>
+<span class="fc" id="L335">		return new Money(bigD, mCommodity);</span>
+	}
+
+	/**
+	 * Returns a new &lt;code&gt;Money&lt;/code&gt; object whose value is the difference of the values of 
+	 * this object and &lt;code&gt;subtrahend&lt;/code&gt;.
+	 * This object is the minuend and the parameter is the subtrahend
+	 * @param subtrahend Second operand in the subtraction.
+	 * @return Money object whose value is the difference of this object and &lt;code&gt;subtrahend&lt;/code&gt;
+	 * @throws CurrencyMismatchException if the &lt;code&gt;Money&lt;/code&gt; objects to be added have different Currencies
+	 */
+    public Money subtract(Money subtrahend){
+<span class="nc bnc" id="L347" title="All 2 branches missed.">		if (!mCommodity.equals(subtrahend.mCommodity))</span>
+<span class="nc" id="L348">			throw new CurrencyMismatchException();</span>
+		
+<span class="nc" id="L350">		BigDecimal bigD = mAmount.subtract(subtrahend.mAmount);		</span>
+<span class="nc" id="L351">		return new Money(bigD, mCommodity);</span>
+	}
+	
+	/**
+	 * Returns a new &lt;code&gt;Money&lt;/code&gt; object whose value is the quotient of the values of 
+	 * this object and &lt;code&gt;divisor&lt;/code&gt;.
+	 * This object is the dividend and &lt;code&gt;divisor&lt;/code&gt; is the divisor
+	 * &lt;p&gt;This method uses the rounding mode {@link BigDecimal#ROUND_HALF_EVEN}&lt;/p&gt;
+	 * @param divisor Second operand in the division.
+	 * @return Money object whose value is the quotient of this object and &lt;code&gt;divisor&lt;/code&gt;
+	 * @throws CurrencyMismatchException if the &lt;code&gt;Money&lt;/code&gt; objects to be added have different Currencies
+	 */
+    public Money divide(Money divisor){
+<span class="nc bnc" id="L364" title="All 2 branches missed.">		if (!mCommodity.equals(divisor.mCommodity))</span>
+<span class="nc" id="L365">			throw new CurrencyMismatchException();</span>
+		
+<span class="nc" id="L367">		BigDecimal bigD = mAmount.divide(divisor.mAmount, mCommodity.getSmallestFractionDigits(), ROUNDING_MODE);</span>
+<span class="nc" id="L368">		return new Money(bigD, mCommodity);</span>
+	}
+	
+	/**
+	 * Returns a new &lt;code&gt;Money&lt;/code&gt; object whose value is the quotient of the division of this objects 
+	 * value by the factor &lt;code&gt;divisor&lt;/code&gt;
+	 * @param divisor Second operand in the addition.
+	 * @return Money object whose value is the quotient of this object and &lt;code&gt;divisor&lt;/code&gt;
+	 */
+    public Money divide(int divisor){
+<span class="nc" id="L378">		Money moneyDiv = new Money(new BigDecimal(divisor), mCommodity);</span>
+<span class="nc" id="L379">		return divide(moneyDiv);</span>
+	}
+	
+	/**
+	 * Returns a new &lt;code&gt;Money&lt;/code&gt; object whose value is the product of the values of 
+	 * this object and &lt;code&gt;money&lt;/code&gt;.
+	 * 
+	 * @param money Second operand in the multiplication.
+	 * @return Money object whose value is the product of this object and &lt;code&gt;money&lt;/code&gt;
+	 * @throws CurrencyMismatchException if the &lt;code&gt;Money&lt;/code&gt; objects to be added have different Currencies
+	 */
+    public Money multiply(Money money){
+<span class="nc bnc" id="L391" title="All 2 branches missed.">		if (!mCommodity.equals(money.mCommodity))</span>
+<span class="nc" id="L392">			throw new CurrencyMismatchException();</span>
+		
+<span class="nc" id="L394">		BigDecimal bigD = mAmount.multiply(money.mAmount);		</span>
+<span class="nc" id="L395">		return new Money(bigD, mCommodity);</span>
+	}
+	
+	/**
+	 * Returns a new &lt;code&gt;Money&lt;/code&gt; object whose value is the product of this object
+	 * and the factor &lt;code&gt;multiplier&lt;/code&gt;
+	 * &lt;p&gt;The currency of the returned object is the same as the current object&lt;/p&gt;
+	 * @param multiplier Factor to multiply the amount by.
+	 * @return Money object whose value is the product of this objects values and &lt;code&gt;multiplier&lt;/code&gt;
+	 */
+    public Money multiply(int multiplier){
+<span class="nc" id="L406">		Money moneyFactor = new Money(new BigDecimal(multiplier), mCommodity);</span>
+<span class="nc" id="L407">		return multiply(moneyFactor);</span>
+	}
+
+	/**
+	 * Returns a new &lt;code&gt;Money&lt;/code&gt; object whose value is the product of this object
+	 * and the factor &lt;code&gt;multiplier&lt;/code&gt;
+	 * @param multiplier Factor to multiply the amount by.
+	 * @return Money object whose value is the product of this objects values and &lt;code&gt;multiplier&lt;/code&gt;
+	 */
+	public Money multiply(@NonNull BigDecimal multiplier){
+<span class="nc" id="L417">		return new Money(mAmount.multiply(multiplier), mCommodity);</span>
+	}
+
+	/**
+	 * Returns true if the amount held by this Money object is negative
+	 * @return &lt;code&gt;true&lt;/code&gt; if the amount is negative, &lt;code&gt;false&lt;/code&gt; otherwise.
+	 */
+	public boolean isNegative(){
+<span class="nc bnc" id="L425" title="All 2 branches missed.">		return mAmount.compareTo(BigDecimal.ZERO) == -1;</span>
+	}
+	
+	/**
+	 * Returns the string representation of the amount (without currency) of the Money object.
+	 * &lt;p&gt;This string is not locale-formatted. The decimal operator is a period (.)&lt;/p&gt;
+	 * @return String representation of the amount (without currency) of the Money object
+	 */
+	public String toPlainString(){
+<span class="nc" id="L434">		return mAmount.setScale(mCommodity.getSmallestFractionDigits(), ROUNDING_MODE).toPlainString();</span>
+	}
+
+	/**
+	 * Returns the string representation of the Money object (value + currency) formatted according
+	 * to the default locale
+	 * @return String representation of the amount formatted with default locale
+	 */
+    @Override
+	public String toString() {
+<span class="nc" id="L444">		return formattedString(Locale.getDefault());</span>
+	}
+		
+	@Override
+	public int hashCode() {
+<span class="nc" id="L449">		final int prime = 31;</span>
+<span class="nc" id="L450">		int result = 1;</span>
+<span class="nc" id="L451">		result = prime * result + (mAmount.hashCode());</span>
+<span class="nc" id="L452">		result = prime * result + (mCommodity.hashCode());</span>
+<span class="nc" id="L453">		return result;</span>
+	}
+
+	/** //FIXME: equality failing for money objects
+	 * Two Money objects are only equal if their amount (value) and currencies are equal
+	 * @param obj Object to compare with
+	 * @return &lt;code&gt;true&lt;/code&gt; if the objects are equal, &lt;code&gt;false&lt;/code&gt; otherwise
+	 */
+	@Override
+	public boolean equals(Object obj) {
+<span class="pc bpc" id="L463" title="1 of 2 branches missed.">		if (this == obj)</span>
+<span class="nc" id="L464">			return true;</span>
+<span class="pc bpc" id="L465" title="1 of 2 branches missed.">		if (obj == null)</span>
+<span class="nc" id="L466">			return false;</span>
+<span class="pc bpc" id="L467" title="1 of 2 branches missed.">		if (getClass() != obj.getClass())</span>
+<span class="nc" id="L468">			return false;</span>
+<span class="fc" id="L469">		Money other = (Money) obj;</span>
+<span class="pc bpc" id="L470" title="1 of 2 branches missed.">		if (!mAmount.equals(other.mAmount))</span>
+<span class="nc" id="L471">			return false;</span>
+<span class="pc bpc" id="L472" title="1 of 2 branches missed.">		if (!mCommodity.equals(other.mCommodity))</span>
+<span class="nc" id="L473">			return false;</span>
+<span class="fc" id="L474">		return true;</span>
+	}
+
+	@Override
+	public int compareTo(@NonNull Money another) {
+<span class="nc bnc" id="L479" title="All 2 branches missed.">		if (!mCommodity.equals(another.mCommodity))</span>
+<span class="nc" id="L480">			throw new CurrencyMismatchException();</span>
+<span class="nc" id="L481">		return mAmount.compareTo(another.mAmount);</span>
+	}
+
+    /**
+     * Returns a new instance of {@link Money} object with the absolute value of the current object
+     * @return Money object with absolute value of this instance
+     */
+    public Money abs() {
+<span class="fc" id="L489">        return new Money(mAmount.abs(), mCommodity);</span>
+    }
+
+	/**
+	 * Checks if the value of this amount is exactly equal to zero.
+	 * @return {@code true} if this money amount is zero, {@code false} otherwise
+	 */
+    public boolean isAmountZero() {
+<span class="nc bnc" id="L497" title="All 2 branches missed.">		return mAmount.compareTo(BigDecimal.ZERO) == 0;</span>
+	}
+
+<span class="nc" id="L500">	public class CurrencyMismatchException extends IllegalArgumentException{</span>
+		@Override
+		public String getMessage() {
+<span class="nc" id="L503">			return &quot;Cannot perform operation on Money instances with different currencies&quot;;</span>
+		}
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

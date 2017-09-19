@@ -1,0 +1,545 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TransactionsActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.ui.transaction</a> &gt; <span class="el_source">TransactionsActivity.java</span></div><h1>TransactionsActivity.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2012 - 2015 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ * Copyright (c) 2014 Yongxin Wang &lt;fefe.wyx@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.ui.transaction;
+
+import android.content.Context;
+import android.content.Intent;
+import android.database.Cursor;
+import android.graphics.drawable.ColorDrawable;
+import android.os.AsyncTask;
+import android.os.Build;
+import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.TabLayout;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentStatePagerAdapter;
+import android.support.v4.view.PagerAdapter;
+import android.support.v4.view.ViewPager;
+import android.text.format.DateUtils;
+import android.util.Log;
+import android.util.SparseArray;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.Spinner;
+import android.widget.SpinnerAdapter;
+import android.widget.TextView;
+
+import org.gnucash.android.R;
+import org.gnucash.android.app.GnuCashApplication;
+import org.gnucash.android.db.DatabaseSchema;
+import org.gnucash.android.db.adapter.AccountsDbAdapter;
+import org.gnucash.android.db.adapter.TransactionsDbAdapter;
+import org.gnucash.android.model.Account;
+import org.gnucash.android.model.Money;
+import org.gnucash.android.ui.account.AccountsActivity;
+import org.gnucash.android.ui.account.AccountsListFragment;
+import org.gnucash.android.ui.account.OnAccountClickedListener;
+import org.gnucash.android.ui.common.BaseDrawerActivity;
+import org.gnucash.android.ui.common.FormActivity;
+import org.gnucash.android.ui.common.Refreshable;
+import org.gnucash.android.ui.common.UxArgument;
+import org.gnucash.android.ui.util.AccountBalanceTask;
+import org.gnucash.android.util.QualifiedAccountNameCursorAdapter;
+import org.joda.time.LocalDate;
+
+import java.math.BigDecimal;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+import butterknife.BindView;
+
+/**
+ * Activity for displaying, creating and editing transactions
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ */
+<span class="nc" id="L75">public class TransactionsActivity extends BaseDrawerActivity implements</span>
+        Refreshable, OnAccountClickedListener, OnTransactionClickedListener{
+
+	/**
+	 * Logging tag
+	 */
+	protected static final String TAG = &quot;TransactionsActivity&quot;;
+
+    /**
+     * ViewPager index for sub-accounts fragment
+     */
+    private static final int INDEX_SUB_ACCOUNTS_FRAGMENT     = 0;
+
+    /**
+     * ViewPager index for transactions fragment
+     */
+    private static final int INDEX_TRANSACTIONS_FRAGMENT     = 1;
+
+    /**
+     * Number of pages to show
+     */
+    private static final int DEFAULT_NUM_PAGES = 2;
+<span class="nc" id="L97">    private static SimpleDateFormat mDayMonthDateFormat = new SimpleDateFormat(&quot;EEE, d MMM&quot;);</span>
+
+    /**
+     * GUID of {@link Account} whose transactions are displayed
+     */
+<span class="nc" id="L102">    private String mAccountUID = null;</span>
+
+    /**
+     * Account database adapter for manipulating the accounts list in navigation
+     */
+    private AccountsDbAdapter mAccountsDbAdapter;
+
+    /**
+     * Hold the accounts cursor that will be used in the Navigation
+     */
+<span class="nc" id="L112">    private Cursor mAccountsCursor = null;</span>
+
+    @BindView(R.id.pager)            ViewPager mViewPager;
+    @BindView(R.id.toolbar_spinner)  Spinner mToolbarSpinner;
+    @BindView(R.id.tab_layout)       TabLayout mTabLayout;
+    @BindView(R.id.transactions_sum) TextView mSumTextView;
+    @BindView(R.id.fab_create_transaction) FloatingActionButton mCreateFloatingButton;
+
+<span class="nc" id="L120">    private SparseArray&lt;Refreshable&gt; mFragmentPageReferenceMap = new SparseArray&lt;&gt;();</span>
+
+    /**
+     * Flag for determining is the currently displayed account is a placeholder account or not.
+     * This will determine if the transactions tab is displayed or not
+     */
+    private boolean mIsPlaceholderAccount;
+
+<span class="nc" id="L128">	private AdapterView.OnItemSelectedListener mTransactionListNavigationListener = new AdapterView.OnItemSelectedListener() {</span>
+
+        @Override
+        public void onItemSelected(AdapterView&lt;?&gt; parent, View view, int position, long id) {
+<span class="nc" id="L132">            mAccountUID = mAccountsDbAdapter.getUID(id);</span>
+<span class="nc" id="L133">            getIntent().putExtra(UxArgument.SELECTED_ACCOUNT_UID, mAccountUID); //update the intent in case the account gets rotated</span>
+<span class="nc" id="L134">            mIsPlaceholderAccount = mAccountsDbAdapter.isPlaceholderAccount(mAccountUID);</span>
+<span class="nc bnc" id="L135" title="All 2 branches missed.">            if (mIsPlaceholderAccount){</span>
+<span class="nc bnc" id="L136" title="All 2 branches missed.">                if (mTabLayout.getTabCount() &gt; 1) {</span>
+<span class="nc" id="L137">                    mPagerAdapter.notifyDataSetChanged();</span>
+<span class="nc" id="L138">                    mTabLayout.removeTabAt(1);</span>
+                }
+            } else {
+<span class="nc bnc" id="L141" title="All 2 branches missed.">                if (mTabLayout.getTabCount() &lt; 2) {</span>
+<span class="nc" id="L142">                    mPagerAdapter.notifyDataSetChanged();</span>
+<span class="nc" id="L143">                    mTabLayout.addTab(mTabLayout.newTab().setText(R.string.section_header_transactions));</span>
+                }
+            }
+<span class="nc bnc" id="L146" title="All 2 branches missed.">            if (view != null) {</span>
+                // Hide the favorite icon of the selected account to avoid clutter
+<span class="nc" id="L148">                ((TextView) view).setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0);</span>
+            }
+            //refresh any fragments in the tab with the new account UID
+<span class="nc" id="L151">            refresh();</span>
+<span class="nc" id="L152">        }</span>
+
+        @Override
+        public void onNothingSelected(AdapterView&lt;?&gt; parent) {
+            //nothing to see here, move along
+<span class="nc" id="L157">        }</span>
+	};
+
+    private PagerAdapter mPagerAdapter;
+
+
+    /**
+     * Adapter for managing the sub-account and transaction fragment pages in the accounts view
+     */
+    private class AccountViewPagerAdapter extends FragmentStatePagerAdapter {
+
+<span class="nc" id="L168">        public AccountViewPagerAdapter(FragmentManager fm){</span>
+<span class="nc" id="L169">            super(fm);</span>
+<span class="nc" id="L170">        }</span>
+
+        @Override
+        public Fragment getItem(int i) {
+<span class="nc bnc" id="L174" title="All 2 branches missed.">            if (mIsPlaceholderAccount){</span>
+<span class="nc" id="L175">                Fragment transactionsListFragment = prepareSubAccountsListFragment();</span>
+<span class="nc" id="L176">                mFragmentPageReferenceMap.put(i, (Refreshable) transactionsListFragment);</span>
+<span class="nc" id="L177">                return transactionsListFragment;</span>
+            }
+
+            Fragment currentFragment;
+<span class="nc bnc" id="L181" title="All 2 branches missed.">            switch (i){</span>
+                case INDEX_SUB_ACCOUNTS_FRAGMENT:
+<span class="nc" id="L183">                    currentFragment = prepareSubAccountsListFragment();</span>
+<span class="nc" id="L184">                    break;</span>
+
+                case INDEX_TRANSACTIONS_FRAGMENT:
+                default:
+<span class="nc" id="L188">                    currentFragment = prepareTransactionsListFragment();</span>
+                    break;
+            }
+
+<span class="nc" id="L192">            mFragmentPageReferenceMap.put(i, (Refreshable)currentFragment);</span>
+<span class="nc" id="L193">            return currentFragment;</span>
+        }
+
+        @Override
+        public void destroyItem(ViewGroup container, int position, Object object) {
+<span class="nc" id="L198">            super.destroyItem(container, position, object);</span>
+<span class="nc" id="L199">            mFragmentPageReferenceMap.remove(position);</span>
+<span class="nc" id="L200">        }</span>
+
+        @Override
+        public CharSequence getPageTitle(int position) {
+<span class="nc bnc" id="L204" title="All 2 branches missed.">            if (mIsPlaceholderAccount)</span>
+<span class="nc" id="L205">                return getString(R.string.section_header_subaccounts);</span>
+
+<span class="nc bnc" id="L207" title="All 2 branches missed.">            switch (position){</span>
+                case INDEX_SUB_ACCOUNTS_FRAGMENT:
+<span class="nc" id="L209">                    return getString(R.string.section_header_subaccounts);</span>
+
+                case INDEX_TRANSACTIONS_FRAGMENT:
+                default:
+<span class="nc" id="L213">                    return getString(R.string.section_header_transactions);</span>
+            }
+        }
+
+        @Override
+        public int getCount() {
+<span class="nc bnc" id="L219" title="All 2 branches missed.">            if (mIsPlaceholderAccount)</span>
+<span class="nc" id="L220">                return 1;</span>
+            else
+<span class="nc" id="L222">                return DEFAULT_NUM_PAGES;</span>
+        }
+
+        /**
+         * Creates and initializes the fragment for displaying sub-account list
+         * @return {@link AccountsListFragment} initialized with the sub-accounts
+         */
+        private AccountsListFragment prepareSubAccountsListFragment(){
+<span class="nc" id="L230">            AccountsListFragment subAccountsListFragment = new AccountsListFragment();</span>
+<span class="nc" id="L231">            Bundle args = new Bundle();</span>
+<span class="nc" id="L232">            args.putString(UxArgument.PARENT_ACCOUNT_UID, mAccountUID);</span>
+<span class="nc" id="L233">            subAccountsListFragment.setArguments(args);</span>
+<span class="nc" id="L234">            return subAccountsListFragment;</span>
+        }
+
+        /**
+         * Creates and initializes fragment for displaying transactions
+         * @return {@link TransactionsListFragment} initialized with the current account transactions
+         */
+        private TransactionsListFragment prepareTransactionsListFragment(){
+<span class="nc" id="L242">            TransactionsListFragment transactionsListFragment = new TransactionsListFragment();</span>
+<span class="nc" id="L243">            Bundle args = new Bundle();</span>
+<span class="nc" id="L244">            args.putString(UxArgument.SELECTED_ACCOUNT_UID, mAccountUID);</span>
+<span class="nc" id="L245">            transactionsListFragment.setArguments(args);</span>
+<span class="nc" id="L246">            Log.i(TAG, &quot;Opening transactions for account:  &quot; +  mAccountUID);</span>
+<span class="nc" id="L247">            return transactionsListFragment;</span>
+        }
+    }
+
+    /**
+     * Refreshes the fragments currently in the transactions activity
+     */
+    @Override
+    public void refresh(String accountUID) {
+<span class="nc bnc" id="L256" title="All 2 branches missed.">        for (int i = 0; i &lt; mFragmentPageReferenceMap.size(); i++) {</span>
+<span class="nc" id="L257">            mFragmentPageReferenceMap.valueAt(i).refresh(accountUID);</span>
+        }
+
+<span class="nc bnc" id="L260" title="All 2 branches missed.">        if (mPagerAdapter != null)</span>
+<span class="nc" id="L261">            mPagerAdapter.notifyDataSetChanged();</span>
+
+<span class="nc" id="L263">        new AccountBalanceTask(mSumTextView).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, mAccountUID);</span>
+
+<span class="nc" id="L265">    }</span>
+
+    @Override
+    public void refresh(){
+<span class="nc" id="L269">        refresh(mAccountUID);</span>
+<span class="nc" id="L270">        setTitleIndicatorColor();</span>
+<span class="nc" id="L271">    }</span>
+
+    @Override
+    public int getContentView() {
+<span class="nc" id="L275">        return R.layout.activity_transactions;</span>
+    }
+
+    @Override
+    public int getTitleRes() {
+<span class="nc" id="L280">        return R.string.title_transactions;</span>
+    }
+
+    @Override
+	protected void onCreate(Bundle savedInstanceState) {
+<span class="nc" id="L285">        super.onCreate(savedInstanceState);</span>
+
+<span class="nc" id="L287">        getSupportActionBar().setDisplayShowTitleEnabled(false);</span>
+
+<span class="nc" id="L289">		mAccountUID = getIntent().getStringExtra(UxArgument.SELECTED_ACCOUNT_UID);</span>
+<span class="nc" id="L290">        mAccountsDbAdapter = AccountsDbAdapter.getInstance();</span>
+
+<span class="nc" id="L292">        mIsPlaceholderAccount = mAccountsDbAdapter.isPlaceholderAccount(mAccountUID);</span>
+
+<span class="nc" id="L294">        mTabLayout.addTab(mTabLayout.newTab().setText(R.string.section_header_subaccounts));</span>
+<span class="nc bnc" id="L295" title="All 2 branches missed.">        if (!mIsPlaceholderAccount) {</span>
+<span class="nc" id="L296">            mTabLayout.addTab(mTabLayout.newTab().setText(R.string.section_header_transactions));</span>
+        }
+
+<span class="nc" id="L299">        setupActionBarNavigation();</span>
+
+<span class="nc" id="L301">        mPagerAdapter = new AccountViewPagerAdapter(getSupportFragmentManager());</span>
+<span class="nc" id="L302">        mViewPager.setAdapter(mPagerAdapter);</span>
+<span class="nc" id="L303">        mViewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(mTabLayout));</span>
+
+<span class="nc" id="L305">        mTabLayout.setOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {</span>
+            @Override
+            public void onTabSelected(TabLayout.Tab tab) {
+<span class="nc" id="L308">                mViewPager.setCurrentItem(tab.getPosition());</span>
+<span class="nc" id="L309">            }</span>
+
+            @Override
+            public void onTabUnselected(TabLayout.Tab tab) {
+                //nothing to see here, move along
+<span class="nc" id="L314">            }</span>
+
+            @Override
+            public void onTabReselected(TabLayout.Tab tab) {
+                //nothing to see here, move along
+<span class="nc" id="L319">            }</span>
+        });
+
+        //if there are no transactions, and there are sub-accounts, show the sub-accounts
+<span class="nc bnc" id="L323" title="All 2 branches missed.">        if (TransactionsDbAdapter.getInstance().getTransactionsCount(mAccountUID) == 0</span>
+<span class="nc bnc" id="L324" title="All 2 branches missed.">                &amp;&amp; mAccountsDbAdapter.getSubAccountCount(mAccountUID) &gt; 0){</span>
+<span class="nc" id="L325">            mViewPager.setCurrentItem(INDEX_SUB_ACCOUNTS_FRAGMENT);</span>
+        } else {
+<span class="nc" id="L327">            mViewPager.setCurrentItem(INDEX_TRANSACTIONS_FRAGMENT);</span>
+        }
+
+<span class="nc" id="L330">        mCreateFloatingButton.setOnClickListener(new View.OnClickListener() {</span>
+            @Override
+            public void onClick(View v) {
+<span class="nc bnc" id="L333" title="All 3 branches missed.">                switch (mViewPager.getCurrentItem()) {</span>
+                    case INDEX_SUB_ACCOUNTS_FRAGMENT:
+<span class="nc" id="L335">                        Intent addAccountIntent = new Intent(TransactionsActivity.this, FormActivity.class);</span>
+<span class="nc" id="L336">                        addAccountIntent.setAction(Intent.ACTION_INSERT_OR_EDIT);</span>
+<span class="nc" id="L337">                        addAccountIntent.putExtra(UxArgument.FORM_TYPE, FormActivity.FormType.ACCOUNT.name());</span>
+<span class="nc" id="L338">                        addAccountIntent.putExtra(UxArgument.PARENT_ACCOUNT_UID, mAccountUID);</span>
+<span class="nc" id="L339">                        startActivityForResult(addAccountIntent, AccountsActivity.REQUEST_EDIT_ACCOUNT);</span>
+                        ;
+<span class="nc" id="L341">                        break;</span>
+
+                    case INDEX_TRANSACTIONS_FRAGMENT:
+<span class="nc" id="L344">                        createNewTransaction(mAccountUID);</span>
+                        break;
+
+                }
+<span class="nc" id="L348">            }</span>
+        });
+<span class="nc" id="L350">	}</span>
+
+    @Override
+    protected void onResume() {
+<span class="nc" id="L354">        super.onResume();</span>
+<span class="nc" id="L355">        setTitleIndicatorColor();</span>
+<span class="nc" id="L356">    }</span>
+
+    /**
+     * Sets the color for the ViewPager title indicator to match the account color
+     */
+    private void setTitleIndicatorColor() {
+<span class="nc" id="L362">        int iColor = AccountsDbAdapter.getActiveAccountColorResource(mAccountUID);</span>
+
+<span class="nc" id="L364">        mTabLayout.setBackgroundColor(iColor);</span>
+
+<span class="nc bnc" id="L366" title="All 2 branches missed.">        if (getSupportActionBar() != null)</span>
+<span class="nc" id="L367">            getSupportActionBar().setBackgroundDrawable(new ColorDrawable(iColor));</span>
+
+<span class="nc bnc" id="L369" title="All 2 branches missed.">        if (Build.VERSION.SDK_INT &gt; 20)</span>
+<span class="nc" id="L370">            getWindow().setStatusBarColor(GnuCashApplication.darken(iColor));</span>
+<span class="nc" id="L371">    }</span>
+
+    /**
+	 * Set up action bar navigation list and listener callbacks
+	 */
+	private void setupActionBarNavigation() {
+		// set up spinner adapter for navigation list
+<span class="nc bnc" id="L378" title="All 2 branches missed.">        if (mAccountsCursor != null) {</span>
+<span class="nc" id="L379">            mAccountsCursor.close();</span>
+        }
+<span class="nc" id="L381">		mAccountsCursor = mAccountsDbAdapter.fetchAllRecordsOrderedByFullName();</span>
+
+<span class="nc" id="L383">        SpinnerAdapter mSpinnerAdapter = new QualifiedAccountNameCursorAdapter(</span>
+<span class="nc" id="L384">                getSupportActionBar().getThemedContext(), mAccountsCursor, R.layout.account_spinner_item);</span>
+
+<span class="nc" id="L386">        mToolbarSpinner.setAdapter(mSpinnerAdapter);</span>
+<span class="nc" id="L387">        mToolbarSpinner.setOnItemSelectedListener(mTransactionListNavigationListener);</span>
+<span class="nc" id="L388">        getSupportActionBar().setDisplayHomeAsUpEnabled(true);</span>
+
+<span class="nc" id="L390">		updateNavigationSelection();</span>
+<span class="nc" id="L391">	}</span>
+	
+	/**
+	 * Updates the action bar navigation list selection to that of the current account
+	 * whose transactions are being displayed/manipulated
+	 */
+	public void updateNavigationSelection() {
+		// set the selected item in the spinner
+<span class="nc" id="L399">		int i = 0;</span>
+<span class="nc" id="L400">		Cursor accountsCursor = mAccountsDbAdapter.fetchAllRecordsOrderedByFullName();</span>
+<span class="nc bnc" id="L401" title="All 2 branches missed.">        while (accountsCursor.moveToNext()) {</span>
+<span class="nc" id="L402">            String uid = accountsCursor.getString(accountsCursor.getColumnIndexOrThrow(DatabaseSchema.AccountEntry.COLUMN_UID));</span>
+<span class="nc bnc" id="L403" title="All 2 branches missed.">            if (mAccountUID.equals(uid)) {</span>
+<span class="nc" id="L404">                mToolbarSpinner.setSelection(i);</span>
+<span class="nc" id="L405">                break;</span>
+            }
+<span class="nc" id="L407">            ++i;</span>
+<span class="nc" id="L408">        }</span>
+<span class="nc" id="L409">        accountsCursor.close();</span>
+<span class="nc" id="L410">	}</span>
+
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+<span class="nc" id="L414">        MenuItem favoriteAccountMenuItem = menu.findItem(R.id.menu_favorite_account);</span>
+
+<span class="nc bnc" id="L416" title="All 2 branches missed.">        if (favoriteAccountMenuItem == null) //when the activity is used to edit a transaction</span>
+<span class="nc" id="L417">            return super.onPrepareOptionsMenu(menu);</span>
+
+<span class="nc" id="L419">        boolean isFavoriteAccount = AccountsDbAdapter.getInstance().isFavoriteAccount(mAccountUID);</span>
+
+<span class="nc bnc" id="L421" title="All 2 branches missed.">        int favoriteIcon = isFavoriteAccount ? R.drawable.ic_star_white_24dp : R.drawable.ic_star_border_white_24dp;</span>
+<span class="nc" id="L422">        favoriteAccountMenuItem.setIcon(favoriteIcon);</span>
+<span class="nc" id="L423">        return super.onPrepareOptionsMenu(menu);</span>
+
+    }
+
+    @Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+<span class="nc bnc" id="L429" title="All 4 branches missed.">		switch (item.getItemId()) {</span>
+            case android.R.id.home:
+<span class="nc" id="L431">                return super.onOptionsItemSelected(item);</span>
+
+            case R.id.menu_favorite_account:
+<span class="nc" id="L434">                AccountsDbAdapter accountsDbAdapter = AccountsDbAdapter.getInstance();</span>
+<span class="nc" id="L435">                long accountId = accountsDbAdapter.getID(mAccountUID);</span>
+<span class="nc" id="L436">                boolean isFavorite = accountsDbAdapter.isFavoriteAccount(mAccountUID);</span>
+                //toggle favorite preference
+<span class="nc bnc" id="L438" title="All 2 branches missed.">                accountsDbAdapter.updateAccount(accountId, DatabaseSchema.AccountEntry.COLUMN_FAVORITE, isFavorite ? &quot;0&quot; : &quot;1&quot;);</span>
+<span class="nc" id="L439">                supportInvalidateOptionsMenu();</span>
+<span class="nc" id="L440">                return true;</span>
+
+            case R.id.menu_edit_account:
+<span class="nc" id="L443">                Intent editAccountIntent = new Intent(this, FormActivity.class);</span>
+<span class="nc" id="L444">                editAccountIntent.setAction(Intent.ACTION_INSERT_OR_EDIT);</span>
+<span class="nc" id="L445">                editAccountIntent.putExtra(UxArgument.SELECTED_ACCOUNT_UID, mAccountUID);</span>
+<span class="nc" id="L446">                editAccountIntent.putExtra(UxArgument.FORM_TYPE, FormActivity.FormType.ACCOUNT.name());</span>
+<span class="nc" id="L447">                startActivityForResult(editAccountIntent, AccountsActivity.REQUEST_EDIT_ACCOUNT);</span>
+<span class="nc" id="L448">                return true;</span>
+
+        default:
+<span class="nc" id="L451">			return false;</span>
+		}
+	}
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+<span class="nc bnc" id="L457" title="All 2 branches missed.">        if (resultCode == RESULT_CANCELED)</span>
+<span class="nc" id="L458">            return;</span>
+
+<span class="nc" id="L460">        refresh();</span>
+<span class="nc" id="L461">        setupActionBarNavigation();</span>
+<span class="nc" id="L462">        super.onActivityResult(requestCode, resultCode, data);</span>
+<span class="nc" id="L463">    }</span>
+
+    @Override
+	protected void onDestroy() {
+<span class="nc" id="L467">		super.onDestroy();</span>
+<span class="nc" id="L468">        mAccountsCursor.close();</span>
+<span class="nc" id="L469">	}</span>
+
+	/**
+	 * Returns the global unique ID of the current account
+	 * @return GUID of the current account
+	 */
+	public String getCurrentAccountUID(){
+<span class="nc" id="L476">		return mAccountUID;</span>
+	}
+
+    /**
+     * Display the balance of a transaction in a text view and format the text color to match the sign of the amount
+     * @param balanceTextView {@link android.widget.TextView} where balance is to be displayed
+     * @param balance {@link org.gnucash.android.model.Money} balance to display
+     */
+    public static void displayBalance(TextView balanceTextView, Money balance){
+<span class="nc" id="L485">        balanceTextView.setText(balance.formattedString());</span>
+<span class="nc" id="L486">        Context context = GnuCashApplication.getAppContext();</span>
+<span class="nc bnc" id="L487" title="All 2 branches missed.">        int fontColor = balance.isNegative() ?</span>
+<span class="nc" id="L488">                context.getResources().getColor(R.color.debit_red) :</span>
+<span class="nc" id="L489">                context.getResources().getColor(R.color.credit_green);</span>
+<span class="nc bnc" id="L490" title="All 2 branches missed.">        if (balance.asBigDecimal().compareTo(BigDecimal.ZERO) == 0)</span>
+<span class="nc" id="L491">            fontColor = context.getResources().getColor(android.R.color.black);</span>
+<span class="nc" id="L492">        balanceTextView.setTextColor(fontColor);</span>
+<span class="nc" id="L493">    }</span>
+
+    /**
+     * Formats the date to show the the day of the week if the {@code dateMillis} is within 7 days
+     * of today. Else it shows the actual date formatted as short string. &lt;br&gt;
+     * It also shows &quot;today&quot;, &quot;yesterday&quot; or &quot;tomorrow&quot; if the date is on any of those days
+     * @param dateMillis
+     * @return
+     */
+    @NonNull
+    public static String getPrettyDateFormat(Context context, long dateMillis) {
+<span class="nc" id="L504">        LocalDate transactionTime = new LocalDate(dateMillis);</span>
+<span class="nc" id="L505">        LocalDate today = new LocalDate();</span>
+<span class="nc" id="L506">        String prettyDateText = null;</span>
+<span class="nc bnc" id="L507" title="All 4 branches missed.">        if (transactionTime.compareTo(today.minusDays(1)) &gt;= 0 &amp;&amp; transactionTime.compareTo(today.plusDays(1)) &lt;= 0){</span>
+<span class="nc" id="L508">            prettyDateText = DateUtils.getRelativeTimeSpanString(dateMillis, System.currentTimeMillis(), DateUtils.DAY_IN_MILLIS).toString();</span>
+<span class="nc bnc" id="L509" title="All 2 branches missed.">        } else if (transactionTime.getYear() == today.getYear()){</span>
+<span class="nc" id="L510">            prettyDateText = mDayMonthDateFormat.format(new Date(dateMillis));</span>
+        } else {
+<span class="nc" id="L512">            prettyDateText = DateUtils.formatDateTime(context, dateMillis, DateUtils.FORMAT_ABBREV_MONTH | DateUtils.FORMAT_SHOW_YEAR);</span>
+        }
+
+<span class="nc" id="L515">        return prettyDateText;</span>
+    }
+
+	@Override
+	public void createNewTransaction(String accountUID) {
+<span class="nc" id="L520">        Intent createTransactionIntent = new Intent(this.getApplicationContext(), FormActivity.class);</span>
+<span class="nc" id="L521">        createTransactionIntent.setAction(Intent.ACTION_INSERT_OR_EDIT);</span>
+<span class="nc" id="L522">        createTransactionIntent.putExtra(UxArgument.SELECTED_ACCOUNT_UID, accountUID);</span>
+<span class="nc" id="L523">        createTransactionIntent.putExtra(UxArgument.FORM_TYPE, FormActivity.FormType.TRANSACTION.name());</span>
+<span class="nc" id="L524">        startActivity(createTransactionIntent);</span>
+<span class="nc" id="L525">	}</span>
+
+	@Override
+	public void editTransaction(String transactionUID){
+<span class="nc" id="L529">        Intent createTransactionIntent = new Intent(this.getApplicationContext(), FormActivity.class);</span>
+<span class="nc" id="L530">        createTransactionIntent.setAction(Intent.ACTION_INSERT_OR_EDIT);</span>
+<span class="nc" id="L531">        createTransactionIntent.putExtra(UxArgument.SELECTED_ACCOUNT_UID, mAccountUID);</span>
+<span class="nc" id="L532">        createTransactionIntent.putExtra(UxArgument.SELECTED_TRANSACTION_UID, transactionUID);</span>
+<span class="nc" id="L533">        createTransactionIntent.putExtra(UxArgument.FORM_TYPE, FormActivity.FormType.TRANSACTION.name());</span>
+<span class="nc" id="L534">        startActivity(createTransactionIntent);</span>
+<span class="nc" id="L535">	}</span>
+
+    @Override
+    public void accountSelected(String accountUID) {
+<span class="nc" id="L539">        Intent restartIntent = new Intent(this.getApplicationContext(), TransactionsActivity.class);</span>
+<span class="nc" id="L540">        restartIntent.setAction(Intent.ACTION_VIEW);</span>
+<span class="nc" id="L541">        restartIntent.putExtra(UxArgument.SELECTED_ACCOUNT_UID, accountUID);</span>
+<span class="nc" id="L542">        startActivity(restartIntent);</span>
+<span class="nc" id="L543">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

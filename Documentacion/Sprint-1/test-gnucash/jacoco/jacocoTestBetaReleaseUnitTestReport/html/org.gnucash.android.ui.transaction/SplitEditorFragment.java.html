@@ -1,0 +1,504 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SplitEditorFragment.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.ui.transaction</a> &gt; <span class="el_source">SplitEditorFragment.java</span></div><h1>SplitEditorFragment.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2014 - 2016 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.gnucash.android.ui.transaction;
+
+import android.app.Activity;
+import android.content.Intent;
+import android.content.res.Configuration;
+import android.database.Cursor;
+import android.inputmethodservice.KeyboardView;
+import android.os.Bundle;
+import android.support.v4.app.Fragment;
+import android.support.v4.widget.SimpleCursorAdapter;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.AppCompatActivity;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.CompoundButton;
+import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.Spinner;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import net.objecthunter.exp4j.Expression;
+import net.objecthunter.exp4j.ExpressionBuilder;
+
+import org.gnucash.android.R;
+import org.gnucash.android.db.DatabaseSchema;
+import org.gnucash.android.db.adapter.AccountsDbAdapter;
+import org.gnucash.android.db.adapter.CommoditiesDbAdapter;
+import org.gnucash.android.model.AccountType;
+import org.gnucash.android.model.BaseModel;
+import org.gnucash.android.model.Commodity;
+import org.gnucash.android.model.Money;
+import org.gnucash.android.model.Split;
+import org.gnucash.android.model.Transaction;
+import org.gnucash.android.model.TransactionType;
+import org.gnucash.android.ui.common.FormActivity;
+import org.gnucash.android.ui.common.UxArgument;
+import org.gnucash.android.ui.transaction.dialog.TransferFundsDialogFragment;
+import org.gnucash.android.ui.util.widget.CalculatorEditText;
+import org.gnucash.android.ui.util.widget.CalculatorKeyboard;
+import org.gnucash.android.ui.util.widget.TransactionTypeSwitch;
+import org.gnucash.android.util.QualifiedAccountNameCursorAdapter;
+
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
+
+import butterknife.BindView;
+import butterknife.ButterKnife;
+
+/**
+ * Dialog for editing the splits in a transaction
+ *
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ */
+<span class="nc bnc" id="L80" title="All 2 branches missed.">public class SplitEditorFragment extends Fragment {</span>
+
+    @BindView(R.id.split_list_layout)   LinearLayout mSplitsLinearLayout;
+    @BindView(R.id.calculator_keyboard) KeyboardView mKeyboardView;
+    @BindView(R.id.imbalance_textview)  TextView mImbalanceTextView;
+
+    private AccountsDbAdapter mAccountsDbAdapter;
+    private Cursor mCursor;
+    private SimpleCursorAdapter mCursorAdapter;
+    private List&lt;View&gt; mSplitItemViewList;
+    private String mAccountUID;
+    private Commodity mCommodity;
+
+<span class="nc" id="L93">    private BigDecimal mBaseAmount = BigDecimal.ZERO;</span>
+
+    CalculatorKeyboard mCalculatorKeyboard;
+
+<span class="nc" id="L97">    BalanceTextWatcher mImbalanceWatcher = new BalanceTextWatcher();</span>
+
+    /**
+     * Create and return a new instance of the fragment with the appropriate paramenters
+     * @param args Arguments to be set to the fragment. &lt;br&gt;
+     *             See {@link UxArgument#AMOUNT_STRING} and {@link UxArgument#SPLIT_LIST}
+     * @return New instance of SplitEditorFragment
+     */
+    public static SplitEditorFragment newInstance(Bundle args){
+<span class="nc" id="L106">        SplitEditorFragment fragment = new SplitEditorFragment();</span>
+<span class="nc" id="L107">        fragment.setArguments(args);</span>
+<span class="nc" id="L108">        return fragment;</span>
+    }
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+<span class="nc" id="L113">        View view = inflater.inflate(R.layout.fragment_split_editor, container, false);</span>
+<span class="nc" id="L114">        ButterKnife.bind(this, view);</span>
+<span class="nc" id="L115">        return view;</span>
+    }
+
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+<span class="nc" id="L120">        super.onActivityCreated(savedInstanceState);</span>
+
+<span class="nc" id="L122">        ActionBar actionBar = ((AppCompatActivity)getActivity()).getSupportActionBar();</span>
+<span class="nc bnc" id="L123" title="All 4 branches missed.">        assert actionBar != null;</span>
+<span class="nc" id="L124">        actionBar.setTitle(R.string.title_split_editor);</span>
+<span class="nc" id="L125">        setHasOptionsMenu(true);</span>
+
+<span class="nc" id="L127">        mCalculatorKeyboard = new CalculatorKeyboard(getActivity(), mKeyboardView, R.xml.calculator_keyboard);</span>
+<span class="nc" id="L128">        mSplitItemViewList = new ArrayList&lt;&gt;();</span>
+
+        //we are editing splits for a new transaction.
+        // But the user may have already created some splits before. Let's check
+
+<span class="nc" id="L133">        List&lt;Split&gt; splitList = getArguments().getParcelableArrayList(UxArgument.SPLIT_LIST);</span>
+<span class="nc bnc" id="L134" title="All 4 branches missed.">        assert splitList != null;</span>
+
+<span class="nc" id="L136">        initArgs();</span>
+<span class="nc bnc" id="L137" title="All 2 branches missed.">        if (!splitList.isEmpty()) {</span>
+            //aha! there are some splits. Let's load those instead
+<span class="nc" id="L139">            loadSplitViews(splitList);</span>
+<span class="nc" id="L140">            mImbalanceWatcher.afterTextChanged(null);</span>
+        } else {
+<span class="nc" id="L142">            final String currencyCode = mAccountsDbAdapter.getAccountCurrencyCode(mAccountUID);</span>
+<span class="nc" id="L143">            Split split = new Split(new Money(mBaseAmount.abs(), Commodity.getInstance(currencyCode)), mAccountUID);</span>
+<span class="nc" id="L144">            AccountType accountType = mAccountsDbAdapter.getAccountType(mAccountUID);</span>
+<span class="nc bnc" id="L145" title="All 2 branches missed.">            TransactionType transactionType = Transaction.getTypeForBalance(accountType, mBaseAmount.signum() &lt; 0);</span>
+<span class="nc" id="L146">            split.setType(transactionType);</span>
+<span class="nc" id="L147">            View view = addSplitView(split);</span>
+<span class="nc" id="L148">            view.findViewById(R.id.input_accounts_spinner).setEnabled(false);</span>
+<span class="nc" id="L149">            view.findViewById(R.id.btn_remove_split).setVisibility(View.GONE);</span>
+<span class="nc" id="L150">            TransactionsActivity.displayBalance(mImbalanceTextView, new Money(mBaseAmount.negate(), mCommodity));</span>
+        }
+
+<span class="nc" id="L153">    }</span>
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+<span class="nc" id="L157">        super.onConfigurationChanged(newConfig);</span>
+<span class="nc" id="L158">        mCalculatorKeyboard = new CalculatorKeyboard(getActivity(), mKeyboardView, R.xml.calculator_keyboard);</span>
+<span class="nc" id="L159">    }</span>
+
+    private void loadSplitViews(List&lt;Split&gt; splitList) {
+<span class="nc bnc" id="L162" title="All 2 branches missed.">        for (Split split : splitList) {</span>
+<span class="nc" id="L163">            addSplitView(split);</span>
+<span class="nc" id="L164">        }</span>
+<span class="nc" id="L165">    }</span>
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+<span class="nc" id="L169">        inflater.inflate(R.menu.split_editor_actions, menu);</span>
+<span class="nc" id="L170">    }</span>
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+
+<span class="nc bnc" id="L175" title="All 4 branches missed.">        switch (item.getItemId()) {</span>
+            case android.R.id.home:
+<span class="nc" id="L177">                getActivity().setResult(Activity.RESULT_CANCELED);</span>
+<span class="nc" id="L178">                getActivity().finish();</span>
+<span class="nc" id="L179">                return true;</span>
+
+            case R.id.menu_save:
+<span class="nc" id="L182">                saveSplits();</span>
+<span class="nc" id="L183">                return true;</span>
+
+            case R.id.menu_add_split:
+<span class="nc" id="L186">                addSplitView(null);</span>
+<span class="nc" id="L187">                return true;</span>
+
+            default:
+<span class="nc" id="L190">                return super.onOptionsItemSelected(item);</span>
+        }
+    }
+
+    /**
+     * Add a split view and initialize it with &lt;code&gt;split&lt;/code&gt;
+     * @param split Split to initialize the contents to
+     * @return Returns the split view which was added
+     */
+    private View addSplitView(Split split){
+<span class="nc" id="L200">        LayoutInflater layoutInflater = getActivity().getLayoutInflater();</span>
+<span class="nc" id="L201">        View splitView = layoutInflater.inflate(R.layout.item_split_entry, mSplitsLinearLayout, false);</span>
+<span class="nc" id="L202">        mSplitsLinearLayout.addView(splitView,0);</span>
+<span class="nc" id="L203">        SplitViewHolder viewHolder = new SplitViewHolder(splitView, split);</span>
+<span class="nc" id="L204">        splitView.setTag(viewHolder);</span>
+<span class="nc" id="L205">        mSplitItemViewList.add(splitView);</span>
+<span class="nc" id="L206">        return splitView;</span>
+    }
+
+    /**
+     * Extracts arguments passed to the view and initializes necessary adapters and cursors
+     */
+    private void initArgs() {
+<span class="nc" id="L213">        mAccountsDbAdapter = AccountsDbAdapter.getInstance();</span>
+
+<span class="nc" id="L215">        Bundle args = getArguments();</span>
+<span class="nc" id="L216">        mAccountUID = ((FormActivity) getActivity()).getCurrentAccountUID();</span>
+<span class="nc" id="L217">        mBaseAmount = new BigDecimal(args.getString(UxArgument.AMOUNT_STRING));</span>
+
+<span class="nc" id="L219">        String conditions = &quot;(&quot;</span>
+                + DatabaseSchema.AccountEntry.COLUMN_HIDDEN + &quot; = 0 AND &quot;
+                + DatabaseSchema.AccountEntry.COLUMN_PLACEHOLDER + &quot; = 0&quot;
+                + &quot;)&quot;;
+<span class="nc" id="L223">        mCursor = mAccountsDbAdapter.fetchAccountsOrderedByFullName(conditions, null);</span>
+<span class="nc" id="L224">        mCommodity = CommoditiesDbAdapter.getInstance().getCommodity(mAccountsDbAdapter.getCurrencyCode(mAccountUID));</span>
+<span class="nc" id="L225">    }</span>
+
+    /**
+     * Holds a split item view and binds the items in it
+     */
+    class SplitViewHolder implements OnTransferFundsListener{
+        @BindView(R.id.input_split_memo)        EditText splitMemoEditText;
+        @BindView(R.id.input_split_amount)      CalculatorEditText splitAmountEditText;
+        @BindView(R.id.btn_remove_split)        ImageView removeSplitButton;
+        @BindView(R.id.input_accounts_spinner)  Spinner accountsSpinner;
+        @BindView(R.id.split_currency_symbol)   TextView splitCurrencyTextView;
+        @BindView(R.id.split_uid)               TextView splitUidTextView;
+        @BindView(R.id.btn_split_type)          TransactionTypeSwitch splitTypeSwitch;
+
+        View splitView;
+        Money quantity;
+
+<span class="nc" id="L242">        public SplitViewHolder(View splitView, Split split){</span>
+<span class="nc" id="L243">            ButterKnife.bind(this, splitView);</span>
+<span class="nc" id="L244">            this.splitView = splitView;</span>
+<span class="nc bnc" id="L245" title="All 4 branches missed.">            if (split != null &amp;&amp; !split.getQuantity().equals(split.getValue()))</span>
+<span class="nc" id="L246">                this.quantity = split.getQuantity();</span>
+<span class="nc" id="L247">            setListeners(split);</span>
+<span class="nc" id="L248">        }</span>
+
+        @Override
+        public void transferComplete(Money amount) {
+<span class="nc" id="L252">            quantity = amount;</span>
+<span class="nc" id="L253">        }</span>
+
+        private void setListeners(Split split){
+<span class="nc" id="L256">            splitAmountEditText.bindListeners(mCalculatorKeyboard);</span>
+
+<span class="nc" id="L258">            removeSplitButton.setOnClickListener(new View.OnClickListener() {</span>
+                @Override
+                public void onClick(View view) {
+<span class="nc" id="L261">                    mSplitsLinearLayout.removeView(splitView);</span>
+<span class="nc" id="L262">                    mSplitItemViewList.remove(splitView);</span>
+<span class="nc" id="L263">                    mImbalanceWatcher.afterTextChanged(null);</span>
+<span class="nc" id="L264">                }</span>
+            });
+
+<span class="nc" id="L267">            updateTransferAccountsList(accountsSpinner);</span>
+
+<span class="nc" id="L269">            splitCurrencyTextView.setText(mCommodity.getSymbol());</span>
+<span class="nc" id="L270">            splitTypeSwitch.setAmountFormattingListener(splitAmountEditText, splitCurrencyTextView);</span>
+<span class="nc bnc" id="L271" title="All 2 branches missed.">            splitTypeSwitch.setChecked(mBaseAmount.signum() &gt; 0);</span>
+<span class="nc" id="L272">            splitUidTextView.setText(BaseModel.generateUID());</span>
+
+<span class="nc bnc" id="L274" title="All 2 branches missed.">            if (split != null) {</span>
+<span class="nc" id="L275">                splitAmountEditText.setCommodity(split.getValue().getCommodity());</span>
+<span class="nc" id="L276">                splitAmountEditText.setValue(split.getFormattedValue().asBigDecimal());</span>
+<span class="nc" id="L277">                splitCurrencyTextView.setText(split.getValue().getCommodity().getSymbol());</span>
+<span class="nc" id="L278">                splitMemoEditText.setText(split.getMemo());</span>
+<span class="nc" id="L279">                splitUidTextView.setText(split.getUID());</span>
+<span class="nc" id="L280">                String splitAccountUID = split.getAccountUID();</span>
+<span class="nc" id="L281">                setSelectedTransferAccount(mAccountsDbAdapter.getID(splitAccountUID), accountsSpinner);</span>
+<span class="nc" id="L282">                splitTypeSwitch.setAccountType(mAccountsDbAdapter.getAccountType(splitAccountUID));</span>
+<span class="nc" id="L283">                splitTypeSwitch.setChecked(split.getType());</span>
+            }
+
+<span class="nc" id="L286">            accountsSpinner.setOnItemSelectedListener(new SplitAccountListener(splitTypeSwitch, this));</span>
+<span class="nc" id="L287">            splitTypeSwitch.addOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {</span>
+                @Override
+                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+<span class="nc" id="L290">                    mImbalanceWatcher.afterTextChanged(null);</span>
+<span class="nc" id="L291">                }</span>
+            });
+<span class="nc" id="L293">            splitAmountEditText.addTextChangedListener(mImbalanceWatcher);</span>
+<span class="nc" id="L294">        }</span>
+
+        /**
+         * Returns the value of the amount in the splitAmountEditText field without setting the value to the view
+         * &lt;p&gt;If the expression in the view is currently incomplete or invalid, null is returned.
+         * This method is used primarily for computing the imbalance&lt;/p&gt;
+         * @return Value in the split item amount field, or {@link BigDecimal#ZERO} if the expression is empty or invalid
+         */
+        public BigDecimal getAmountValue(){
+<span class="nc" id="L303">            String amountString = splitAmountEditText.getCleanString();</span>
+<span class="nc bnc" id="L304" title="All 2 branches missed.">            if (amountString.isEmpty())</span>
+<span class="nc" id="L305">                return BigDecimal.ZERO;</span>
+
+<span class="nc" id="L307">            ExpressionBuilder expressionBuilder = new ExpressionBuilder(amountString);</span>
+            Expression expression;
+
+            try {
+<span class="nc" id="L311">                expression = expressionBuilder.build();</span>
+<span class="nc" id="L312">            } catch (RuntimeException e) {</span>
+<span class="nc" id="L313">                return BigDecimal.ZERO;</span>
+<span class="nc" id="L314">            }</span>
+
+<span class="nc bnc" id="L316" title="All 4 branches missed.">            if (expression != null &amp;&amp; expression.validate().isValid()) {</span>
+<span class="nc" id="L317">                return new BigDecimal(expression.evaluate());</span>
+            } else {
+<span class="nc" id="L319">                Log.v(SplitEditorFragment.this.getClass().getSimpleName(),</span>
+                        &quot;Incomplete expression for updating imbalance: &quot; + expression);
+<span class="nc" id="L321">                return BigDecimal.ZERO;</span>
+            }
+        }
+    }
+
+    /**
+     * Updates the spinner to the selected transfer account
+     * @param accountId Database ID of the transfer account
+     */
+    private void setSelectedTransferAccount(long accountId, final Spinner accountsSpinner){
+<span class="nc bnc" id="L331" title="All 2 branches missed.">        for (int pos = 0; pos &lt; mCursorAdapter.getCount(); pos++) {</span>
+<span class="nc bnc" id="L332" title="All 2 branches missed.">            if (mCursorAdapter.getItemId(pos) == accountId){</span>
+<span class="nc" id="L333">                accountsSpinner.setSelection(pos);</span>
+<span class="nc" id="L334">                break;</span>
+            }
+        }
+<span class="nc" id="L337">    }</span>
+    /**
+     * Updates the list of possible transfer accounts.
+     * Only accounts with the same currency can be transferred to
+     */
+    private void updateTransferAccountsList(Spinner transferAccountSpinner){
+<span class="nc" id="L343">        mCursorAdapter = new QualifiedAccountNameCursorAdapter(getActivity(), mCursor);</span>
+<span class="nc" id="L344">        transferAccountSpinner.setAdapter(mCursorAdapter);</span>
+<span class="nc" id="L345">    }</span>
+
+    /**
+     * Check if all the split amounts have valid values that can be saved
+     * @return {@code true} if splits can be saved, {@code false} otherwise
+     */
+    private boolean canSave(){
+<span class="nc bnc" id="L352" title="All 2 branches missed.">        for (View splitView : mSplitItemViewList) {</span>
+<span class="nc" id="L353">            SplitViewHolder viewHolder = (SplitViewHolder) splitView.getTag();</span>
+<span class="nc" id="L354">            viewHolder.splitAmountEditText.evaluate();</span>
+<span class="nc bnc" id="L355" title="All 2 branches missed.">            if (viewHolder.splitAmountEditText.getError() != null){</span>
+<span class="nc" id="L356">                return false;</span>
+            }
+            //TODO: also check that multicurrency splits have a conversion amount present
+<span class="nc" id="L359">        }</span>
+<span class="nc" id="L360">        return true;</span>
+    }
+
+    /**
+     * Save all the splits from the split editor
+     */
+    private void saveSplits() {
+<span class="nc bnc" id="L367" title="All 2 branches missed.">        if (!canSave()){</span>
+<span class="nc" id="L368">            Toast.makeText(getActivity(), R.string.toast_error_check_split_amounts,</span>
+<span class="nc" id="L369">                    Toast.LENGTH_SHORT).show();</span>
+<span class="nc" id="L370">            return;</span>
+        }
+
+<span class="nc" id="L373">        Intent data = new Intent();</span>
+<span class="nc" id="L374">        data.putParcelableArrayListExtra(UxArgument.SPLIT_LIST, extractSplitsFromView());</span>
+<span class="nc" id="L375">        getActivity().setResult(Activity.RESULT_OK, data);</span>
+
+<span class="nc" id="L377">        getActivity().finish();</span>
+<span class="nc" id="L378">    }</span>
+
+    /**
+     * Extracts the input from the views and builds {@link org.gnucash.android.model.Split}s to correspond to the input.
+     * @return List of {@link org.gnucash.android.model.Split}s represented in the view
+     */
+    private ArrayList&lt;Split&gt; extractSplitsFromView(){
+<span class="nc" id="L385">        ArrayList&lt;Split&gt; splitList = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L386" title="All 2 branches missed.">        for (View splitView : mSplitItemViewList) {</span>
+<span class="nc" id="L387">            SplitViewHolder viewHolder = (SplitViewHolder) splitView.getTag();</span>
+<span class="nc bnc" id="L388" title="All 2 branches missed.">            if (viewHolder.splitAmountEditText.getValue() == null)</span>
+<span class="nc" id="L389">                continue;</span>
+
+<span class="nc" id="L391">            BigDecimal amountBigDecimal = viewHolder.splitAmountEditText.getValue();</span>
+
+<span class="nc" id="L393">            String currencyCode = mAccountsDbAdapter.getCurrencyCode(mAccountUID);</span>
+<span class="nc" id="L394">            Money valueAmount = new Money(amountBigDecimal.abs(), Commodity.getInstance(currencyCode));</span>
+
+<span class="nc" id="L396">            String accountUID = mAccountsDbAdapter.getUID(viewHolder.accountsSpinner.getSelectedItemId());</span>
+<span class="nc" id="L397">            Split split = new Split(valueAmount, accountUID);</span>
+<span class="nc" id="L398">            split.setMemo(viewHolder.splitMemoEditText.getText().toString());</span>
+<span class="nc" id="L399">            split.setType(viewHolder.splitTypeSwitch.getTransactionType());</span>
+<span class="nc" id="L400">            split.setUID(viewHolder.splitUidTextView.getText().toString().trim());</span>
+<span class="nc bnc" id="L401" title="All 2 branches missed.">            if (viewHolder.quantity != null)</span>
+<span class="nc" id="L402">                split.setQuantity(viewHolder.quantity.abs());</span>
+<span class="nc" id="L403">            splitList.add(split);</span>
+<span class="nc" id="L404">        }</span>
+<span class="nc" id="L405">        return splitList;</span>
+    }
+
+    /**
+     * Updates the displayed balance of the accounts when the amount of a split is changed
+     */
+<span class="nc" id="L411">    private class BalanceTextWatcher implements TextWatcher {</span>
+
+        @Override
+        public void beforeTextChanged(CharSequence charSequence, int i, int i2, int i3) {
+            //nothing to see here, move along
+<span class="nc" id="L416">        }</span>
+
+        @Override
+        public void onTextChanged(CharSequence charSequence, int i, int i2, int i3) {
+            //nothing to see here, move along
+<span class="nc" id="L421">        }</span>
+
+        @Override
+        public void afterTextChanged(Editable editable) {
+<span class="nc" id="L425">            BigDecimal imbalance = BigDecimal.ZERO;</span>
+
+<span class="nc bnc" id="L427" title="All 2 branches missed.">            for (View splitItem : mSplitItemViewList) {</span>
+<span class="nc" id="L428">                SplitViewHolder viewHolder = (SplitViewHolder) splitItem.getTag();</span>
+<span class="nc" id="L429">                BigDecimal amount = viewHolder.getAmountValue().abs();</span>
+<span class="nc" id="L430">                long accountId = viewHolder.accountsSpinner.getSelectedItemId();</span>
+<span class="nc" id="L431">                boolean hasDebitNormalBalance = AccountsDbAdapter.getInstance()</span>
+<span class="nc" id="L432">                        .getAccountType(accountId).hasDebitNormalBalance();</span>
+
+<span class="nc bnc" id="L434" title="All 2 branches missed.">                if (viewHolder.splitTypeSwitch.isChecked()) {</span>
+<span class="nc bnc" id="L435" title="All 2 branches missed.">                    if (hasDebitNormalBalance)</span>
+<span class="nc" id="L436">                        imbalance = imbalance.add(amount);</span>
+                    else
+<span class="nc" id="L438">                        imbalance = imbalance.subtract(amount);</span>
+                } else {
+<span class="nc bnc" id="L440" title="All 2 branches missed.">                    if (hasDebitNormalBalance)</span>
+<span class="nc" id="L441">                        imbalance = imbalance.subtract(amount);</span>
+                    else
+<span class="nc" id="L443">                        imbalance = imbalance.add(amount);</span>
+                }
+
+<span class="nc" id="L446">            }</span>
+
+<span class="nc" id="L448">            TransactionsActivity.displayBalance(mImbalanceTextView, new Money(imbalance, mCommodity));</span>
+<span class="nc" id="L449">        }</span>
+    }
+
+    /**
+     * Listens to changes in the transfer account and updates the currency symbol, the label of the
+     * transaction type and if neccessary
+     */
+    private class SplitAccountListener implements AdapterView.OnItemSelectedListener {
+        TransactionTypeSwitch mTypeToggleButton;
+        SplitViewHolder mSplitViewHolder;
+
+        /**
+         * Flag to know when account spinner callback is due to user interaction or layout of components
+         */
+<span class="nc" id="L463">        boolean userInteraction = false;</span>
+
+<span class="nc" id="L465">        public SplitAccountListener(TransactionTypeSwitch typeToggleButton, SplitViewHolder viewHolder){</span>
+<span class="nc" id="L466">            this.mTypeToggleButton = typeToggleButton;</span>
+<span class="nc" id="L467">            this.mSplitViewHolder = viewHolder;</span>
+<span class="nc" id="L468">        }</span>
+
+        @Override
+        public void onItemSelected(AdapterView&lt;?&gt; parentView, View selectedItemView, int position, long id) {
+<span class="nc" id="L472">            AccountType accountType = mAccountsDbAdapter.getAccountType(id);</span>
+<span class="nc" id="L473">            mTypeToggleButton.setAccountType(accountType);</span>
+
+            //refresh the imbalance amount if we change the account
+<span class="nc" id="L476">            mImbalanceWatcher.afterTextChanged(null);</span>
+
+<span class="nc" id="L478">            String fromCurrencyCode = mAccountsDbAdapter.getCurrencyCode(mAccountUID);</span>
+<span class="nc" id="L479">            String targetCurrencyCode = mAccountsDbAdapter.getCurrencyCode(mAccountsDbAdapter.getUID(id));</span>
+
+<span class="nc bnc" id="L481" title="All 4 branches missed.">            if (!userInteraction || fromCurrencyCode.equals(targetCurrencyCode)){</span>
+                //first call is on layout, subsequent calls will be true and transfer will work as usual
+<span class="nc" id="L483">                userInteraction = true;</span>
+<span class="nc" id="L484">                return;</span>
+            }
+
+<span class="nc" id="L487">            BigDecimal amountBigD = mSplitViewHolder.splitAmountEditText.getValue();</span>
+<span class="nc bnc" id="L488" title="All 2 branches missed.">            if (amountBigD == null)</span>
+<span class="nc" id="L489">                return;</span>
+
+<span class="nc" id="L491">            Money amount = new Money(amountBigD, Commodity.getInstance(fromCurrencyCode));</span>
+<span class="nc" id="L492">            TransferFundsDialogFragment fragment</span>
+<span class="nc" id="L493">                    = TransferFundsDialogFragment.getInstance(amount, targetCurrencyCode, mSplitViewHolder);</span>
+<span class="nc" id="L494">            fragment.show(getFragmentManager(), &quot;tranfer_funds_editor&quot;);</span>
+<span class="nc" id="L495">        }</span>
+
+        @Override
+        public void onNothingSelected(AdapterView&lt;?&gt; adapterView) {
+            //nothing to see here, move along
+<span class="nc" id="L500">        }</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

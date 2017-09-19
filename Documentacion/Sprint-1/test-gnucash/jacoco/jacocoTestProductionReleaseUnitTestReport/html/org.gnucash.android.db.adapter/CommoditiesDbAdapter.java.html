@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CommoditiesDbAdapter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.db.adapter</a> &gt; <span class="el_source">CommoditiesDbAdapter.java</span></div><h1>CommoditiesDbAdapter.java</h1><pre class="source lang-java linenums">package org.gnucash.android.db.adapter;
+
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteStatement;
+import android.support.annotation.NonNull;
+import android.util.Log;
+
+import com.crashlytics.android.Crashlytics;
+
+import org.gnucash.android.app.GnuCashApplication;
+import org.gnucash.android.db.DatabaseSchema;
+import org.gnucash.android.model.Commodity;
+
+import static org.gnucash.android.db.DatabaseSchema.CommodityEntry;
+
+/**
+ * Database adapter for {@link org.gnucash.android.model.Commodity}
+ */
+public class CommoditiesDbAdapter extends DatabaseAdapter&lt;Commodity&gt; {
+    /**
+     * Opens the database adapter with an existing database
+     *
+     * @param db        SQLiteDatabase object
+     */
+    public CommoditiesDbAdapter(SQLiteDatabase db) {
+<span class="nc" id="L27">        super(db, CommodityEntry.TABLE_NAME, new String[]{</span>
+                CommodityEntry.COLUMN_FULLNAME,
+                CommodityEntry.COLUMN_NAMESPACE,
+                CommodityEntry.COLUMN_MNEMONIC,
+                CommodityEntry.COLUMN_LOCAL_SYMBOL,
+                CommodityEntry.COLUMN_CUSIP,
+                CommodityEntry.COLUMN_SMALLEST_FRACTION,
+                CommodityEntry.COLUMN_QUOTE_FLAG
+        });
+        /**
+         * initialize commonly used commodities
+         */
+<span class="nc" id="L39">        Commodity.USD = getCommodity(&quot;USD&quot;);</span>
+<span class="nc" id="L40">        Commodity.EUR = getCommodity(&quot;EUR&quot;);</span>
+<span class="nc" id="L41">        Commodity.GBP = getCommodity(&quot;GBP&quot;);</span>
+<span class="nc" id="L42">        Commodity.CHF = getCommodity(&quot;CHF&quot;);</span>
+<span class="nc" id="L43">        Commodity.CAD = getCommodity(&quot;CAD&quot;);</span>
+<span class="nc" id="L44">        Commodity.JPY = getCommodity(&quot;JPY&quot;);</span>
+<span class="nc" id="L45">        Commodity.AUD = getCommodity(&quot;AUD&quot;);</span>
+
+<span class="nc" id="L47">        Commodity.DEFAULT_COMMODITY = getCommodity(GnuCashApplication.getDefaultCurrencyCode());</span>
+<span class="nc" id="L48">    }</span>
+
+    public static CommoditiesDbAdapter getInstance(){
+<span class="nc" id="L51">        return GnuCashApplication.getCommoditiesDbAdapter();</span>
+    }
+
+    @Override
+    protected @NonNull SQLiteStatement setBindings(@NonNull SQLiteStatement stmt, @NonNull final Commodity commodity) {
+<span class="nc" id="L56">        stmt.clearBindings();</span>
+<span class="nc" id="L57">        stmt.bindString(1, commodity.getFullname());</span>
+<span class="nc" id="L58">        stmt.bindString(2, commodity.getNamespace().name());</span>
+<span class="nc" id="L59">        stmt.bindString(3, commodity.getMnemonic());</span>
+<span class="nc" id="L60">        stmt.bindString(4, commodity.getLocalSymbol());</span>
+<span class="nc" id="L61">        stmt.bindString(5, commodity.getCusip());</span>
+<span class="nc" id="L62">        stmt.bindLong(6, commodity.getSmallestFraction());</span>
+<span class="nc" id="L63">        stmt.bindLong(7, commodity.getQuoteFlag());</span>
+<span class="nc" id="L64">        stmt.bindString(8, commodity.getUID());</span>
+
+<span class="nc" id="L66">        return stmt;</span>
+    }
+
+    @Override
+    public Commodity buildModelInstance(@NonNull final Cursor cursor) {
+<span class="nc" id="L71">        String fullname = cursor.getString(cursor.getColumnIndexOrThrow(CommodityEntry.COLUMN_FULLNAME));</span>
+<span class="nc" id="L72">        String mnemonic = cursor.getString(cursor.getColumnIndexOrThrow(CommodityEntry.COLUMN_MNEMONIC));</span>
+<span class="nc" id="L73">        String namespace = cursor.getString(cursor.getColumnIndexOrThrow(CommodityEntry.COLUMN_NAMESPACE));</span>
+<span class="nc" id="L74">        String cusip = cursor.getString(cursor.getColumnIndexOrThrow(CommodityEntry.COLUMN_CUSIP));</span>
+<span class="nc" id="L75">        String localSymbol = cursor.getString(cursor.getColumnIndexOrThrow(CommodityEntry.COLUMN_LOCAL_SYMBOL));</span>
+
+<span class="nc" id="L77">        int fraction = cursor.getInt(cursor.getColumnIndexOrThrow(CommodityEntry.COLUMN_SMALLEST_FRACTION));</span>
+<span class="nc" id="L78">        int quoteFlag = cursor.getInt(cursor.getColumnIndexOrThrow(CommodityEntry.COLUMN_QUOTE_FLAG));</span>
+
+<span class="nc" id="L80">        Commodity commodity = new Commodity(fullname, mnemonic, fraction);</span>
+<span class="nc" id="L81">        commodity.setNamespace(Commodity.Namespace.valueOf(namespace));</span>
+<span class="nc" id="L82">        commodity.setCusip(cusip);</span>
+<span class="nc" id="L83">        commodity.setQuoteFlag(quoteFlag);</span>
+<span class="nc" id="L84">        commodity.setLocalSymbol(localSymbol);</span>
+<span class="nc" id="L85">        populateBaseModelAttributes(cursor, commodity);</span>
+
+<span class="nc" id="L87">        return commodity;</span>
+    }
+
+    @Override
+    public Cursor fetchAllRecords() {
+<span class="nc" id="L92">        return mDb.query(mTableName, null, null, null, null, null,</span>
+                CommodityEntry.COLUMN_FULLNAME + &quot; ASC&quot;);
+    }
+
+    /**
+     * Fetches all commodities in the database sorted in the specified order
+     * @param orderBy SQL statement for orderBy without the ORDER_BY itself
+     * @return Cursor holding all commodity records
+     */
+    public Cursor fetchAllRecords(String orderBy) {
+<span class="nc" id="L102">        return mDb.query(mTableName, null, null, null, null, null,</span>
+                orderBy);
+    }
+
+    /**
+     * Returns the commodity associated with the ISO4217 currency code
+     * @param currencyCode 3-letter currency code
+     * @return Commodity associated with code or null if none is found
+     */
+    public Commodity getCommodity(String currencyCode){
+<span class="nc" id="L112">        Cursor cursor = fetchAllRecords(CommodityEntry.COLUMN_MNEMONIC + &quot;=?&quot;, new String[]{currencyCode}, null);</span>
+<span class="nc" id="L113">        Commodity commodity = null;</span>
+<span class="nc bnc" id="L114" title="All 2 branches missed.">        if (cursor.moveToNext()){</span>
+<span class="nc" id="L115">            commodity = buildModelInstance(cursor);</span>
+        } else {
+<span class="nc" id="L117">            String msg = &quot;Commodity not found in the database: &quot; + currencyCode;</span>
+<span class="nc" id="L118">            Log.e(LOG_TAG, msg);</span>
+<span class="nc" id="L119">            Crashlytics.log(msg);</span>
+        }
+<span class="nc" id="L121">        cursor.close();</span>
+<span class="nc" id="L122">        return commodity;</span>
+    }
+
+    public String getCurrencyCode(@NonNull String guid) {
+<span class="nc" id="L126">        Cursor cursor = mDb.query(mTableName, new String[]{CommodityEntry.COLUMN_MNEMONIC},</span>
+                DatabaseSchema.CommonColumns.COLUMN_UID + &quot; = ?&quot;, new String[]{guid},
+                null, null, null);
+        try {
+<span class="nc bnc" id="L130" title="All 2 branches missed.">            if (cursor.moveToNext()) {</span>
+<span class="nc" id="L131">                return cursor.getString(cursor.getColumnIndexOrThrow(CommodityEntry.COLUMN_MNEMONIC));</span>
+            } else {
+<span class="nc" id="L133">                throw new IllegalArgumentException(&quot;guid &quot; + guid + &quot; not exits in commodity db&quot;);</span>
+            }
+        } finally {
+<span class="nc" id="L136">            cursor.close();</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

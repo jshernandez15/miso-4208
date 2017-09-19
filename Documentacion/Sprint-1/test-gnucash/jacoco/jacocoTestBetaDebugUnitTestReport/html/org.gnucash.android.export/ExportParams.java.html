@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ExportParams.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.export</a> &gt; <span class="el_source">ExportParams.java</span></div><h1>ExportParams.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2013 - 2015 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.export;
+
+import android.net.Uri;
+
+import org.gnucash.android.ui.export.ExportFormFragment;
+import org.gnucash.android.util.TimestampHelper;
+
+import java.sql.Timestamp;
+
+/**
+ * Encapsulation of the parameters used for exporting transactions.
+ * The parameters are determined by the user in the export dialog and are then transmitted to the asynchronous task which
+ * actually performs the export.
+ * @see ExportFormFragment
+ * @see ExportAsyncTask
+ *
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ */
+public class ExportParams {
+    /**
+     * Options for the destination of the exported transctions file.
+     * It could be stored on the {@link #SD_CARD} or exported through another program via {@link #SHARING}
+     */
+<span class="nc" id="L40">    public enum ExportTarget {SD_CARD(&quot;SD Card&quot;), SHARING(&quot;External Service&quot;),</span>
+<span class="nc" id="L41">        DROPBOX(&quot;Dropbox&quot;), GOOGLE_DRIVE(&quot;Google Drive&quot;), OWNCLOUD(&quot;ownCloud&quot;),</span>
+<span class="nc" id="L42">        URI(&quot;Sync Service&quot;);</span>
+        private String mDescription;
+<span class="nc" id="L44">        ExportTarget(String description){</span>
+<span class="nc" id="L45">            mDescription = description;</span>
+<span class="nc" id="L46">        }</span>
+
+        public String getDescription(){
+<span class="nc" id="L49">            return mDescription;</span>
+        }
+    }
+
+    /**
+     * Format to use for the exported transactions
+     * By default, the {@link ExportFormat#QIF} format is used
+     */
+<span class="nc" id="L57">    private ExportFormat mExportFormat      = ExportFormat.QIF;</span>
+
+    /**
+     * All transactions created after this date will be exported
+     */
+<span class="nc" id="L62">    private Timestamp mExportStartTime = TimestampHelper.getTimestampFromEpochZero();</span>
+
+    /**
+     * Flag to determine if all transactions should be deleted after exporting is complete
+     * By default no transactions are deleted
+     */
+<span class="nc" id="L68">    private boolean mDeleteTransactionsAfterExport = false;</span>
+
+    /**
+     * Destination for the exported transactions
+     */
+<span class="nc" id="L73">    private ExportTarget mExportTarget      = ExportTarget.SHARING;</span>
+
+    /**
+     * Location to save the file name being exported.
+     * This is typically a Uri and used for {@link ExportTarget#URI} target
+     */
+    private String mExportLocation;
+
+    /**
+     * Creates a new set of paramters and specifies the export format
+     * @param format Format to use when exporting the transactions
+     */
+<span class="nc" id="L85">    public ExportParams(ExportFormat format){</span>
+<span class="nc" id="L86">        setExportFormat(format);</span>
+<span class="nc" id="L87">    }</span>
+
+    /**
+     * Return the format used for exporting
+     * @return {@link ExportFormat}
+     */
+    public ExportFormat getExportFormat() {
+<span class="nc" id="L94">        return mExportFormat;</span>
+    }
+
+    /**
+     * Set the export format
+     * @param exportFormat {@link ExportFormat}
+     */
+    public void setExportFormat(ExportFormat exportFormat) {
+<span class="nc" id="L102">        this.mExportFormat = exportFormat;</span>
+<span class="nc" id="L103">    }</span>
+
+    /**
+     * Return date from which to start exporting transactions
+     * &lt;p&gt;Transactions created or modified after this timestamp will be exported&lt;/p&gt;
+     * @return Timestamp from which to export
+     */
+    public Timestamp getExportStartTime(){
+<span class="nc" id="L111">        return mExportStartTime;</span>
+    }
+
+    /**
+     * Set the timestamp after which all transactions created/modified will be exported
+     * @param exportStartTime Timestamp
+     */
+    public void setExportStartTime(Timestamp exportStartTime){
+<span class="nc" id="L119">        this.mExportStartTime = exportStartTime;</span>
+<span class="nc" id="L120">    }</span>
+
+    /**
+     * Returns flag whether transactions should be deleted after export
+     * @return &lt;code&gt;true&lt;/code&gt; if all transactions will be deleted, &lt;code&gt;false&lt;/code&gt; otherwise
+     */
+    public boolean shouldDeleteTransactionsAfterExport() {
+<span class="nc" id="L127">        return mDeleteTransactionsAfterExport;</span>
+    }
+
+    /**
+     * Set flag to delete transactions after exporting is complete
+     * @param deleteTransactions SEt to &lt;code&gt;true&lt;/code&gt; if transactions should be deleted, false if not
+     */
+    public void setDeleteTransactionsAfterExport(boolean deleteTransactions) {
+<span class="nc" id="L135">        this.mDeleteTransactionsAfterExport = deleteTransactions;</span>
+<span class="nc" id="L136">    }</span>
+
+    /**
+     * Get the target for the exported file
+     * @return {@link org.gnucash.android.export.ExportParams.ExportTarget}
+     */
+    public ExportTarget getExportTarget() {
+<span class="nc" id="L143">        return mExportTarget;</span>
+    }
+
+    /**
+     * Set the target for the exported transactions
+     * @param mExportTarget Target for exported transactions
+     */
+    public void setExportTarget(ExportTarget mExportTarget) {
+<span class="nc" id="L151">        this.mExportTarget = mExportTarget;</span>
+<span class="nc" id="L152">    }</span>
+
+    /**
+     * Return the location where the file should be exported to.
+     * When used with {@link ExportTarget#URI}, the returned value will be a URI which can be parsed
+     * with {@link Uri#parse(String)}
+     * @return String representing export file destination.
+     */
+    public String getExportLocation(){
+<span class="nc" id="L161">        return mExportLocation;</span>
+    }
+
+    /**
+     * Set the location where to export the file
+     * @param exportLocation Destination of the export
+     */
+    public void setExportLocation(String exportLocation){
+<span class="nc" id="L169">        mExportLocation = exportLocation;</span>
+<span class="nc" id="L170">    }</span>
+
+    @Override
+    public String toString() {
+<span class="nc" id="L174">        return &quot;Export all transactions created since &quot; + TimestampHelper.getUtcStringFromTimestamp(mExportStartTime) + &quot; UTC&quot;</span>
+<span class="nc bnc" id="L175" title="All 2 branches missed.">                + &quot; as &quot;+ mExportFormat.name() + &quot; to &quot; + mExportTarget.name() + (mExportLocation != null ? &quot; (&quot; + mExportLocation +&quot;)&quot; : &quot;&quot;);</span>
+    }
+
+    /**
+     * Returns the export parameters formatted as CSV.
+     * &lt;p&gt;The CSV format is: exportformat;exportTarget;shouldExportAllTransactions;shouldDeleteAllTransactions&lt;/p&gt;
+     * @return String containing CSV format of ExportParams
+     */
+    public String toCsv(){
+<span class="nc" id="L184">        String separator = &quot;;&quot;;</span>
+
+<span class="nc" id="L186">        return mExportFormat.name() + separator</span>
+<span class="nc" id="L187">                + mExportTarget.name() + separator</span>
+<span class="nc" id="L188">                + TimestampHelper.getUtcStringFromTimestamp(mExportStartTime) + separator</span>
+<span class="nc bnc" id="L189" title="All 2 branches missed.">                + Boolean.toString(mDeleteTransactionsAfterExport) + separator</span>
+                + (mExportLocation != null ? mExportLocation : &quot;&quot;);
+    }
+
+    /**
+     * Parses csv generated by {@link #toCsv()} to create
+     * @param csvParams String containing csv of params
+     * @return ExportParams from the csv
+     */
+    public static ExportParams parseCsv(String csvParams){
+<span class="nc" id="L199">        String[] tokens = csvParams.split(&quot;;&quot;);</span>
+<span class="nc" id="L200">        ExportParams params = new ExportParams(ExportFormat.valueOf(tokens[0]));</span>
+<span class="nc" id="L201">        params.setExportTarget(ExportTarget.valueOf(tokens[1]));</span>
+<span class="nc" id="L202">        params.setExportStartTime(TimestampHelper.getTimestampFromUtcString(tokens[2]));</span>
+<span class="nc" id="L203">        params.setDeleteTransactionsAfterExport(Boolean.parseBoolean(tokens[3]));</span>
+<span class="nc bnc" id="L204" title="All 2 branches missed.">        if (tokens.length == 5){</span>
+<span class="nc" id="L205">            params.setExportLocation(tokens[4]);</span>
+        }
+<span class="nc" id="L207">        return params;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

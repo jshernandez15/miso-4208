@@ -1,0 +1,295 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ScheduledActionService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.service</a> &gt; <span class="el_source">ScheduledActionService.java</span></div><h1>ScheduledActionService.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2015 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.service;
+
+import android.app.IntentService;
+import android.content.ContentValues;
+import android.content.Context;
+import android.content.Intent;
+import android.database.sqlite.SQLiteDatabase;
+import android.net.Uri;
+import android.os.PowerManager;
+import android.support.annotation.VisibleForTesting;
+import android.util.Log;
+
+import com.crashlytics.android.Crashlytics;
+
+import org.gnucash.android.app.GnuCashApplication;
+import org.gnucash.android.db.DatabaseHelper;
+import org.gnucash.android.db.DatabaseSchema;
+import org.gnucash.android.db.adapter.BooksDbAdapter;
+import org.gnucash.android.db.adapter.DatabaseAdapter;
+import org.gnucash.android.db.adapter.RecurrenceDbAdapter;
+import org.gnucash.android.db.adapter.ScheduledActionDbAdapter;
+import org.gnucash.android.db.adapter.SplitsDbAdapter;
+import org.gnucash.android.db.adapter.TransactionsDbAdapter;
+import org.gnucash.android.export.ExportAsyncTask;
+import org.gnucash.android.export.ExportFormat;
+import org.gnucash.android.export.ExportParams;
+import org.gnucash.android.export.xml.GncXmlExporter;
+import org.gnucash.android.model.Book;
+import org.gnucash.android.model.ScheduledAction;
+import org.gnucash.android.model.Transaction;
+import org.gnucash.android.util.BookUtils;
+
+import java.io.BufferedOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.zip.GZIPOutputStream;
+
+/**
+ * Service for running scheduled events.
+ * &lt;p&gt;The service is started and goes through all scheduled event entries in the the database and executes them.
+ * Then it is stopped until the next time it is run. &lt;br&gt;
+ * Scheduled runs of the service should be achieved using an {@link android.app.AlarmManager}&lt;/p&gt;
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ */
+public class ScheduledActionService extends IntentService {
+
+    public static final String LOG_TAG = &quot;ScheduledActionService&quot;;
+
+    public ScheduledActionService() {
+<span class="nc" id="L71">        super(LOG_TAG);</span>
+<span class="nc" id="L72">    }</span>
+
+    @Override
+    protected void onHandleIntent(Intent intent) {
+<span class="nc" id="L76">        Log.i(LOG_TAG, &quot;Starting scheduled action service&quot;);</span>
+
+<span class="nc" id="L78">        PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);</span>
+<span class="nc" id="L79">        PowerManager.WakeLock wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, LOG_TAG);</span>
+<span class="nc" id="L80">        wakeLock.acquire();</span>
+
+<span class="nc" id="L82">        autoBackup(); //First run automatic backup of all books before doing anything else</span>
+        try {
+<span class="nc" id="L84">            BooksDbAdapter booksDbAdapter = BooksDbAdapter.getInstance();</span>
+<span class="nc" id="L85">            List&lt;Book&gt; books = booksDbAdapter.getAllRecords();</span>
+<span class="nc bnc" id="L86" title="All 2 branches missed.">            for (Book book : books) { //// TODO: 20.04.2017 Retrieve only the book UIDs with new method</span>
+<span class="nc" id="L87">                DatabaseHelper dbHelper = new DatabaseHelper(GnuCashApplication.getAppContext(), book.getUID());</span>
+<span class="nc" id="L88">                SQLiteDatabase db = dbHelper.getWritableDatabase();</span>
+<span class="nc" id="L89">                RecurrenceDbAdapter recurrenceDbAdapter = new RecurrenceDbAdapter(db);</span>
+<span class="nc" id="L90">                ScheduledActionDbAdapter scheduledActionDbAdapter = new ScheduledActionDbAdapter(db, recurrenceDbAdapter);</span>
+
+<span class="nc" id="L92">                List&lt;ScheduledAction&gt; scheduledActions = scheduledActionDbAdapter.getAllEnabledScheduledActions();</span>
+<span class="nc" id="L93">                Log.i(LOG_TAG, String.format(&quot;Processing %d total scheduled actions for Book: %s&quot;,</span>
+<span class="nc" id="L94">                        scheduledActions.size(), book.getDisplayName()));</span>
+<span class="nc" id="L95">                processScheduledActions(scheduledActions, db);</span>
+
+                //close all databases except the currently active database
+<span class="nc bnc" id="L98" title="All 2 branches missed.">                if (!db.getPath().equals(GnuCashApplication.getActiveDb().getPath()))</span>
+<span class="nc" id="L99">                    db.close();</span>
+<span class="nc" id="L100">            }</span>
+
+<span class="nc" id="L102">            Log.i(LOG_TAG, &quot;Completed service @ &quot; + java.text.DateFormat.getDateTimeInstance().format(new Date()));</span>
+
+        } finally { //release the lock either way
+<span class="nc" id="L105">            wakeLock.release();</span>
+<span class="nc" id="L106">        }</span>
+<span class="nc" id="L107">    }</span>
+
+    /**
+     * Process scheduled actions and execute any pending actions
+     * @param scheduledActions List of scheduled actions
+     */
+    //made public static for testing. Do not call these methods directly
+    @VisibleForTesting
+    public static void processScheduledActions(List&lt;ScheduledAction&gt; scheduledActions, SQLiteDatabase db) {
+<span class="nc bnc" id="L116" title="All 2 branches missed.">        for (ScheduledAction scheduledAction : scheduledActions) {</span>
+
+<span class="nc" id="L118">            long now        = System.currentTimeMillis();</span>
+<span class="nc" id="L119">            int totalPlannedExecutions = scheduledAction.getTotalPlannedExecutionCount();</span>
+<span class="nc" id="L120">            int executionCount = scheduledAction.getExecutionCount();</span>
+
+            //the end time of the ScheduledAction is not handled here because
+            //it is handled differently for transactions and backups. See the individual methods.
+<span class="nc bnc" id="L124" title="All 2 branches missed.">            if (scheduledAction.getStartTime() &gt; now    //if schedule begins in the future</span>
+<span class="nc bnc" id="L125" title="All 6 branches missed.">                    || !scheduledAction.isEnabled()     // of if schedule is disabled</span>
+                    || (totalPlannedExecutions &gt; 0 &amp;&amp; executionCount &gt;= totalPlannedExecutions)) { //limit was set and we reached or exceeded it
+<span class="nc" id="L127">                Log.i(LOG_TAG, &quot;Skipping scheduled action: &quot; + scheduledAction.toString());</span>
+<span class="nc" id="L128">                continue;</span>
+            }
+
+<span class="nc" id="L131">            executeScheduledEvent(scheduledAction, db);</span>
+<span class="nc" id="L132">        }</span>
+<span class="nc" id="L133">    }</span>
+
+    /**
+     * Executes a scheduled event according to the specified parameters
+     * @param scheduledAction ScheduledEvent to be executed
+     */
+    private static void executeScheduledEvent(ScheduledAction scheduledAction, SQLiteDatabase db){
+<span class="nc" id="L140">        Log.i(LOG_TAG, &quot;Executing scheduled action: &quot; + scheduledAction.toString());</span>
+<span class="nc" id="L141">        int executionCount = 0;</span>
+
+<span class="nc bnc" id="L143" title="All 3 branches missed.">        switch (scheduledAction.getActionType()){</span>
+            case TRANSACTION:
+<span class="nc" id="L145">                executionCount += executeTransactions(scheduledAction, db);</span>
+<span class="nc" id="L146">                break;</span>
+
+            case BACKUP:
+<span class="nc" id="L149">                executionCount += executeBackup(scheduledAction, db);</span>
+                break;
+        }
+
+<span class="nc bnc" id="L153" title="All 2 branches missed.">        if (executionCount &gt; 0) {</span>
+<span class="nc" id="L154">            scheduledAction.setLastRun(System.currentTimeMillis());</span>
+            // Set the execution count in the object because it will be checked
+            // for the next iteration in the calling loop.
+            // This call is important, do not remove!!
+<span class="nc" id="L158">            scheduledAction.setExecutionCount(scheduledAction.getExecutionCount() + executionCount);</span>
+            // Update the last run time and execution count
+<span class="nc" id="L160">            ContentValues contentValues = new ContentValues();</span>
+<span class="nc" id="L161">            contentValues.put(DatabaseSchema.ScheduledActionEntry.COLUMN_LAST_RUN,</span>
+<span class="nc" id="L162">                    scheduledAction.getLastRunTime());</span>
+<span class="nc" id="L163">            contentValues.put(DatabaseSchema.ScheduledActionEntry.COLUMN_EXECUTION_COUNT,</span>
+<span class="nc" id="L164">                    scheduledAction.getExecutionCount());</span>
+<span class="nc" id="L165">            db.update(DatabaseSchema.ScheduledActionEntry.TABLE_NAME, contentValues,</span>
+<span class="nc" id="L166">                    DatabaseSchema.ScheduledActionEntry.COLUMN_UID + &quot;=?&quot;, new String[]{scheduledAction.getUID()});</span>
+        }
+<span class="nc" id="L168">    }</span>
+
+    /**
+     * Executes scheduled backups for a given scheduled action.
+     * The backup will be executed only once, even if multiple schedules were missed
+     * @param scheduledAction Scheduled action referencing the backup
+     * @param db SQLiteDatabase to backup
+     * @return Number of times backup is executed. This should either be 1 or 0
+     */
+    private static int executeBackup(ScheduledAction scheduledAction, SQLiteDatabase db) {
+<span class="nc bnc" id="L178" title="All 2 branches missed.">        if (!shouldExecuteScheduledBackup(scheduledAction))</span>
+<span class="nc" id="L179">            return 0;</span>
+
+<span class="nc" id="L181">        ExportParams params = ExportParams.parseCsv(scheduledAction.getTag());</span>
+        // HACK: the tag isn't updated with the new date, so set the correct by hand
+<span class="nc" id="L183">        params.setExportStartTime(new Timestamp(scheduledAction.getLastRunTime()));</span>
+<span class="nc" id="L184">        Boolean result = false;</span>
+        try {
+            //wait for async task to finish before we proceed (we are holding a wake lock)
+<span class="nc" id="L187">            result = new ExportAsyncTask(GnuCashApplication.getAppContext(), db).execute(params).get();</span>
+<span class="nc" id="L188">        } catch (InterruptedException | ExecutionException e) {</span>
+<span class="nc" id="L189">            Crashlytics.logException(e);</span>
+<span class="nc" id="L190">            Log.e(LOG_TAG, e.getMessage());</span>
+<span class="nc" id="L191">        }</span>
+<span class="nc" id="L192">        Log.i(LOG_TAG, &quot;Backup/export did not occur. There might have beeen no new transactions to export or it might have crashed&quot;);</span>
+<span class="nc" id="L193">        return 1;</span>
+    }
+
+    /**
+     * Check if a scheduled action is due for execution
+     * @param scheduledAction Scheduled action
+     * @return {@code true} if execution is due, {@code false} otherwise
+     */
+    private static boolean shouldExecuteScheduledBackup(ScheduledAction scheduledAction) {
+<span class="nc" id="L202">        long now = System.currentTimeMillis();</span>
+<span class="nc" id="L203">        long endTime = scheduledAction.getEndTime();</span>
+
+<span class="nc bnc" id="L205" title="All 4 branches missed.">        if (endTime &gt; 0 &amp;&amp; endTime &lt; now)</span>
+<span class="nc" id="L206">            return false;</span>
+
+<span class="nc bnc" id="L208" title="All 2 branches missed.">        if (scheduledAction.computeNextTimeBasedScheduledExecutionTime() &gt; now)</span>
+<span class="nc" id="L209">            return false;</span>
+
+<span class="nc" id="L211">        return true;</span>
+    }
+
+    /**
+     * Executes scheduled transactions which are to be added to the database.
+     * &lt;p&gt;If a schedule was missed, all the intervening transactions will be generated, even if
+     * the end time of the transaction was already reached&lt;/p&gt;
+     * @param scheduledAction Scheduled action which references the transaction
+     * @param db SQLiteDatabase where the transactions are to be executed
+     * @return Number of transactions created as a result of this action
+     */
+    private static int executeTransactions(ScheduledAction scheduledAction, SQLiteDatabase db) {
+<span class="nc" id="L223">        int executionCount = 0;</span>
+<span class="nc" id="L224">        String actionUID = scheduledAction.getActionUID();</span>
+<span class="nc" id="L225">        TransactionsDbAdapter transactionsDbAdapter = new TransactionsDbAdapter(db, new SplitsDbAdapter(db));</span>
+<span class="nc" id="L226">        Transaction trxnTemplate = null;</span>
+        try {
+<span class="nc" id="L228">            trxnTemplate = transactionsDbAdapter.getRecord(actionUID);</span>
+<span class="nc" id="L229">        } catch (IllegalArgumentException ex){ //if the record could not be found, abort</span>
+<span class="nc" id="L230">            Log.e(LOG_TAG, &quot;Scheduled transaction with UID &quot; + actionUID + &quot; could not be found in the db with path &quot; + db.getPath());</span>
+<span class="nc" id="L231">            return executionCount;</span>
+<span class="nc" id="L232">        }</span>
+
+
+<span class="nc" id="L235">        long now = System.currentTimeMillis();</span>
+        //if there is an end time in the past, we execute all schedules up to the end time.
+        //if the end time is in the future, we execute all schedules until now (current time)
+        //if there is no end time, we execute all schedules until now
+<span class="nc bnc" id="L239" title="All 2 branches missed.">        long endTime = scheduledAction.getEndTime() &gt; 0 ? Math.min(scheduledAction.getEndTime(), now) : now;</span>
+<span class="nc" id="L240">        int totalPlannedExecutions = scheduledAction.getTotalPlannedExecutionCount();</span>
+<span class="nc" id="L241">        List&lt;Transaction&gt; transactions = new ArrayList&lt;&gt;();</span>
+
+<span class="nc" id="L243">        int previousExecutionCount = scheduledAction.getExecutionCount(); // We'll modify it</span>
+        //we may be executing scheduled action significantly after scheduled time (depending on when Android fires the alarm)
+        //so compute the actual transaction time from pre-known values
+<span class="nc" id="L246">        long transactionTime = scheduledAction.computeNextCountBasedScheduledExecutionTime();</span>
+<span class="nc bnc" id="L247" title="All 2 branches missed.">        while (transactionTime &lt;= endTime) {</span>
+<span class="nc" id="L248">            Transaction recurringTrxn = new Transaction(trxnTemplate, true);</span>
+<span class="nc" id="L249">            recurringTrxn.setTime(transactionTime);</span>
+<span class="nc" id="L250">            transactions.add(recurringTrxn);</span>
+<span class="nc" id="L251">            recurringTrxn.setScheduledActionUID(scheduledAction.getUID());</span>
+<span class="nc" id="L252">            scheduledAction.setExecutionCount(++executionCount); //required for computingNextScheduledExecutionTime</span>
+
+<span class="nc bnc" id="L254" title="All 4 branches missed.">            if (totalPlannedExecutions &gt; 0 &amp;&amp; executionCount &gt;= totalPlannedExecutions)</span>
+<span class="nc" id="L255">                break; //if we hit the total planned executions set, then abort</span>
+<span class="nc" id="L256">            transactionTime = scheduledAction.computeNextCountBasedScheduledExecutionTime();</span>
+<span class="nc" id="L257">        }</span>
+
+<span class="nc" id="L259">        transactionsDbAdapter.bulkAddRecords(transactions, DatabaseAdapter.UpdateMethod.insert);</span>
+        // Be nice and restore the parameter's original state to avoid confusing the callers
+<span class="nc" id="L261">        scheduledAction.setExecutionCount(previousExecutionCount);</span>
+<span class="nc" id="L262">        return executionCount;</span>
+    }
+
+    /**
+     * Perform an automatic backup of all books in the database.
+     * This method is run everytime the service is executed
+     */
+    private static void autoBackup(){
+<span class="nc" id="L270">        BooksDbAdapter booksDbAdapter = BooksDbAdapter.getInstance();</span>
+<span class="nc" id="L271">        List&lt;String&gt; bookUIDs = booksDbAdapter.getAllBookUIDs();</span>
+<span class="nc" id="L272">        Context context = GnuCashApplication.getAppContext();</span>
+
+<span class="nc bnc" id="L274" title="All 2 branches missed.">        for (String bookUID : bookUIDs) {</span>
+<span class="nc" id="L275">            String backupFile = BookUtils.getBookBackupFileUri(bookUID);</span>
+<span class="nc bnc" id="L276" title="All 2 branches missed.">            if (backupFile == null){</span>
+<span class="nc" id="L277">                GncXmlExporter.createBackup();</span>
+<span class="nc" id="L278">                continue;</span>
+            }
+
+<span class="nc" id="L281">            try (BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(context.getContentResolver().openOutputStream(Uri.parse(backupFile)))){</span>
+<span class="nc" id="L282">                GZIPOutputStream gzipOutputStream = new GZIPOutputStream(bufferedOutputStream);</span>
+<span class="nc" id="L283">                OutputStreamWriter writer = new OutputStreamWriter(gzipOutputStream);</span>
+<span class="nc" id="L284">                ExportParams params = new ExportParams(ExportFormat.XML);</span>
+<span class="nc" id="L285">                new GncXmlExporter(params).generateExport(writer);</span>
+<span class="nc" id="L286">                writer.close();</span>
+<span class="nc bnc" id="L287" title="All 8 branches missed.">            } catch (IOException ex) {</span>
+<span class="nc" id="L288">                Log.e(LOG_TAG, &quot;Auto backup failed for book &quot; + bookUID);</span>
+<span class="nc" id="L289">                ex.printStackTrace();</span>
+<span class="nc" id="L290">                Crashlytics.logException(ex);</span>
+<span class="nc" id="L291">            }</span>
+<span class="nc" id="L292">        }</span>
+<span class="nc" id="L293">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

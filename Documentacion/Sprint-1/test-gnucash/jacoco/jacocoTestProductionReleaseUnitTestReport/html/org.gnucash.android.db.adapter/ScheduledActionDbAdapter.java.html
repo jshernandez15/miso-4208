@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ScheduledActionDbAdapter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.db.adapter</a> &gt; <span class="el_source">ScheduledActionDbAdapter.java</span></div><h1>ScheduledActionDbAdapter.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2014 - 2015 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.gnucash.android.db.adapter;
+
+import android.content.ContentValues;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteStatement;
+import android.support.annotation.NonNull;
+import android.util.Log;
+
+import org.gnucash.android.app.GnuCashApplication;
+import org.gnucash.android.db.DatabaseSchema;
+import org.gnucash.android.model.Recurrence;
+import org.gnucash.android.model.ScheduledAction;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.gnucash.android.db.DatabaseSchema.ScheduledActionEntry;
+
+/**
+ * Database adapter for fetching/saving/modifying scheduled events
+ *
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ */
+public class ScheduledActionDbAdapter extends DatabaseAdapter&lt;ScheduledAction&gt; {
+
+    private RecurrenceDbAdapter mRecurrenceDbAdapter;
+
+    public ScheduledActionDbAdapter(SQLiteDatabase db, RecurrenceDbAdapter recurrenceDbAdapter){
+<span class="nc" id="L45">        super(db, ScheduledActionEntry.TABLE_NAME,  new String[]{</span>
+                ScheduledActionEntry.COLUMN_ACTION_UID        ,
+                ScheduledActionEntry.COLUMN_TYPE              ,
+                ScheduledActionEntry.COLUMN_START_TIME        ,
+                ScheduledActionEntry.COLUMN_END_TIME          ,
+                ScheduledActionEntry.COLUMN_LAST_RUN 		  ,
+                ScheduledActionEntry.COLUMN_ENABLED           ,
+                ScheduledActionEntry.COLUMN_CREATED_AT        ,
+                ScheduledActionEntry.COLUMN_TAG               ,
+                ScheduledActionEntry.COLUMN_TOTAL_FREQUENCY   ,
+                ScheduledActionEntry.COLUMN_RECURRENCE_UID    ,
+                ScheduledActionEntry.COLUMN_AUTO_CREATE       ,
+                ScheduledActionEntry.COLUMN_AUTO_NOTIFY       ,
+                ScheduledActionEntry.COLUMN_ADVANCE_CREATION  ,
+                ScheduledActionEntry.COLUMN_ADVANCE_NOTIFY    ,
+                ScheduledActionEntry.COLUMN_TEMPLATE_ACCT_UID ,
+                ScheduledActionEntry.COLUMN_EXECUTION_COUNT
+        });
+<span class="nc" id="L63">        mRecurrenceDbAdapter = recurrenceDbAdapter;</span>
+<span class="nc" id="L64">        LOG_TAG = &quot;ScheduledActionDbAdapter&quot;;</span>
+<span class="nc" id="L65">    }</span>
+
+    /**
+     * Returns application-wide instance of database adapter
+     * @return ScheduledEventDbAdapter instance
+     */
+    public static ScheduledActionDbAdapter getInstance(){
+<span class="nc" id="L72">        return GnuCashApplication.getScheduledEventDbAdapter();</span>
+    }
+
+    @Override
+    public void addRecord(@NonNull ScheduledAction scheduledAction, UpdateMethod updateMethod) {
+<span class="nc" id="L77">        mRecurrenceDbAdapter.addRecord(scheduledAction.getRecurrence(), updateMethod);</span>
+<span class="nc" id="L78">        super.addRecord(scheduledAction, updateMethod);</span>
+<span class="nc" id="L79">    }</span>
+
+    @Override
+    public long bulkAddRecords(@NonNull List&lt;ScheduledAction&gt; scheduledActions, UpdateMethod updateMethod) {
+<span class="nc" id="L83">        List&lt;Recurrence&gt; recurrenceList = new ArrayList&lt;&gt;(scheduledActions.size());</span>
+<span class="nc bnc" id="L84" title="All 2 branches missed.">        for (ScheduledAction scheduledAction : scheduledActions) {</span>
+<span class="nc" id="L85">            recurrenceList.add(scheduledAction.getRecurrence());</span>
+<span class="nc" id="L86">        }</span>
+
+        //first add the recurrences, they have no dependencies (foreign key constraints)
+<span class="nc" id="L89">        long nRecurrences = mRecurrenceDbAdapter.bulkAddRecords(recurrenceList, updateMethod);</span>
+<span class="nc" id="L90">        Log.d(LOG_TAG, String.format(&quot;Added %d recurrences for scheduled actions&quot;, nRecurrences));</span>
+
+<span class="nc" id="L92">        return super.bulkAddRecords(scheduledActions, updateMethod);</span>
+    }
+
+    /**
+     * Updates only the recurrence attributes of the scheduled action.
+     * The recurrence attributes are the period, start time, end time and/or total frequency.
+     * All other properties of a scheduled event are only used for internal database tracking and are
+     * not central to the recurrence schedule.
+     * &lt;p&gt;&lt;b&gt;The GUID of the scheduled action should already exist in the database&lt;/b&gt;&lt;/p&gt;
+     * @param scheduledAction Scheduled action
+     * @return Database record ID of the edited scheduled action
+     */
+    public long updateRecurrenceAttributes(ScheduledAction scheduledAction){
+        //since we are updating, first fetch the existing recurrence UID and set it to the object
+        //so that it will be updated and not a new one created
+<span class="nc" id="L107">        RecurrenceDbAdapter recurrenceDbAdapter = new RecurrenceDbAdapter(mDb);</span>
+<span class="nc" id="L108">        String recurrenceUID = recurrenceDbAdapter.getAttribute(scheduledAction.getUID(), ScheduledActionEntry.COLUMN_RECURRENCE_UID);</span>
+
+<span class="nc" id="L110">        Recurrence recurrence = scheduledAction.getRecurrence();</span>
+<span class="nc" id="L111">        recurrence.setUID(recurrenceUID);</span>
+<span class="nc" id="L112">        recurrenceDbAdapter.addRecord(recurrence, UpdateMethod.update);</span>
+
+<span class="nc" id="L114">        ContentValues contentValues = new ContentValues();</span>
+<span class="nc" id="L115">        extractBaseModelAttributes(contentValues, scheduledAction);</span>
+<span class="nc" id="L116">        contentValues.put(ScheduledActionEntry.COLUMN_START_TIME, scheduledAction.getStartTime());</span>
+<span class="nc" id="L117">        contentValues.put(ScheduledActionEntry.COLUMN_END_TIME,  scheduledAction.getEndTime());</span>
+<span class="nc" id="L118">        contentValues.put(ScheduledActionEntry.COLUMN_TAG,       scheduledAction.getTag());</span>
+<span class="nc" id="L119">        contentValues.put(ScheduledActionEntry.COLUMN_TOTAL_FREQUENCY, scheduledAction.getTotalPlannedExecutionCount());</span>
+
+<span class="nc" id="L121">        Log.d(LOG_TAG, &quot;Updating scheduled event recurrence attributes&quot;);</span>
+<span class="nc" id="L122">        String where = ScheduledActionEntry.COLUMN_UID + &quot;=?&quot;;</span>
+<span class="nc" id="L123">        String[] whereArgs = new String[]{scheduledAction.getUID()};</span>
+<span class="nc" id="L124">        return mDb.update(ScheduledActionEntry.TABLE_NAME, contentValues, where, whereArgs);</span>
+    }
+
+    @Override
+    protected @NonNull SQLiteStatement setBindings(@NonNull SQLiteStatement stmt, @NonNull final ScheduledAction schedxAction) {
+<span class="nc" id="L129">        stmt.clearBindings();</span>
+<span class="nc" id="L130">        stmt.bindString(1, schedxAction.getActionUID());</span>
+<span class="nc" id="L131">        stmt.bindString(2, schedxAction.getActionType().name());</span>
+<span class="nc" id="L132">        stmt.bindLong(3,   schedxAction.getStartTime());</span>
+<span class="nc" id="L133">        stmt.bindLong(4, schedxAction.getEndTime());</span>
+<span class="nc" id="L134">        stmt.bindLong(5, schedxAction.getLastRunTime());</span>
+<span class="nc bnc" id="L135" title="All 2 branches missed.">        stmt.bindLong(6, schedxAction.isEnabled() ? 1 : 0);</span>
+<span class="nc" id="L136">        stmt.bindString(7, schedxAction.getCreatedTimestamp().toString());</span>
+<span class="nc bnc" id="L137" title="All 2 branches missed.">        if (schedxAction.getTag() == null)</span>
+<span class="nc" id="L138">            stmt.bindNull(8);</span>
+        else
+<span class="nc" id="L140">            stmt.bindString(8, schedxAction.getTag());</span>
+<span class="nc" id="L141">        stmt.bindString(9, Integer.toString(schedxAction.getTotalPlannedExecutionCount()));</span>
+<span class="nc" id="L142">        stmt.bindString(10, schedxAction.getRecurrence().getUID());</span>
+<span class="nc bnc" id="L143" title="All 2 branches missed.">        stmt.bindLong(11,   schedxAction.shouldAutoCreate() ? 1 : 0);</span>
+<span class="nc bnc" id="L144" title="All 2 branches missed.">        stmt.bindLong(12,   schedxAction.shouldAutoNotify() ? 1 : 0);</span>
+<span class="nc" id="L145">        stmt.bindLong(13,   schedxAction.getAdvanceCreateDays());</span>
+<span class="nc" id="L146">        stmt.bindLong(14,   schedxAction.getAdvanceNotifyDays());</span>
+<span class="nc" id="L147">        stmt.bindString(15, schedxAction.getTemplateAccountUID());</span>
+
+<span class="nc" id="L149">        stmt.bindString(16, Integer.toString(schedxAction.getExecutionCount()));</span>
+<span class="nc" id="L150">        stmt.bindString(17, schedxAction.getUID());</span>
+<span class="nc" id="L151">        return stmt;</span>
+    }
+    /**
+     * Builds a {@link org.gnucash.android.model.ScheduledAction} instance from a row to cursor in the database.
+     * The cursor should be already pointing to the right entry in the data set. It will not be modified in any way
+     * @param cursor Cursor pointing to data set
+     * @return ScheduledEvent object instance
+     */
+    @Override
+    public ScheduledAction buildModelInstance(@NonNull final Cursor cursor){
+<span class="nc" id="L161">        String actionUid = cursor.getString(cursor.getColumnIndexOrThrow(ScheduledActionEntry.COLUMN_ACTION_UID));</span>
+<span class="nc" id="L162">        long startTime  = cursor.getLong(cursor.getColumnIndexOrThrow(ScheduledActionEntry.COLUMN_START_TIME));</span>
+<span class="nc" id="L163">        long endTime    = cursor.getLong(cursor.getColumnIndexOrThrow(ScheduledActionEntry.COLUMN_END_TIME));</span>
+<span class="nc" id="L164">        long lastRun    = cursor.getLong(cursor.getColumnIndexOrThrow(ScheduledActionEntry.COLUMN_LAST_RUN));</span>
+<span class="nc" id="L165">        String typeString = cursor.getString(cursor.getColumnIndexOrThrow(ScheduledActionEntry.COLUMN_TYPE));</span>
+<span class="nc" id="L166">        String tag      = cursor.getString(cursor.getColumnIndexOrThrow(ScheduledActionEntry.COLUMN_TAG));</span>
+<span class="nc bnc" id="L167" title="All 2 branches missed.">        boolean enabled = cursor.getInt(cursor.getColumnIndexOrThrow(ScheduledActionEntry.COLUMN_ENABLED)) &gt; 0;</span>
+<span class="nc" id="L168">        int numOccurrences = cursor.getInt(cursor.getColumnIndexOrThrow(ScheduledActionEntry.COLUMN_TOTAL_FREQUENCY));</span>
+<span class="nc" id="L169">        int execCount = cursor.getInt(cursor.getColumnIndexOrThrow(ScheduledActionEntry.COLUMN_EXECUTION_COUNT));</span>
+<span class="nc" id="L170">        int autoCreate = cursor.getInt(cursor.getColumnIndexOrThrow(ScheduledActionEntry.COLUMN_AUTO_CREATE));</span>
+<span class="nc" id="L171">        int autoNotify = cursor.getInt(cursor.getColumnIndexOrThrow(ScheduledActionEntry.COLUMN_AUTO_NOTIFY));</span>
+<span class="nc" id="L172">        int advanceCreate = cursor.getInt(cursor.getColumnIndexOrThrow(ScheduledActionEntry.COLUMN_ADVANCE_CREATION));</span>
+<span class="nc" id="L173">        int advanceNotify = cursor.getInt(cursor.getColumnIndexOrThrow(ScheduledActionEntry.COLUMN_ADVANCE_NOTIFY));</span>
+<span class="nc" id="L174">        String recurrenceUID = cursor.getString(cursor.getColumnIndexOrThrow(ScheduledActionEntry.COLUMN_RECURRENCE_UID));</span>
+<span class="nc" id="L175">        String templateActUID = cursor.getString(cursor.getColumnIndexOrThrow(ScheduledActionEntry.COLUMN_TEMPLATE_ACCT_UID));</span>
+
+<span class="nc" id="L177">        ScheduledAction event = new ScheduledAction(ScheduledAction.ActionType.valueOf(typeString));</span>
+<span class="nc" id="L178">        populateBaseModelAttributes(cursor, event);</span>
+<span class="nc" id="L179">        event.setStartTime(startTime);</span>
+<span class="nc" id="L180">        event.setEndTime(endTime);</span>
+<span class="nc" id="L181">        event.setActionUID(actionUid);</span>
+<span class="nc" id="L182">        event.setLastRun(lastRun);</span>
+<span class="nc" id="L183">        event.setTag(tag);</span>
+<span class="nc" id="L184">        event.setEnabled(enabled);</span>
+<span class="nc" id="L185">        event.setTotalPlannedExecutionCount(numOccurrences);</span>
+<span class="nc" id="L186">        event.setExecutionCount(execCount);</span>
+<span class="nc bnc" id="L187" title="All 2 branches missed.">        event.setAutoCreate(autoCreate == 1);</span>
+<span class="nc bnc" id="L188" title="All 2 branches missed.">        event.setAutoNotify(autoNotify == 1);</span>
+<span class="nc" id="L189">        event.setAdvanceCreateDays(advanceCreate);</span>
+<span class="nc" id="L190">        event.setAdvanceNotifyDays(advanceNotify);</span>
+        //TODO: optimize by doing overriding fetchRecord(String) and join the two tables
+<span class="nc" id="L192">        event.setRecurrence(mRecurrenceDbAdapter.getRecord(recurrenceUID));</span>
+<span class="nc" id="L193">        event.setTemplateAccountUID(templateActUID);</span>
+
+<span class="nc" id="L195">        return event;</span>
+    }
+
+    /**
+     * Returns all {@link org.gnucash.android.model.ScheduledAction}s from the database with the specified action UID.
+     * Note that the parameter is not of the the scheduled action record, but from the action table
+     * @param actionUID GUID of the event itself
+     * @return List of ScheduledEvents
+     */
+    public List&lt;ScheduledAction&gt; getScheduledActionsWithUID(@NonNull String actionUID){
+<span class="nc" id="L205">        Cursor cursor = mDb.query(ScheduledActionEntry.TABLE_NAME, null,</span>
+                ScheduledActionEntry.COLUMN_ACTION_UID + &quot;= ?&quot;,
+                new String[]{actionUID}, null, null, null);
+
+<span class="nc" id="L209">        List&lt;ScheduledAction&gt; scheduledActions = new ArrayList&lt;&gt;();</span>
+        try {
+<span class="nc bnc" id="L211" title="All 2 branches missed.">            while (cursor.moveToNext()) {</span>
+<span class="nc" id="L212">                scheduledActions.add(buildModelInstance(cursor));</span>
+            }
+        } finally {
+<span class="nc" id="L215">            cursor.close();</span>
+<span class="nc" id="L216">        }</span>
+<span class="nc" id="L217">        return scheduledActions;</span>
+    }
+
+    /**
+     * Returns all enabled scheduled actions in the database
+     * @return List of enabled scheduled actions
+     */
+    public List&lt;ScheduledAction&gt; getAllEnabledScheduledActions(){
+<span class="nc" id="L225">        Cursor cursor = mDb.query(mTableName,</span>
+                null, ScheduledActionEntry.COLUMN_ENABLED + &quot;=1&quot;, null, null, null, null);
+<span class="nc" id="L227">        List&lt;ScheduledAction&gt; scheduledActions = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L228" title="All 2 branches missed.">        while (cursor.moveToNext()){</span>
+<span class="nc" id="L229">            scheduledActions.add(buildModelInstance(cursor));</span>
+        }
+<span class="nc" id="L231">        return scheduledActions;</span>
+    }
+
+    /**
+     * Returns the number of instances of the action which have been created from this scheduled action
+     * @param scheduledActionUID GUID of scheduled action
+     * @return Number of transactions created from scheduled action
+     */
+    public long getActionInstanceCount(String scheduledActionUID) {
+<span class="nc" id="L240">        String sql = &quot;SELECT COUNT(*) FROM &quot; + DatabaseSchema.TransactionEntry.TABLE_NAME</span>
+                + &quot; WHERE &quot; + DatabaseSchema.TransactionEntry.COLUMN_SCHEDX_ACTION_UID + &quot;=?&quot;;
+<span class="nc" id="L242">        SQLiteStatement statement = mDb.compileStatement(sql);</span>
+<span class="nc" id="L243">        statement.bindString(1, scheduledActionUID);</span>
+<span class="nc" id="L244">        return statement.simpleQueryForLong();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

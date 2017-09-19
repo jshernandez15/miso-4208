@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DatabaseSchema.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.db</a> &gt; <span class="el_source">DatabaseSchema.java</span></div><h1>DatabaseSchema.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2014 - 2015 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.db;
+
+import android.provider.BaseColumns;
+
+/**
+ * Holds the database schema
+ *
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ */
+public class DatabaseSchema {
+
+    /**
+     * Name of database storing information about the books in the application
+     */
+    public static final String BOOK_DATABASE_NAME = &quot;gnucash_books.db&quot;;
+
+    /**
+     * Version number of database containing information about the books in the application
+     */
+    public static final int BOOK_DATABASE_VERSION = 1;
+
+    /**
+     * Version number of database containing accounts and transactions info.
+     * With any change to the database schema, this number must increase
+     */
+    public static final int DATABASE_VERSION = 15;
+
+    /**
+     * Name of the database
+     * &lt;p&gt;This was used when the application had only one database per instance.
+     * Now there can be multiple databases for each book imported
+     * &lt;/p&gt;
+     * @deprecated Each database uses the GUID of the root account as name
+     */
+    @Deprecated
+    public static final String LEGACY_DATABASE_NAME = &quot;gnucash_db&quot;;
+
+    //no instances are to be instantiated
+<span class="nc" id="L55">    private DatabaseSchema(){}</span>
+
+    public interface CommonColumns extends BaseColumns {
+        public static final String COLUMN_UID           = &quot;uid&quot;;
+        public static final String COLUMN_CREATED_AT    = &quot;created_at&quot;;
+        public static final String COLUMN_MODIFIED_AT   = &quot;modified_at&quot;;
+    }
+
+<span class="nc" id="L63">    public static abstract class BookEntry implements CommonColumns {</span>
+        public static final String TABLE_NAME = &quot;books&quot;;
+
+        public static final String COLUMN_DISPLAY_NAME  = &quot;name&quot;;
+        public static final String COLUMN_SOURCE_URI    = &quot;uri&quot;;
+        public static final String COLUMN_ROOT_GUID     = &quot;root_account_guid&quot;;
+        public static final String COLUMN_TEMPLATE_GUID = &quot;root_template_guid&quot;;
+        public static final String COLUMN_ACTIVE        = &quot;is_active&quot;;
+        public static final String COLUMN_LAST_SYNC     = &quot;last_export_time&quot;;
+    }
+
+    /**
+     * Columns for the account tables
+     */
+<span class="nc" id="L77">    public static abstract class AccountEntry implements CommonColumns {</span>
+
+        public static final String TABLE_NAME                   = &quot;accounts&quot;;
+
+        public static final String COLUMN_NAME                  = &quot;name&quot;;
+        public static final String COLUMN_CURRENCY              = &quot;currency_code&quot;;
+        public static final String COLUMN_COMMODITY_UID         = &quot;commodity_uid&quot;;
+        public static final String COLUMN_DESCRIPTION           = &quot;description&quot;;
+        public static final String COLUMN_PARENT_ACCOUNT_UID    = &quot;parent_account_uid&quot;;
+        public static final String COLUMN_PLACEHOLDER           = &quot;is_placeholder&quot;;
+        public static final String COLUMN_COLOR_CODE            = &quot;color_code&quot;;
+        public static final String COLUMN_FAVORITE              = &quot;favorite&quot;;
+        public static final String COLUMN_FULL_NAME             = &quot;full_name&quot;;
+        public static final String COLUMN_TYPE                  = &quot;type&quot;;
+        public static final String COLUMN_HIDDEN                = &quot;is_hidden&quot;;
+        public static final String COLUMN_DEFAULT_TRANSFER_ACCOUNT_UID = &quot;default_transfer_account_uid&quot;;
+
+        public static final String INDEX_UID                    = &quot;account_uid_index&quot;;
+    }
+
+    /**
+     * Column schema for the transaction table in the database
+     */
+<span class="nc" id="L100">    public static abstract class TransactionEntry implements CommonColumns {</span>
+
+        public static final String TABLE_NAME                   = &quot;transactions&quot;;
+        //The actual names of columns for description and notes are unlike the variable names because of legacy
+        //We will not change them now for backwards compatibility reasons. But the variable names make sense
+        public static final String COLUMN_DESCRIPTION           = &quot;name&quot;;
+        public static final String COLUMN_NOTES                 = &quot;description&quot;;
+        public static final String COLUMN_CURRENCY              = &quot;currency_code&quot;;
+        public static final String COLUMN_COMMODITY_UID         = &quot;commodity_uid&quot;;
+        public static final String COLUMN_TIMESTAMP             = &quot;timestamp&quot;;
+
+        /**
+         * Flag for marking transactions which have been exported
+         * @deprecated Transactions are exported based on last modified timestamp
+         */
+        @Deprecated
+        public static final String COLUMN_EXPORTED              = &quot;is_exported&quot;;
+        public static final String COLUMN_TEMPLATE              = &quot;is_template&quot;;
+        public static final String COLUMN_SCHEDX_ACTION_UID     = &quot;scheduled_action_uid&quot;;
+
+        public static final String INDEX_UID                    = &quot;transaction_uid_index&quot;;
+    }
+
+    /**
+     * Column schema for the splits table in the database
+     */
+<span class="nc" id="L126">    public static abstract class SplitEntry implements CommonColumns {</span>
+
+        public static final String TABLE_NAME                   = &quot;splits&quot;;
+
+        public static final String COLUMN_TYPE                  = &quot;type&quot;;
+
+        /**
+         * The value columns are in the currency of the transaction containing the split
+         */
+        public static final String COLUMN_VALUE_NUM             = &quot;value_num&quot;;
+        public static final String COLUMN_VALUE_DENOM           = &quot;value_denom&quot;;
+        /**
+         * The quantity columns are in the currency of the account to which the split belongs
+         */
+        public static final String COLUMN_QUANTITY_NUM          = &quot;quantity_num&quot;;
+        public static final String COLUMN_QUANTITY_DENOM        = &quot;quantity_denom&quot;;
+        public static final String COLUMN_MEMO                  = &quot;memo&quot;;
+        public static final String COLUMN_ACCOUNT_UID           = &quot;account_uid&quot;;
+        public static final String COLUMN_TRANSACTION_UID       = &quot;transaction_uid&quot;;
+
+        public static final String COLUMN_RECONCILE_STATE       = &quot;reconcile_state&quot;;
+        public static final String COLUMN_RECONCILE_DATE        = &quot;reconcile_date&quot;;
+
+        public static final String INDEX_UID                    = &quot;split_uid_index&quot;;
+    }
+
+<span class="nc" id="L152">    public static abstract class ScheduledActionEntry implements CommonColumns {</span>
+        public static final String TABLE_NAME               = &quot;scheduled_actions&quot;;
+
+        public static final String COLUMN_TYPE              = &quot;type&quot;;
+        public static final String COLUMN_ACTION_UID        = &quot;action_uid&quot;;
+        public static final String COLUMN_START_TIME        = &quot;start_time&quot;;
+        public static final String COLUMN_END_TIME          = &quot;end_time&quot;;
+        public static final String COLUMN_LAST_RUN          = &quot;last_run&quot;;
+
+        /**
+         * Tag for scheduledAction-specific information e.g. backup parameters for backup
+         */
+        public static final String COLUMN_TAG               = &quot;tag&quot;;
+        public static final String COLUMN_ENABLED           = &quot;is_enabled&quot;;
+        public static final String COLUMN_TOTAL_FREQUENCY   = &quot;total_frequency&quot;;
+
+        /**
+         * Number of times this scheduledAction has been run. Analogous to instance_count in GnuCash desktop SQL
+         */
+        public static final String COLUMN_EXECUTION_COUNT   = &quot;execution_count&quot;;
+
+        public static final String COLUMN_RECURRENCE_UID    = &quot;recurrence_uid&quot;;
+        public static final String COLUMN_AUTO_CREATE       = &quot;auto_create&quot;;
+        public static final String COLUMN_AUTO_NOTIFY       = &quot;auto_notify&quot;;
+        public static final String COLUMN_ADVANCE_CREATION  = &quot;adv_creation&quot;;
+        public static final String COLUMN_ADVANCE_NOTIFY    = &quot;adv_notify&quot;;
+        public static final String COLUMN_TEMPLATE_ACCT_UID = &quot;template_act_uid&quot;;
+
+
+        public static final String INDEX_UID            = &quot;scheduled_action_uid_index&quot;;
+    }
+
+<span class="nc" id="L184">    public static abstract class CommodityEntry implements CommonColumns {</span>
+        public static final String TABLE_NAME           = &quot;commodities&quot;;
+
+        /**
+         * The namespace field denotes the namespace for this commodity,
+         * either a currency or symbol from a quote source
+         */
+        public static final String COLUMN_NAMESPACE     = &quot;namespace&quot;;
+
+        /**
+         * The fullname is the official full name of the currency
+         */
+        public static final String COLUMN_FULLNAME      = &quot;fullname&quot;;
+
+        /**
+         * The mnemonic is the official abbreviated designation for the currency
+         */
+        public static final String COLUMN_MNEMONIC      = &quot;mnemonic&quot;;
+
+        public static final String COLUMN_LOCAL_SYMBOL  = &quot;local_symbol&quot;;
+
+        /**
+         * The fraction is the number of sub-units that the basic commodity can be divided into
+         */
+        public static final String COLUMN_SMALLEST_FRACTION = &quot;fraction&quot;;
+
+        /**
+         * A CUSIP is a nine-character alphanumeric code that identifies a North American financial security
+         * for the purposes of facilitating clearing and settlement of trades
+         */
+        public static final String COLUMN_CUSIP         = &quot;cusip&quot;;
+
+        /**
+         * TRUE if prices are to be downloaded for this commodity from a quote source
+         */
+        public static final String COLUMN_QUOTE_FLAG    = &quot;quote_flag&quot;;
+
+        public static final String INDEX_UID = &quot;commodities_uid_index&quot;;
+    }
+
+
+<span class="nc" id="L225">    public static abstract class PriceEntry implements CommonColumns {</span>
+        public static final String TABLE_NAME = &quot;prices&quot;;
+
+        public static final String COLUMN_COMMODITY_UID = &quot;commodity_guid&quot;;
+        public static final String COLUMN_CURRENCY_UID  = &quot;currency_guid&quot;;
+        public static final String COLUMN_DATE          = &quot;date&quot;;
+        public static final String COLUMN_SOURCE        = &quot;source&quot;;
+        public static final String COLUMN_TYPE          = &quot;type&quot;;
+        public static final String COLUMN_VALUE_NUM     = &quot;value_num&quot;;
+        public static final String COLUMN_VALUE_DENOM   = &quot;value_denom&quot;;
+
+        public static final String INDEX_UID = &quot;prices_uid_index&quot;;
+
+    }
+
+
+<span class="nc" id="L241">    public static abstract class BudgetEntry implements CommonColumns {</span>
+        public static final String TABLE_NAME           = &quot;budgets&quot;;
+
+        public static final String COLUMN_NAME          = &quot;name&quot;;
+        public static final String COLUMN_DESCRIPTION   = &quot;description&quot;;
+        public static final String COLUMN_NUM_PERIODS   = &quot;num_periods&quot;;
+        public static final String COLUMN_RECURRENCE_UID = &quot;recurrence_uid&quot;;
+
+        public static final String INDEX_UID = &quot;budgets_uid_index&quot;;
+    }
+
+
+<span class="nc" id="L253">    public static abstract class BudgetAmountEntry implements CommonColumns {</span>
+        public static final String TABLE_NAME           = &quot;budget_amounts&quot;;
+
+        public static final String COLUMN_BUDGET_UID    = &quot;budget_uid&quot;;
+        public static final String COLUMN_ACCOUNT_UID   = &quot;account_uid&quot;;
+        public static final String COLUMN_PERIOD_NUM    = &quot;period_num&quot;;
+        public static final String COLUMN_AMOUNT_NUM    = &quot;amount_num&quot;;
+        public static final String COLUMN_AMOUNT_DENOM  = &quot;amount_denom&quot;;
+
+        public static final String INDEX_UID            = &quot;budget_amounts_uid_index&quot;;
+    }
+
+
+<span class="nc" id="L266">    public static abstract class RecurrenceEntry implements CommonColumns {</span>
+        public static final String TABLE_NAME           = &quot;recurrences&quot;;
+
+        public static final String COLUMN_MULTIPLIER    = &quot;recurrence_mult&quot;;
+        public static final String COLUMN_PERIOD_TYPE   = &quot;recurrence_period_type&quot;;
+        public static final String COLUMN_PERIOD_START  = &quot;recurrence_period_start&quot;;
+        public static final String COLUMN_PERIOD_END    = &quot;recurrence_period_end&quot;;
+        public static final String COLUMN_BYDAY         = &quot;recurrence_byday&quot;;
+
+        public static final String INDEX_UID = &quot;recurrence_uid_index&quot;;
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

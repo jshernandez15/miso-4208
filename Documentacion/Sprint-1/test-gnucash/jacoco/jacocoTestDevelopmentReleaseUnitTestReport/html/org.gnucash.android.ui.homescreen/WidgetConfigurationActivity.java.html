@@ -1,0 +1,355 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WidgetConfigurationActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.ui.homescreen</a> &gt; <span class="el_source">WidgetConfigurationActivity.java</span></div><h1>WidgetConfigurationActivity.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2012 - 2015 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.ui.homescreen;
+
+import android.app.Activity;
+import android.app.PendingIntent;
+import android.appwidget.AppWidgetManager;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.os.Bundle;
+import android.support.v4.widget.SimpleCursorAdapter;
+import android.support.v7.preference.PreferenceManager;
+import android.util.Log;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.ImageButton;
+import android.widget.RemoteViews;
+import android.widget.Spinner;
+import android.widget.Toast;
+
+import org.gnucash.android.R;
+import org.gnucash.android.db.BookDbHelper;
+import org.gnucash.android.db.DatabaseHelper;
+import org.gnucash.android.db.DatabaseSchema;
+import org.gnucash.android.db.adapter.AccountsDbAdapter;
+import org.gnucash.android.db.adapter.BooksDbAdapter;
+import org.gnucash.android.model.Account;
+import org.gnucash.android.model.Book;
+import org.gnucash.android.model.Money;
+import org.gnucash.android.receivers.TransactionAppWidgetProvider;
+import org.gnucash.android.ui.account.AccountsActivity;
+import org.gnucash.android.ui.common.FormActivity;
+import org.gnucash.android.ui.common.UxArgument;
+import org.gnucash.android.ui.settings.PreferenceActivity;
+import org.gnucash.android.ui.transaction.TransactionsActivity;
+import org.gnucash.android.util.QualifiedAccountNameCursorAdapter;
+
+import java.util.Locale;
+import java.util.prefs.Preferences;
+
+import butterknife.BindView;
+import butterknife.ButterKnife;
+
+/**
+ * Activity for configuration which account to display on a widget.
+ * The activity is opened each time a widget is added to the homescreen
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ */
+<span class="nc" id="L70">public class WidgetConfigurationActivity extends Activity {</span>
+	private AccountsDbAdapter mAccountsDbAdapter;
+    private int mAppWidgetId;
+	
+	@BindView(R.id.input_accounts_spinner) Spinner mAccountsSpinner;
+	@BindView(R.id.input_books_spinner) Spinner mBooksSpinner;
+	@BindView(R.id.input_hide_account_balance) CheckBox mHideAccountBalance;
+	@BindView(R.id.btn_save) Button mOkButton;
+	@BindView(R.id.btn_cancel) Button mCancelButton;
+
+
+	private SimpleCursorAdapter mAccountsCursorAdapter;
+
+
+	@Override
+	public void onCreate(Bundle savedInstanceState) {		
+<span class="nc" id="L86">		super.onCreate(savedInstanceState);</span>
+<span class="nc" id="L87">		setContentView(R.layout.widget_configuration);</span>
+<span class="nc" id="L88">		setResult(RESULT_CANCELED);</span>
+
+<span class="nc" id="L90">		ButterKnife.bind(this);</span>
+
+<span class="nc" id="L92">		BooksDbAdapter booksDbAdapter = BooksDbAdapter.getInstance();</span>
+<span class="nc" id="L93">		Cursor booksCursor = booksDbAdapter.fetchAllRecords();</span>
+<span class="nc" id="L94">		String currentBookUID = booksDbAdapter.getActiveBookUID();</span>
+
+		//determine the position of the currently active book in the cursor
+<span class="nc" id="L97">		int position = 0;</span>
+<span class="nc bnc" id="L98" title="All 2 branches missed.">		while (booksCursor.moveToNext()){</span>
+<span class="nc" id="L99">			String bookUID = booksCursor.getString(booksCursor.getColumnIndexOrThrow(DatabaseSchema.BookEntry.COLUMN_UID));</span>
+<span class="nc bnc" id="L100" title="All 2 branches missed.">			if (bookUID.equals(currentBookUID))</span>
+<span class="nc" id="L101">				break;</span>
+<span class="nc" id="L102">			++position;</span>
+<span class="nc" id="L103">		}</span>
+
+<span class="nc" id="L105">		SimpleCursorAdapter booksCursorAdapter = new SimpleCursorAdapter(this,</span>
+				android.R.layout.simple_spinner_item, booksCursor,
+				new String[]{DatabaseSchema.BookEntry.COLUMN_DISPLAY_NAME},
+				new int[]{android.R.id.text1}, 0);
+<span class="nc" id="L109">		booksCursorAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);</span>
+<span class="nc" id="L110">		mBooksSpinner.setAdapter(booksCursorAdapter);</span>
+<span class="nc" id="L111">		mBooksSpinner.setSelection(position);</span>
+
+<span class="nc" id="L113">		mAccountsDbAdapter = AccountsDbAdapter.getInstance();</span>
+<span class="nc" id="L114">		Cursor cursor = mAccountsDbAdapter.fetchAllRecordsOrderedByFullName();</span>
+		
+<span class="nc bnc" id="L116" title="All 2 branches missed.">		if (cursor.getCount() &lt;= 0){</span>
+<span class="nc" id="L117">			Toast.makeText(this, R.string.error_no_accounts, Toast.LENGTH_LONG).show();</span>
+<span class="nc" id="L118">			finish();</span>
+		}
+
+<span class="nc" id="L121">		mAccountsCursorAdapter = new QualifiedAccountNameCursorAdapter(this, cursor);</span>
+		//without this line, the app crashes when a user tries to select an account
+<span class="nc" id="L123">		mAccountsCursorAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);</span>
+<span class="nc" id="L124">		mAccountsSpinner.setAdapter(mAccountsCursorAdapter);</span>
+
+<span class="nc" id="L126">		boolean passcodeEnabled = PreferenceManager.getDefaultSharedPreferences(getApplicationContext())</span>
+<span class="nc" id="L127">				.getBoolean(UxArgument.ENABLED_PASSCODE, false);</span>
+<span class="nc" id="L128">		mHideAccountBalance.setChecked(passcodeEnabled);</span>
+
+<span class="nc" id="L130">		bindListeners();</span>
+<span class="nc" id="L131">	}</span>
+
+	/**
+	 * Sets click listeners for the buttons in the dialog
+	 */
+	private void bindListeners() {
+<span class="nc" id="L137">		mBooksSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {</span>
+			@Override
+			public void onItemSelected(AdapterView&lt;?&gt; parent, View view, int position, long id) {
+<span class="nc" id="L140">				Book book = BooksDbAdapter.getInstance().getRecord(id);</span>
+<span class="nc" id="L141">				SQLiteDatabase db = new DatabaseHelper(WidgetConfigurationActivity.this, book.getUID()).getWritableDatabase();</span>
+<span class="nc" id="L142">				mAccountsDbAdapter = new AccountsDbAdapter(db);</span>
+
+<span class="nc" id="L144">				Cursor cursor = mAccountsDbAdapter.fetchAllRecordsOrderedByFullName();</span>
+<span class="nc" id="L145">				mAccountsCursorAdapter.swapCursor(cursor);</span>
+<span class="nc" id="L146">				mAccountsCursorAdapter.notifyDataSetChanged();</span>
+<span class="nc" id="L147">			}</span>
+
+			@Override
+			public void onNothingSelected(AdapterView&lt;?&gt; parent) {
+				//nothing to see here, move along
+<span class="nc" id="L152">			}</span>
+		});
+
+<span class="nc" id="L155">		mOkButton.setOnClickListener(new View.OnClickListener() {</span>
+			
+			@Override
+			public void onClick(View v) {
+<span class="nc" id="L159">				Intent intent = getIntent();</span>
+<span class="nc" id="L160">				Bundle extras = intent.getExtras();</span>
+<span class="nc bnc" id="L161" title="All 2 branches missed.">				if (extras != null) {</span>
+<span class="nc" id="L162">				    mAppWidgetId = extras.getInt(</span>
+				            AppWidgetManager.EXTRA_APPWIDGET_ID, 
+				            AppWidgetManager.INVALID_APPWIDGET_ID);
+				}
+				
+<span class="nc bnc" id="L167" title="All 2 branches missed.">				if (mAppWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID){</span>
+<span class="nc" id="L168">					finish();</span>
+<span class="nc" id="L169">					return;</span>
+				}
+
+<span class="nc" id="L172">				String bookUID = BooksDbAdapter.getInstance().getUID(mBooksSpinner.getSelectedItemId());</span>
+<span class="nc" id="L173">				String accountUID = mAccountsDbAdapter.getUID(mAccountsSpinner.getSelectedItemId());</span>
+<span class="nc" id="L174">				boolean hideAccountBalance = mHideAccountBalance.isChecked();</span>
+				
+<span class="nc" id="L176">				configureWidget(WidgetConfigurationActivity.this, mAppWidgetId, bookUID, accountUID, hideAccountBalance);</span>
+<span class="nc" id="L177">				updateWidget(WidgetConfigurationActivity.this, mAppWidgetId);</span>
+						
+<span class="nc" id="L179">				Intent resultValue = new Intent();</span>
+<span class="nc" id="L180">				resultValue.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, mAppWidgetId);</span>
+<span class="nc" id="L181">				setResult(RESULT_OK, resultValue);</span>
+<span class="nc" id="L182">				finish();		</span>
+<span class="nc" id="L183">			}</span>
+		});
+		
+<span class="nc" id="L186">		mCancelButton.setOnClickListener(new View.OnClickListener() {</span>
+			
+			@Override
+			public void onClick(View v) {
+<span class="nc" id="L190">				finish();</span>
+<span class="nc" id="L191">			}</span>
+		});
+<span class="nc" id="L193">	}</span>
+
+	/**
+	 * Configure a given widget with the given parameters.
+	 * @param context The current context
+	 * @param appWidgetId ID of the widget to configure
+	 * @param bookUID UID of the book for this widget
+	 * @param accountUID UID of the account for this widget
+	 * @param hideAccountBalance &lt;code&gt;true&lt;/code&gt; if the account balance should be hidden,
+	 *                           &lt;code&gt;false&lt;/code&gt; otherwise
+     */
+	public static void configureWidget(final Context context, int appWidgetId, String bookUID, String accountUID, boolean hideAccountBalance) {
+<span class="nc" id="L205">		context.getSharedPreferences(&quot;widget:&quot; + appWidgetId, MODE_PRIVATE).edit()</span>
+<span class="nc" id="L206">				.putString(UxArgument.BOOK_UID, bookUID)</span>
+<span class="nc" id="L207">				.putString(UxArgument.SELECTED_ACCOUNT_UID, accountUID)</span>
+<span class="nc" id="L208">				.putBoolean(UxArgument.HIDE_ACCOUNT_BALANCE_IN_WIDGET, hideAccountBalance)</span>
+<span class="nc" id="L209">				.apply();</span>
+<span class="nc" id="L210">	}</span>
+
+	/**
+	 * Remove the configuration for a widget. Primarily this should be called when a widget is
+	 * destroyed.
+	 * @param context The current context
+	 * @param appWidgetId ID of the widget whose configuration should be removed
+     */
+	public static void removeWidgetConfiguration(final Context context, int appWidgetId) {
+<span class="nc" id="L219">		context.getSharedPreferences(&quot;widget:&quot; + appWidgetId, MODE_PRIVATE).edit()</span>
+<span class="nc" id="L220">				.clear()</span>
+<span class="nc" id="L221">				.apply();</span>
+<span class="nc" id="L222">	}</span>
+
+	/**
+	 * Load obsolete preferences for a widget, if they exist, and save them using the new widget
+	 * configuration format.
+	 * @param context The current context
+	 * @param appWidgetId ID of the widget whose configuration to load/save
+     */
+	private static void loadOldPreferences(Context context, int appWidgetId) {
+<span class="nc" id="L231">		SharedPreferences preferences = PreferenceActivity.getActiveBookSharedPreferences();</span>
+<span class="nc" id="L232">		String accountUID = preferences.getString(UxArgument.SELECTED_ACCOUNT_UID + appWidgetId, null);</span>
+<span class="nc bnc" id="L233" title="All 2 branches missed.">		if (accountUID != null) {</span>
+<span class="nc" id="L234">			String bookUID = BooksDbAdapter.getInstance().getActiveBookUID();</span>
+<span class="nc" id="L235">			boolean hideAccountBalance = preferences.getBoolean(UxArgument.HIDE_ACCOUNT_BALANCE_IN_WIDGET + appWidgetId, false);</span>
+<span class="nc" id="L236">			configureWidget(context, appWidgetId, bookUID, accountUID, hideAccountBalance);</span>
+<span class="nc" id="L237">			preferences.edit()</span>
+<span class="nc" id="L238">					.remove(UxArgument.SELECTED_ACCOUNT_UID + appWidgetId)</span>
+<span class="nc" id="L239">					.remove(UxArgument.HIDE_ACCOUNT_BALANCE_IN_WIDGET + appWidgetId)</span>
+<span class="nc" id="L240">					.apply();</span>
+		}
+<span class="nc" id="L242">	}</span>
+
+	/**
+	 * Updates the widget with id &lt;code&gt;appWidgetId&lt;/code&gt; with information from the 
+	 * account with record ID &lt;code&gt;accountId&lt;/code&gt;
+     * If the account has been deleted, then a notice is posted in the widget
+	 * @param appWidgetId ID of the widget to be updated
+	 */
+	public static void updateWidget(final Context context, int appWidgetId) {
+<span class="nc" id="L251">		Log.i(&quot;WidgetConfiguration&quot;, &quot;Updating widget: &quot; + appWidgetId);</span>
+<span class="nc" id="L252">		AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);</span>
+
+<span class="nc" id="L254">		loadOldPreferences(context, appWidgetId);</span>
+
+<span class="nc" id="L256">		SharedPreferences preferences = context.getSharedPreferences(&quot;widget:&quot; + appWidgetId, MODE_PRIVATE);</span>
+<span class="nc" id="L257">		String bookUID = preferences.getString(UxArgument.BOOK_UID, null);</span>
+<span class="nc" id="L258">		String accountUID = preferences.getString(UxArgument.SELECTED_ACCOUNT_UID, null);</span>
+<span class="nc" id="L259">		boolean hideAccountBalance = preferences.getBoolean(UxArgument.HIDE_ACCOUNT_BALANCE_IN_WIDGET, false);</span>
+
+<span class="nc bnc" id="L261" title="All 4 branches missed.">		if (bookUID == null || accountUID == null) {</span>
+<span class="nc" id="L262">			return;</span>
+		}
+
+<span class="nc" id="L265">		AccountsDbAdapter accountsDbAdapter = new AccountsDbAdapter(BookDbHelper.getDatabase(bookUID));</span>
+
+		final Account account;
+        try {
+<span class="nc" id="L269">            account = accountsDbAdapter.getRecord(accountUID);</span>
+<span class="nc" id="L270">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L271">			Log.i(&quot;WidgetConfiguration&quot;, &quot;Account not found, resetting widget &quot; + appWidgetId);</span>
+			//if account has been deleted, let the user know
+<span class="nc" id="L273">			RemoteViews views = new RemoteViews(context.getPackageName(),</span>
+					R.layout.widget_4x1);
+<span class="nc" id="L275">			views.setTextViewText(R.id.account_name, context.getString(R.string.toast_account_deleted));</span>
+<span class="nc" id="L276">			views.setTextViewText(R.id.transactions_summary, &quot;&quot;);</span>
+            //set it to simply open the app
+<span class="nc" id="L278">            PendingIntent pendingIntent = PendingIntent.getActivity(context, 0,</span>
+                    new Intent(context, AccountsActivity.class), 0);
+<span class="nc" id="L280">			views.setOnClickPendingIntent(R.id.widget_layout, pendingIntent);</span>
+<span class="nc" id="L281">			views.setOnClickPendingIntent(R.id.btn_new_transaction, pendingIntent);</span>
+<span class="nc" id="L282">			appWidgetManager.updateAppWidget(appWidgetId, views);</span>
+<span class="nc" id="L283">			Editor editor = PreferenceActivity.getActiveBookSharedPreferences().edit(); //PreferenceManager.getDefaultSharedPreferences(context).edit();</span>
+<span class="nc" id="L284">			editor.remove(UxArgument.SELECTED_ACCOUNT_UID + appWidgetId);</span>
+<span class="nc" id="L285">			editor.apply();</span>
+<span class="nc" id="L286">			return;</span>
+<span class="nc" id="L287">		}</span>
+		
+<span class="nc" id="L289">		final RemoteViews views = new RemoteViews(context.getPackageName(),</span>
+				R.layout.widget_4x1);
+<span class="nc" id="L291">		views.setTextViewText(R.id.account_name, account.getName());</span>
+
+<span class="nc" id="L293">		Money accountBalance = accountsDbAdapter.getAccountBalance(accountUID, -1, System.currentTimeMillis());</span>
+
+<span class="nc bnc" id="L295" title="All 2 branches missed.">		if (hideAccountBalance) {</span>
+<span class="nc" id="L296">			views.setViewVisibility(R.id.transactions_summary, View.GONE);</span>
+		} else {
+<span class="nc" id="L298">			views.setTextViewText(R.id.transactions_summary,</span>
+<span class="nc" id="L299">					accountBalance.formattedString(Locale.getDefault()));</span>
+<span class="nc bnc" id="L300" title="All 2 branches missed.">			int color = accountBalance.isNegative() ? R.color.debit_red : R.color.credit_green;</span>
+<span class="nc" id="L301">			views.setTextColor(R.id.transactions_summary, context.getResources().getColor(color));</span>
+		}
+
+
+<span class="nc" id="L305">		Intent accountViewIntent = new Intent(context, TransactionsActivity.class);</span>
+<span class="nc" id="L306">		accountViewIntent.setAction(Intent.ACTION_VIEW);</span>
+<span class="nc" id="L307">		accountViewIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);</span>
+<span class="nc" id="L308">		accountViewIntent.putExtra(UxArgument.SELECTED_ACCOUNT_UID, accountUID);</span>
+<span class="nc" id="L309">		accountViewIntent.putExtra(UxArgument.BOOK_UID, bookUID);</span>
+<span class="nc" id="L310">		PendingIntent accountPendingIntent = PendingIntent</span>
+<span class="nc" id="L311">				.getActivity(context, appWidgetId, accountViewIntent, 0);</span>
+<span class="nc" id="L312">		views.setOnClickPendingIntent(R.id.widget_layout, accountPendingIntent);</span>
+		
+<span class="nc bnc" id="L314" title="All 2 branches missed.">		if (accountsDbAdapter.isPlaceholderAccount(accountUID)) {</span>
+<span class="nc" id="L315">			views.setOnClickPendingIntent(R.id.btn_view_account, accountPendingIntent);</span>
+<span class="nc" id="L316">			views.setViewVisibility(R.id.btn_new_transaction, View.GONE);</span>
+		} else {
+<span class="nc" id="L318">			Intent newTransactionIntent = new Intent(context, FormActivity.class);</span>
+<span class="nc" id="L319">			newTransactionIntent.setAction(Intent.ACTION_INSERT_OR_EDIT);</span>
+<span class="nc" id="L320">			newTransactionIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);</span>
+<span class="nc" id="L321">			newTransactionIntent.putExtra(UxArgument.FORM_TYPE, FormActivity.FormType.TRANSACTION.name());</span>
+<span class="nc" id="L322">			newTransactionIntent.putExtra(UxArgument.BOOK_UID, bookUID);</span>
+<span class="nc" id="L323">			newTransactionIntent.putExtra(UxArgument.SELECTED_ACCOUNT_UID, accountUID);</span>
+<span class="nc" id="L324">			PendingIntent pendingIntent = PendingIntent</span>
+<span class="nc" id="L325">					.getActivity(context, appWidgetId, newTransactionIntent, 0);</span>
+<span class="nc" id="L326">			views.setOnClickPendingIntent(R.id.btn_new_transaction, pendingIntent);</span>
+<span class="nc" id="L327">			views.setViewVisibility(R.id.btn_view_account, View.GONE);</span>
+		}
+		
+<span class="nc" id="L330">		appWidgetManager.updateAppWidget(appWidgetId, views);</span>
+<span class="nc" id="L331">	}</span>
+
+	/**
+	 * Updates all widgets belonging to the application
+	 * @param context Application context
+	 */
+	public static void updateAllWidgets(final Context context){
+<span class="nc" id="L338">		Log.i(&quot;WidgetConfiguration&quot;, &quot;Updating all widgets&quot;);</span>
+<span class="nc" id="L339">		AppWidgetManager widgetManager = AppWidgetManager.getInstance(context);</span>
+<span class="nc" id="L340">		ComponentName componentName = new ComponentName(context, TransactionAppWidgetProvider.class);</span>
+<span class="nc" id="L341">		final int[] appWidgetIds = widgetManager.getAppWidgetIds(componentName);</span>
+
+		//update widgets asynchronously so as not to block method which called the update
+		//inside the computation of the account balance
+<span class="nc" id="L345">		new Thread(new Runnable() {</span>
+			@Override
+			public void run() {
+<span class="nc bnc" id="L348" title="All 2 branches missed.">				for (final int widgetId : appWidgetIds) {</span>
+<span class="nc" id="L349">					updateWidget(context, widgetId);</span>
+				}
+<span class="nc" id="L351">			}</span>
+<span class="nc" id="L352">		}).start();</span>
+<span class="nc" id="L353">	}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

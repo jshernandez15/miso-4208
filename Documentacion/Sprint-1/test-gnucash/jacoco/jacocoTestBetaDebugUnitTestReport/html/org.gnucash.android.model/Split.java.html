@@ -1,0 +1,577 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Split.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.model</a> &gt; <span class="el_source">Split.java</span></div><h1>Split.java</h1><pre class="source lang-java linenums">package org.gnucash.android.model;
+
+
+import android.os.Parcel;
+import android.os.Parcelable;
+import android.support.annotation.NonNull;
+
+import org.gnucash.android.db.adapter.AccountsDbAdapter;
+
+import java.sql.Timestamp;
+
+/**
+ * A split amount in a transaction.
+ * Every transaction is made up of at least two splits (representing a double entry transaction)
+ * &lt;p&gt;The split amount is always stored in the database as the absolute value alongside its transaction type of CREDIT/DEBIT&lt;br/&gt;
+ * This is independent of the negative values which are shown in the UI (for user convenience).
+ * The actual movement of the balance in the account depends on the type of normal balance of the account and the
+ * transaction type of the split.&lt;/p&gt;
+ *
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ */
+public class Split extends BaseModel implements Parcelable{
+
+    /**
+     * Flag indicating that the split has been reconciled
+     */
+    public static final char FLAG_RECONCILED        = 'y';
+
+    /**
+     * Flag indicating that the split has not been reconciled
+     */
+    public static final char FLAG_NOT_RECONCILED    = 'n';
+
+    /**
+     * Flag indicating that the split has been cleared, but not reconciled
+     */
+    public static final char FLAG_CLEARED           = 'c';
+
+
+    /**
+     * Amount value of this split which is in the currency of the transaction
+     */
+    private Money mValue;
+
+    /**
+     * Amount of the split in the currency of the account to which the split belongs
+     */
+    private Money mQuantity;
+
+    /**
+     * Transaction UID which this split belongs to
+     */
+<span class="nc" id="L53">    private String mTransactionUID = &quot;&quot;;</span>
+
+    /**
+     * Account UID which this split belongs to
+     */
+    private String mAccountUID;
+
+    /**
+     * The type of this transaction, credit or debit
+     */
+<span class="nc" id="L63">    private TransactionType mSplitType = TransactionType.CREDIT;</span>
+
+    /**
+     * Memo associated with this split
+     */
+    private String mMemo;
+
+<span class="nc" id="L70">    private char mReconcileState = FLAG_NOT_RECONCILED;</span>
+
+    /**
+     * Database required non-null field
+     */
+<span class="nc" id="L75">    private Timestamp mReconcileDate = new Timestamp(System.currentTimeMillis());</span>
+
+    /**
+     * Initialize split with a value amount and account
+     * @param value Money value amount of this split
+     * @param accountUID String UID of transfer account
+     */
+<span class="nc" id="L82">    public Split(@NonNull Money value, @NonNull Money quantity, String accountUID){</span>
+<span class="nc" id="L83">        setQuantity(quantity);</span>
+<span class="nc" id="L84">        setValue(value);</span>
+<span class="nc" id="L85">        setAccountUID(accountUID);</span>
+        //NOTE: This is a rather simplististic approach to the split type.
+        //It typically also depends on the account type of the account. But we do not want to access
+        //the database everytime a split is created. So we keep it simple here. Set the type you want explicity.
+<span class="nc bnc" id="L89" title="All 2 branches missed.">        mSplitType = value.isNegative() ? TransactionType.DEBIT : TransactionType.CREDIT;</span>
+<span class="nc" id="L90">    }</span>
+
+    /**
+     * Initialize split with a value amount and account
+     * @param amount Money value amount of this split. Value is always in the currency the owning transaction.
+     *               This amount will be assigned as both the value and the quantity of this split
+     * @param accountUID String UID of owning account
+     */
+<span class="nc" id="L98">    public Split(@NonNull Money amount, String accountUID){</span>
+<span class="nc" id="L99">        setValue(amount);</span>
+<span class="nc" id="L100">        setQuantity(new Money(amount));</span>
+<span class="nc" id="L101">        setAccountUID(accountUID);</span>
+        //NOTE: This is a rather simplististic approach to the split type.
+        //It typically also depends on the account type of the account. But we do not want to access
+        //the database everytime a split is created. So we keep it simple here. Set the type you want explicity.
+<span class="nc bnc" id="L105" title="All 2 branches missed.">        mSplitType = amount.isNegative() ? TransactionType.DEBIT : TransactionType.CREDIT;</span>
+<span class="nc" id="L106">    }</span>
+
+
+    /**
+     * Clones the &lt;code&gt;sourceSplit&lt;/code&gt; to create a new instance with same fields
+     * @param sourceSplit Split to be cloned
+     * @param generateUID Determines if the clone should have a new UID or should maintain the one from source
+     */
+<span class="nc" id="L114">    public Split(Split sourceSplit, boolean generateUID){</span>
+<span class="nc" id="L115">        this.mMemo          = sourceSplit.mMemo;</span>
+<span class="nc" id="L116">        this.mAccountUID    = sourceSplit.mAccountUID;</span>
+<span class="nc" id="L117">        this.mSplitType     = sourceSplit.mSplitType;</span>
+<span class="nc" id="L118">        this.mTransactionUID = sourceSplit.mTransactionUID;</span>
+<span class="nc" id="L119">        this.mValue         = new Money(sourceSplit.mValue);</span>
+<span class="nc" id="L120">        this.mQuantity      = new Money(sourceSplit.mQuantity);</span>
+
+        //todo: clone reconciled status
+<span class="nc bnc" id="L123" title="All 2 branches missed.">        if (generateUID){</span>
+<span class="nc" id="L124">            generateUID();</span>
+        } else {
+<span class="nc" id="L126">            setUID(sourceSplit.getUID());</span>
+        }
+<span class="nc" id="L128">    }</span>
+
+    /**
+     * Returns the value amount of the split
+     * @return Money amount of the split with the currency of the transaction
+     * @see #getQuantity()
+     */
+    public Money getValue() {
+<span class="nc" id="L136">        return mValue;</span>
+    }
+
+    /**
+     * Sets the value amount of the split.&lt;br&gt;
+     * The value is in the currency of the containing transaction
+     * @param value Money value of this split
+     * @see #setQuantity(Money)
+     */
+    public void setValue(Money value) {
+<span class="nc" id="L146">        mValue = value;</span>
+<span class="nc" id="L147">    }</span>
+
+    /**
+     * Returns the quantity amount of the split.
+     * &lt;p&gt;The quantity is in the currency of the account to which the split is associated&lt;/p&gt;
+     * @return Money quantity amount
+     * @see #getValue()
+     */
+    public Money getQuantity() {
+<span class="nc" id="L156">        return mQuantity;</span>
+    }
+
+    /**
+     * Sets the quantity value of the split
+     * @param quantity Money quantity amount
+     * @see #setValue(Money)
+     */
+    public void setQuantity(Money quantity) {
+<span class="nc" id="L165">        this.mQuantity = quantity;</span>
+<span class="nc" id="L166">    }</span>
+
+    /**
+     * Returns transaction GUID to which the split belongs
+     * @return String GUID of the transaction
+     */
+    public String getTransactionUID() {
+<span class="nc" id="L173">        return mTransactionUID;</span>
+    }
+
+    /**
+     * Sets the transaction to which the split belongs
+     * @param transactionUID GUID of transaction
+     */
+    public void setTransactionUID(String transactionUID) {
+<span class="nc" id="L181">        this.mTransactionUID = transactionUID;</span>
+<span class="nc" id="L182">    }</span>
+
+    /**
+     * Returns the account GUID of this split
+     * @return GUID of the account
+     */
+    public String getAccountUID() {
+<span class="nc" id="L189">        return mAccountUID;</span>
+    }
+
+    /**
+     * Sets the GUID of the account of this split
+     * @param accountUID GUID of account
+     */
+    public void setAccountUID(String accountUID) {
+<span class="nc" id="L197">        this.mAccountUID = accountUID;</span>
+<span class="nc" id="L198">    }</span>
+
+    /**
+     * Returns the type of the split
+     * @return {@link TransactionType} of the split
+     */
+    public TransactionType getType() {
+<span class="nc" id="L205">        return mSplitType;</span>
+    }
+
+    /**
+     * Sets the type of this split
+     * @param splitType Type of the split
+     */
+    public void setType(TransactionType splitType) {
+<span class="nc" id="L213">        this.mSplitType = splitType;</span>
+<span class="nc" id="L214">    }</span>
+
+    /**
+     * Returns the memo of this split
+     * @return String memo of this split
+     */
+    public String getMemo() {
+<span class="nc" id="L221">        return mMemo;</span>
+    }
+
+    /**
+     * Sets this split memo
+     * @param memo String memo of this split
+     */
+    public void setMemo(String memo) {
+<span class="nc" id="L229">        this.mMemo = memo;</span>
+<span class="nc" id="L230">    }</span>
+
+    /**
+     * Creates a split which is a pair of this instance.
+     * A pair split has all the same attributes except that the SplitType is inverted and it belongs
+     * to another account.
+     * @param accountUID GUID of account
+     * @return New split pair of current split
+     * @see TransactionType#invert()
+     */
+    public Split createPair(String accountUID){
+<span class="nc" id="L241">        Split pair = new Split(mValue.abs(), accountUID);</span>
+<span class="nc" id="L242">        pair.setType(mSplitType.invert());</span>
+<span class="nc" id="L243">        pair.setMemo(mMemo);</span>
+<span class="nc" id="L244">        pair.setTransactionUID(mTransactionUID);</span>
+<span class="nc" id="L245">        pair.setQuantity(mQuantity);</span>
+<span class="nc" id="L246">        return pair;</span>
+    }
+
+    /**
+     * Clones this split and returns an exact copy.
+     * @return New instance of a split which is a copy of the current one
+     */
+    protected Split clone() throws CloneNotSupportedException {
+<span class="nc" id="L254">        super.clone();</span>
+<span class="nc" id="L255">        Split split = new Split(mValue, mAccountUID);</span>
+<span class="nc" id="L256">        split.setUID(getUID());</span>
+<span class="nc" id="L257">        split.setType(mSplitType);</span>
+<span class="nc" id="L258">        split.setMemo(mMemo);</span>
+<span class="nc" id="L259">        split.setTransactionUID(mTransactionUID);</span>
+<span class="nc" id="L260">        split.setQuantity(mQuantity);</span>
+<span class="nc" id="L261">        return split;</span>
+    }
+
+    /**
+     * Checks is this &lt;code&gt;other&lt;/code&gt; is a pair split of this.
+     * &lt;p&gt;Two splits are considered a pair if they have the same amount and opposite split types&lt;/p&gt;
+     * @param other the other split of the pair to be tested
+     * @return whether the two splits are a pair
+     */
+    public boolean isPairOf(Split other) {
+<span class="nc bnc" id="L271" title="All 2 branches missed.">        return mValue.abs().equals(other.mValue.abs())</span>
+<span class="nc bnc" id="L272" title="All 2 branches missed.">                &amp;&amp; mSplitType.invert().equals(other.mSplitType);</span>
+    }
+
+    /**
+     * Returns the formatted amount (with or without negation sign) for the split value
+     * @return Money amount of value
+     * @see #getFormattedAmount(Money, String, TransactionType)
+     */
+    public Money getFormattedValue(){
+<span class="nc" id="L281">        return getFormattedAmount(mValue, mAccountUID, mSplitType);</span>
+    }
+
+    /**
+     * Returns the formatted amount (with or without negation sign) for the quantity
+     * @return Money amount of quantity
+     * @see #getFormattedAmount(Money, String, TransactionType)
+     */
+    public Money getFormattedQuantity(){
+<span class="nc" id="L290">        return getFormattedAmount(mQuantity, mAccountUID, mSplitType);</span>
+    }
+
+    /**
+     * Splits are saved as absolute values to the database, with no negative numbers.
+     * The type of movement the split causes to the balance of an account determines its sign, and
+     * that depends on the split type and the account type
+     * @param amount Money amount to format
+     * @param accountUID GUID of the account
+     * @param splitType Transaction type of the split
+     * @return -{@code amount} if the amount would reduce the balance of {@code account}, otherwise +{@code amount}
+     */
+    public static Money getFormattedAmount(Money amount, String accountUID, TransactionType splitType){
+<span class="nc" id="L303">        boolean isDebitAccount = AccountsDbAdapter.getInstance().getAccountType(accountUID).hasDebitNormalBalance();</span>
+<span class="nc" id="L304">        Money absAmount = amount.abs();</span>
+
+<span class="nc bnc" id="L306" title="All 2 branches missed.">        boolean isDebitSplit = splitType == TransactionType.DEBIT;</span>
+<span class="nc bnc" id="L307" title="All 2 branches missed.">        if (isDebitAccount) {</span>
+<span class="nc bnc" id="L308" title="All 2 branches missed.">            if (isDebitSplit) {</span>
+<span class="nc" id="L309">                return absAmount;</span>
+            } else {
+<span class="nc" id="L311">                return absAmount.negate();</span>
+            }
+        } else {
+<span class="nc bnc" id="L314" title="All 2 branches missed.">            if (isDebitSplit) {</span>
+<span class="nc" id="L315">                return absAmount.negate();</span>
+            } else {
+<span class="nc" id="L317">                return absAmount;</span>
+            }
+        }
+    }
+
+    /**
+     * Return the reconciled state of this split
+     * &lt;p&gt;
+     *     The reconciled state is one of the following values:
+     *     &lt;ul&gt;
+     *         &lt;li&gt;&lt;b&gt;y&lt;/b&gt;: means this split has been reconciled&lt;/li&gt;
+     *         &lt;li&gt;&lt;b&gt;n&lt;/b&gt;: means this split is not reconciled&lt;/li&gt;
+     *         &lt;li&gt;&lt;b&gt;c&lt;/b&gt;: means split has been cleared, but not reconciled&lt;/li&gt;
+     *     &lt;/ul&gt;
+     * &lt;/p&gt; &lt;br&gt;
+     * You can check the return value against the reconciled flags {@link #FLAG_RECONCILED}, {@link #FLAG_NOT_RECONCILED}, {@link #FLAG_CLEARED}
+     * @return Character showing reconciled state
+     */
+    public char getReconcileState() {
+<span class="nc" id="L336">        return mReconcileState;</span>
+    }
+
+    /**
+     * Check if this split is reconciled
+     * @return {@code true} if the split is reconciled, {@code false} otherwise
+     */
+    public boolean isReconciled(){
+<span class="nc bnc" id="L344" title="All 2 branches missed.">        return mReconcileState == FLAG_RECONCILED;</span>
+    }
+
+    /**
+     * Set reconciled state of this split.
+     * &lt;p&gt;
+     *     The reconciled state is one of the following values:
+     *     &lt;ul&gt;
+     *         &lt;li&gt;&lt;b&gt;y&lt;/b&gt;: means this split has been reconciled&lt;/li&gt;
+     *         &lt;li&gt;&lt;b&gt;n&lt;/b&gt;: means this split is not reconciled&lt;/li&gt;
+     *         &lt;li&gt;&lt;b&gt;c&lt;/b&gt;: means split has been cleared, but not reconciled&lt;/li&gt;
+     *     &lt;/ul&gt;
+     * &lt;/p&gt;
+     * @param reconcileState One of the following flags {@link #FLAG_RECONCILED}, {@link #FLAG_NOT_RECONCILED}, {@link #FLAG_CLEARED}
+     */
+    public void setReconcileState(char reconcileState) {
+<span class="nc" id="L360">        this.mReconcileState = reconcileState;</span>
+<span class="nc" id="L361">    }</span>
+
+    /**
+     * Return the date of reconciliation
+     * @return Timestamp
+     */
+    public Timestamp getReconcileDate() {
+<span class="nc" id="L368">        return mReconcileDate;</span>
+    }
+
+    /**
+     * Set reconciliation date for this split
+     * @param reconcileDate Timestamp of reconciliation
+     */
+    public void setReconcileDate(Timestamp reconcileDate) {
+<span class="nc" id="L376">        this.mReconcileDate = reconcileDate;</span>
+<span class="nc" id="L377">    }</span>
+
+    @Override
+    public String toString() {
+<span class="nc" id="L381">        return mSplitType.name() + &quot; of &quot; + mValue.toString() + &quot; in account: &quot; + mAccountUID;</span>
+    }
+
+    /**
+     * Returns a string representation of the split which can be parsed again using {@link org.gnucash.android.model.Split#parseSplit(String)}
+     * &lt;p&gt;The string is formatted as:&lt;br/&gt;
+     * &quot;&amp;lt;uid&amp;gt;;&amp;lt;valueNum&amp;gt;;&amp;lt;valueDenom&amp;gt;;&amp;lt;valueCurrencyCode&amp;gt;;&amp;lt;quantityNum&amp;gt;;&amp;lt;quantityDenom&amp;gt;;&amp;lt;quantityCurrencyCode&amp;gt;;&amp;lt;transaction_uid&amp;gt;;&amp;lt;account_uid&amp;gt;;&amp;lt;type&amp;gt;;&amp;lt;memo&amp;gt;&quot;
+     * &lt;/p&gt;
+     * &lt;p&gt;&lt;b&gt;Only the memo field is allowed to be null&lt;/b&gt;&lt;/p&gt;
+     * @return the converted CSV string of this split
+     */
+    public String toCsv(){
+<span class="nc" id="L393">        String sep = &quot;;&quot;;</span>
+        //TODO: add reconciled state and date
+<span class="nc" id="L395">        String splitString = getUID() + sep + mValue.getNumerator() + sep + mValue.getDenominator()</span>
+<span class="nc" id="L396">                + sep + mValue.getCommodity().getCurrencyCode() + sep + mQuantity.getNumerator()</span>
+<span class="nc" id="L397">                + sep + mQuantity.getDenominator() + sep + mQuantity.getCommodity().getCurrencyCode()</span>
+<span class="nc" id="L398">                + sep + mTransactionUID + sep + mAccountUID + sep + mSplitType.name();</span>
+<span class="nc bnc" id="L399" title="All 2 branches missed.">        if (mMemo != null){</span>
+<span class="nc" id="L400">            splitString = splitString + sep + mMemo;</span>
+        }
+<span class="nc" id="L402">        return splitString;</span>
+    }
+
+    /**
+     * Parses a split which is in the format:&lt;br/&gt;
+     * &quot;&lt;uid&gt;;&lt;valueNum&gt;;&lt;valueDenom&gt;;&lt;currency_code&gt;;&lt;quantityNum&gt;;&lt;quantityDenom&gt;;&lt;currency_code&gt;;&lt;transaction_uid&gt;;&lt;account_uid&gt;;&lt;type&gt;;&lt;memo&gt;&quot;.
+     * &lt;p&gt;Also supports parsing of the deprecated format &quot;&lt;amount&gt;;&lt;currency_code&gt;;&lt;transaction_uid&gt;;&lt;account_uid&gt;;&lt;type&gt;;&lt;memo&gt;&quot;.
+     * The split input string is the same produced by the {@link Split#toCsv()} method
+     *&lt;/p&gt;
+     * @param splitCsvString String containing formatted split
+     * @return Split instance parsed from the string
+     */
+    public static Split parseSplit(String splitCsvString) {
+        //TODO: parse reconciled state and date
+<span class="nc" id="L416">        String[] tokens = splitCsvString.split(&quot;;&quot;);</span>
+<span class="nc bnc" id="L417" title="All 2 branches missed.">        if (tokens.length &lt; 8) { //old format splits</span>
+<span class="nc" id="L418">            Money amount = new Money(tokens[0], tokens[1]);</span>
+<span class="nc" id="L419">            Split split = new Split(amount, tokens[2]);</span>
+<span class="nc" id="L420">            split.setTransactionUID(tokens[3]);</span>
+<span class="nc" id="L421">            split.setType(TransactionType.valueOf(tokens[4]));</span>
+<span class="nc bnc" id="L422" title="All 2 branches missed.">            if (tokens.length == 6) {</span>
+<span class="nc" id="L423">                split.setMemo(tokens[5]);</span>
+            }
+<span class="nc" id="L425">            return split;</span>
+        } else {
+<span class="nc" id="L427">            long valueNum = Long.parseLong(tokens[1]);</span>
+<span class="nc" id="L428">            long valueDenom = Long.parseLong(tokens[2]);</span>
+<span class="nc" id="L429">            String valueCurrencyCode = tokens[3];</span>
+<span class="nc" id="L430">            long quantityNum = Long.parseLong(tokens[4]);</span>
+<span class="nc" id="L431">            long quantityDenom = Long.parseLong(tokens[5]);</span>
+<span class="nc" id="L432">            String qtyCurrencyCode = tokens[6];</span>
+
+<span class="nc" id="L434">            Money value = new Money(valueNum, valueDenom, valueCurrencyCode);</span>
+<span class="nc" id="L435">            Money quantity = new Money(quantityNum, quantityDenom, qtyCurrencyCode);</span>
+
+<span class="nc" id="L437">            Split split = new Split(value, tokens[8]);</span>
+<span class="nc" id="L438">            split.setUID(tokens[0]);</span>
+<span class="nc" id="L439">            split.setQuantity(quantity);</span>
+<span class="nc" id="L440">            split.setTransactionUID(tokens[7]);</span>
+<span class="nc" id="L441">            split.setType(TransactionType.valueOf(tokens[9]));</span>
+<span class="nc bnc" id="L442" title="All 2 branches missed.">            if (tokens.length == 11) {</span>
+<span class="nc" id="L443">                split.setMemo(tokens[10]);</span>
+            }
+<span class="nc" id="L445">            return split;</span>
+        }
+    }
+
+    /**
+     * Two splits are considered equivalent if all the fields (excluding GUID and timestamps - created, modified, reconciled) are equal.
+     * Any two splits which are equal are also equivalent, but the reverse is not true
+     * &lt;p&gt;The difference with to {@link #equals(Object)} is that the GUID of the split is not considered.
+     * This is useful in cases where a new split is generated for a transaction with the same properties,
+     * but a new GUID is generated e.g. when editing a transaction and modifying the splits&lt;/p&gt;
+     *
+     * @param split Other split for which to test equivalence
+     * @return {@code true} if both splits are equivalent, {@code false} otherwise
+     */
+    public boolean isEquivalentTo(Split split){
+<span class="nc bnc" id="L460" title="All 2 branches missed.">        if (this == split) return true;</span>
+<span class="nc bnc" id="L461" title="All 2 branches missed.">        if (super.equals(split)) return true;</span>
+
+<span class="nc bnc" id="L463" title="All 2 branches missed.">        if (mReconcileState != split.mReconcileState) return false;</span>
+<span class="nc bnc" id="L464" title="All 2 branches missed.">        if (!mValue.equals(split.mValue)) return false;</span>
+<span class="nc bnc" id="L465" title="All 2 branches missed.">        if (!mQuantity.equals(split.mQuantity)) return false;</span>
+<span class="nc bnc" id="L466" title="All 2 branches missed.">        if (!mTransactionUID.equals(split.mTransactionUID)) return false;</span>
+<span class="nc bnc" id="L467" title="All 2 branches missed.">        if (!mAccountUID.equals(split.mAccountUID)) return false;</span>
+<span class="nc bnc" id="L468" title="All 2 branches missed.">        if (mSplitType != split.mSplitType) return false;</span>
+<span class="nc bnc" id="L469" title="All 4 branches missed.">        return mMemo != null ? mMemo.equals(split.mMemo) : split.mMemo == null;</span>
+    }
+
+    /**
+     * Two splits are considered equal if all their properties excluding timestampes (created, modified, reconciled) are equal.
+     * @param o Other split to compare for equality
+     * @return {@code true} if this split is equal to {@code o}, {@code false} otherwise
+     */
+    @Override
+    public boolean equals(Object o) {
+<span class="nc bnc" id="L479" title="All 2 branches missed.">        if (this == o) return true;</span>
+<span class="nc bnc" id="L480" title="All 4 branches missed.">        if (o == null || getClass() != o.getClass()) return false;</span>
+<span class="nc bnc" id="L481" title="All 2 branches missed.">        if (!super.equals(o)) return false;</span>
+
+<span class="nc" id="L483">        Split split = (Split) o;</span>
+
+<span class="nc bnc" id="L485" title="All 2 branches missed.">        if (mReconcileState != split.mReconcileState) return false;</span>
+<span class="nc bnc" id="L486" title="All 2 branches missed.">        if (!mValue.equals(split.mValue)) return false;</span>
+<span class="nc bnc" id="L487" title="All 2 branches missed.">        if (!mQuantity.equals(split.mQuantity)) return false;</span>
+<span class="nc bnc" id="L488" title="All 2 branches missed.">        if (!mTransactionUID.equals(split.mTransactionUID)) return false;</span>
+<span class="nc bnc" id="L489" title="All 2 branches missed.">        if (!mAccountUID.equals(split.mAccountUID)) return false;</span>
+<span class="nc bnc" id="L490" title="All 2 branches missed.">        if (mSplitType != split.mSplitType) return false;</span>
+<span class="nc bnc" id="L491" title="All 4 branches missed.">        return mMemo != null ? mMemo.equals(split.mMemo) : split.mMemo == null;</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L496">        int result = super.hashCode();</span>
+<span class="nc" id="L497">        result = 31 * result + mValue.hashCode();</span>
+<span class="nc" id="L498">        result = 31 * result + mQuantity.hashCode();</span>
+<span class="nc" id="L499">        result = 31 * result + mTransactionUID.hashCode();</span>
+<span class="nc" id="L500">        result = 31 * result + mAccountUID.hashCode();</span>
+<span class="nc" id="L501">        result = 31 * result + mSplitType.hashCode();</span>
+<span class="nc bnc" id="L502" title="All 2 branches missed.">        result = 31 * result + (mMemo != null ? mMemo.hashCode() : 0);</span>
+<span class="nc" id="L503">        result = 31 * result + (int) mReconcileState;</span>
+<span class="nc" id="L504">        return result;</span>
+    }
+
+    @Override
+    public int describeContents() {
+<span class="nc" id="L509">        return 0;</span>
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+<span class="nc" id="L514">        dest.writeString(getUID());</span>
+<span class="nc" id="L515">        dest.writeString(mAccountUID);</span>
+<span class="nc" id="L516">        dest.writeString(mTransactionUID);</span>
+<span class="nc" id="L517">        dest.writeString(mSplitType.name());</span>
+
+<span class="nc" id="L519">        dest.writeLong(mValue.getNumerator());</span>
+<span class="nc" id="L520">        dest.writeLong(mValue.getDenominator());</span>
+<span class="nc" id="L521">        dest.writeString(mValue.getCommodity().getCurrencyCode());</span>
+
+<span class="nc" id="L523">        dest.writeLong(mQuantity.getNumerator());</span>
+<span class="nc" id="L524">        dest.writeLong(mQuantity.getDenominator());</span>
+<span class="nc" id="L525">        dest.writeString(mQuantity.getCommodity().getCurrencyCode());</span>
+
+<span class="nc bnc" id="L527" title="All 2 branches missed.">        dest.writeString(mMemo == null ? &quot;&quot; : mMemo);</span>
+<span class="nc" id="L528">        dest.writeString(String.valueOf(mReconcileState));</span>
+<span class="nc" id="L529">        dest.writeString(mReconcileDate.toString());</span>
+<span class="nc" id="L530">    }</span>
+
+    /**
+     * Constructor for creating a Split object from a Parcel
+     * @param source Source parcel containing the split
+     * @see #CREATOR
+     */
+<span class="nc" id="L537">    private Split(Parcel source){</span>
+<span class="nc" id="L538">        setUID(source.readString());</span>
+<span class="nc" id="L539">        mAccountUID = source.readString();</span>
+<span class="nc" id="L540">        mTransactionUID = source.readString();</span>
+<span class="nc" id="L541">        mSplitType = TransactionType.valueOf(source.readString());</span>
+
+<span class="nc" id="L543">        long valueNum = source.readLong();</span>
+<span class="nc" id="L544">        long valueDenom = source.readLong();</span>
+<span class="nc" id="L545">        String valueCurrency = source.readString();</span>
+<span class="nc" id="L546">        mValue = new Money(valueNum, valueDenom, valueCurrency);</span>
+
+<span class="nc" id="L548">        long qtyNum = source.readLong();</span>
+<span class="nc" id="L549">        long qtyDenom = source.readLong();</span>
+<span class="nc" id="L550">        String qtyCurrency = source.readString();</span>
+<span class="nc" id="L551">        mQuantity = new Money(qtyNum, qtyDenom, qtyCurrency);</span>
+
+<span class="nc" id="L553">        String memo = source.readString();</span>
+<span class="nc bnc" id="L554" title="All 2 branches missed.">        mMemo = memo.isEmpty() ? null : memo;</span>
+<span class="nc" id="L555">        mReconcileState = source.readString().charAt(0);</span>
+<span class="nc" id="L556">        mReconcileDate = Timestamp.valueOf(source.readString());</span>
+<span class="nc" id="L557">    }</span>
+
+    /**
+     * Creates new Parcels containing the information in this split during serialization
+     */
+<span class="nc" id="L562">    public static final Parcelable.Creator&lt;Split&gt; CREATOR</span>
+<span class="nc" id="L563">            = new Parcelable.Creator&lt;Split&gt;() {</span>
+
+        @Override
+        public Split createFromParcel(Parcel source) {
+<span class="nc" id="L567">            return new Split(source);</span>
+        }
+
+        @Override
+        public Split[] newArray(int size) {
+<span class="nc" id="L572">            return new Split[size];</span>
+        }
+    };
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BulkMoveDialogFragment.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.ui.transaction.dialog</a> &gt; <span class="el_source">BulkMoveDialogFragment.java</span></div><h1>BulkMoveDialogFragment.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2012 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.ui.transaction.dialog;
+
+import android.database.Cursor;
+import android.os.Bundle;
+import android.support.v4.app.DialogFragment;
+import android.support.v4.widget.SimpleCursorAdapter;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.WindowManager.LayoutParams;
+import android.widget.Button;
+import android.widget.Spinner;
+import android.widget.Toast;
+
+import org.gnucash.android.R;
+import org.gnucash.android.db.DatabaseSchema;
+import org.gnucash.android.db.adapter.AccountsDbAdapter;
+import org.gnucash.android.db.adapter.TransactionsDbAdapter;
+import org.gnucash.android.ui.common.Refreshable;
+import org.gnucash.android.ui.common.UxArgument;
+import org.gnucash.android.ui.homescreen.WidgetConfigurationActivity;
+import org.gnucash.android.ui.transaction.TransactionsActivity;
+import org.gnucash.android.util.QualifiedAccountNameCursorAdapter;
+
+/**
+ * Dialog fragment for moving transactions from one account to another
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ */
+<span class="nc" id="L45">public class BulkMoveDialogFragment extends DialogFragment {</span>
+
+	/**
+	 * Spinner for selecting the account to move the transactions to
+	 */
+	Spinner mDestinationAccountSpinner; 
+	
+	/**
+	 * Dialog positive button. Ok to moving the transactions
+	 */
+	Button mOkButton; 
+	
+	/**
+	 * Cancel button
+	 */
+	Button mCancelButton; 
+	
+	/**
+	 * Record IDs of the transactions to be moved
+	 */
+<span class="nc" id="L65">	long[] mTransactionIds = null;</span>
+	
+	/**
+	 * GUID of account from which to move the transactions
+	 */
+<span class="nc" id="L70">	String mOriginAccountUID = null;</span>
+
+	/**
+	 * Create new instance of the bulk move dialog
+	 * @param transactionIds Array of transaction database record IDs
+	 * @param originAccountUID Account from which to move the transactions
+	 * @return BulkMoveDialogFragment instance with arguments set
+	 */
+	public static BulkMoveDialogFragment newInstance(long[] transactionIds, String originAccountUID){
+<span class="nc" id="L79">		Bundle args = new Bundle();</span>
+<span class="nc" id="L80">		args.putLongArray(UxArgument.SELECTED_TRANSACTION_IDS, transactionIds);</span>
+<span class="nc" id="L81">		args.putString(UxArgument.ORIGIN_ACCOUNT_UID, originAccountUID);</span>
+<span class="nc" id="L82">		BulkMoveDialogFragment bulkMoveDialogFragment = new BulkMoveDialogFragment();</span>
+<span class="nc" id="L83">		bulkMoveDialogFragment.setArguments(args);</span>
+<span class="nc" id="L84">		return bulkMoveDialogFragment;</span>
+	}
+
+    /**
+	 * Creates the view and retrieves references to the dialog elements
+	 */
+	@Override
+	public View onCreateView(LayoutInflater inflater, ViewGroup container,
+			Bundle savedInstanceState) {		
+<span class="nc" id="L93">		View v = inflater.inflate(R.layout.dialog_bulk_move, container, false);</span>
+		
+<span class="nc" id="L95">		mDestinationAccountSpinner = (Spinner) v.findViewById(R.id.accounts_list_spinner);</span>
+<span class="nc" id="L96">		mOkButton = (Button) v.findViewById(R.id.btn_save);</span>
+<span class="nc" id="L97">		mOkButton.setText(R.string.btn_move);</span>
+		
+<span class="nc" id="L99">		mCancelButton = (Button) v.findViewById(R.id.btn_cancel);</span>
+<span class="nc" id="L100">		return v;</span>
+	}
+
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
+<span class="nc" id="L105">		super.onCreate(savedInstanceState);</span>
+<span class="nc" id="L106">		setStyle(DialogFragment.STYLE_NORMAL, R.style.CustomDialog);</span>
+<span class="nc" id="L107">	}</span>
+
+	@Override
+	public void onActivityCreated(Bundle savedInstanceState) {
+<span class="nc" id="L111">		super.onActivityCreated(savedInstanceState);</span>
+<span class="nc" id="L112">		getDialog().getWindow().setLayout(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);</span>
+		
+<span class="nc" id="L114">		Bundle args = getArguments();</span>
+<span class="nc" id="L115">		mTransactionIds = args.getLongArray(UxArgument.SELECTED_TRANSACTION_IDS);</span>
+<span class="nc" id="L116">		mOriginAccountUID = args.getString(UxArgument.ORIGIN_ACCOUNT_UID);</span>
+		
+<span class="nc" id="L118">		String title = getActivity().getString(R.string.title_move_transactions, </span>
+<span class="nc" id="L119">				mTransactionIds.length);</span>
+<span class="nc" id="L120">		getDialog().setTitle(title);</span>
+
+<span class="nc" id="L122">        AccountsDbAdapter accountsDbAdapter = AccountsDbAdapter.getInstance();</span>
+<span class="nc" id="L123">        String conditions = &quot;(&quot; + DatabaseSchema.AccountEntry.COLUMN_UID    + &quot; != ? AND &quot;</span>
+                + DatabaseSchema.AccountEntry.COLUMN_CURRENCY               + &quot; = ? AND &quot;
+                + DatabaseSchema.AccountEntry.COLUMN_HIDDEN         + &quot; = 0 AND &quot;
+                + DatabaseSchema.AccountEntry.COLUMN_PLACEHOLDER + &quot; = 0&quot;
+                + &quot;)&quot;;
+<span class="nc" id="L128">		Cursor cursor = accountsDbAdapter.fetchAccountsOrderedByFullName(conditions,</span>
+<span class="nc" id="L129">                new String[]{mOriginAccountUID, accountsDbAdapter.getCurrencyCode(mOriginAccountUID)});</span>
+
+<span class="nc" id="L131">		SimpleCursorAdapter mCursorAdapter = new QualifiedAccountNameCursorAdapter(getActivity(), cursor);</span>
+<span class="nc" id="L132">		mDestinationAccountSpinner.setAdapter(mCursorAdapter);</span>
+<span class="nc" id="L133">		setListeners();</span>
+<span class="nc" id="L134">	}</span>
+	
+	/**
+	 * Binds click listeners for the dialog buttons
+	 */
+	protected void setListeners(){
+<span class="nc" id="L140">		mCancelButton.setOnClickListener(new View.OnClickListener() {</span>
+			
+			@Override
+			public void onClick(View v) {
+<span class="nc" id="L144">				dismiss();</span>
+<span class="nc" id="L145">			}</span>
+		});
+		
+<span class="nc" id="L148">		mOkButton.setOnClickListener(new View.OnClickListener() {</span>
+
+			@Override
+			public void onClick(View v) {
+<span class="nc bnc" id="L152" title="All 2 branches missed.">				if (mTransactionIds == null) {</span>
+<span class="nc" id="L153">					dismiss();</span>
+				}
+
+<span class="nc" id="L156">				long dstAccountId = mDestinationAccountSpinner.getSelectedItemId();</span>
+<span class="nc" id="L157">				String dstAccountUID = AccountsDbAdapter.getInstance().getUID(dstAccountId);</span>
+<span class="nc" id="L158">				TransactionsDbAdapter trxnAdapter = TransactionsDbAdapter.getInstance();</span>
+<span class="nc bnc" id="L159" title="All 2 branches missed.">				if (!trxnAdapter.getAccountCurrencyCode(dstAccountUID).equals(trxnAdapter.getAccountCurrencyCode(mOriginAccountUID))) {</span>
+<span class="nc" id="L160">					Toast.makeText(getActivity(), R.string.toast_incompatible_currency, Toast.LENGTH_LONG).show();</span>
+<span class="nc" id="L161">					return;</span>
+				}
+<span class="nc" id="L163">				String srcAccountUID = ((TransactionsActivity) getActivity()).getCurrentAccountUID();</span>
+
+<span class="nc bnc" id="L165" title="All 2 branches missed.">				for (long trxnId : mTransactionIds) {</span>
+<span class="nc" id="L166">					trxnAdapter.moveTransaction(trxnAdapter.getUID(trxnId), srcAccountUID, dstAccountUID);</span>
+				}
+
+<span class="nc" id="L169">				WidgetConfigurationActivity.updateAllWidgets(getActivity());</span>
+<span class="nc" id="L170">				((Refreshable) getTargetFragment()).refresh();</span>
+<span class="nc" id="L171">				dismiss();</span>
+<span class="nc" id="L172">			}</span>
+		});
+<span class="nc" id="L174">	}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

@@ -1,0 +1,328 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BudgetListFragment.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.ui.budget</a> &gt; <span class="el_source">BudgetListFragment.java</span></div><h1>BudgetListFragment.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2015 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.ui.budget;
+
+import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
+import android.content.res.Configuration;
+import android.database.Cursor;
+import android.os.Bundle;
+import android.support.annotation.Nullable;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.Loader;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.PopupMenu;
+import android.support.v7.widget.RecyclerView;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.ProgressBar;
+import android.widget.TextView;
+
+import org.gnucash.android.R;
+import org.gnucash.android.db.DatabaseCursorLoader;
+import org.gnucash.android.db.DatabaseSchema;
+import org.gnucash.android.db.adapter.AccountsDbAdapter;
+import org.gnucash.android.db.adapter.BudgetsDbAdapter;
+import org.gnucash.android.model.Budget;
+import org.gnucash.android.model.BudgetAmount;
+import org.gnucash.android.model.Commodity;
+import org.gnucash.android.model.Money;
+import org.gnucash.android.ui.common.FormActivity;
+import org.gnucash.android.ui.common.Refreshable;
+import org.gnucash.android.ui.common.UxArgument;
+import org.gnucash.android.ui.util.CursorRecyclerAdapter;
+import org.gnucash.android.ui.util.widget.EmptyRecyclerView;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
+import butterknife.BindView;
+import butterknife.ButterKnife;
+
+/**
+ * Budget list fragment
+ */
+<span class="nc" id="L71">public class BudgetListFragment extends Fragment implements Refreshable,</span>
+        LoaderManager.LoaderCallbacks&lt;Cursor&gt; {
+
+    private static final String LOG_TAG = &quot;BudgetListFragment&quot;;
+    private static final int REQUEST_EDIT_BUDGET = 0xB;
+    private static final int REQUEST_OPEN_ACCOUNT = 0xC;
+
+    private BudgetRecyclerAdapter mBudgetRecyclerAdapter;
+
+    private BudgetsDbAdapter mBudgetsDbAdapter;
+
+    @BindView(R.id.budget_recycler_view) EmptyRecyclerView mRecyclerView;
+    @BindView(R.id.empty_view) Button mProposeBudgets;
+
+    @Nullable
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+<span class="nc" id="L88">        View view = inflater.inflate(R.layout.fragment_budget_list, container, false);</span>
+<span class="nc" id="L89">        ButterKnife.bind(this, view);</span>
+
+<span class="nc" id="L91">        mRecyclerView.setHasFixedSize(true);</span>
+<span class="nc" id="L92">        mRecyclerView.setEmptyView(mProposeBudgets);</span>
+
+<span class="nc bnc" id="L94" title="All 2 branches missed.">        if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {</span>
+<span class="nc" id="L95">            GridLayoutManager gridLayoutManager = new GridLayoutManager(getActivity(), 2);</span>
+<span class="nc" id="L96">            mRecyclerView.setLayoutManager(gridLayoutManager);</span>
+<span class="nc" id="L97">        } else {</span>
+<span class="nc" id="L98">            LinearLayoutManager mLayoutManager = new LinearLayoutManager(getActivity());</span>
+<span class="nc" id="L99">            mRecyclerView.setLayoutManager(mLayoutManager);</span>
+        }
+<span class="nc" id="L101">        return view;</span>
+    }
+
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+<span class="nc" id="L106">        super.onActivityCreated(savedInstanceState);</span>
+
+<span class="nc" id="L108">        mBudgetsDbAdapter = BudgetsDbAdapter.getInstance();</span>
+<span class="nc" id="L109">        mBudgetRecyclerAdapter = new BudgetRecyclerAdapter(null);</span>
+
+<span class="nc" id="L111">        mRecyclerView.setAdapter(mBudgetRecyclerAdapter);</span>
+
+<span class="nc" id="L113">        getLoaderManager().initLoader(0, null, this);</span>
+<span class="nc" id="L114">    }</span>
+
+    @Override
+    public Loader&lt;Cursor&gt; onCreateLoader(int id, Bundle args) {
+<span class="nc" id="L118">        Log.d(LOG_TAG, &quot;Creating the accounts loader&quot;);</span>
+<span class="nc" id="L119">        return new BudgetsCursorLoader(getActivity());</span>
+    }
+
+    @Override
+    public void onLoadFinished(Loader&lt;Cursor&gt; loaderCursor, Cursor cursor) {
+<span class="nc" id="L124">        Log.d(LOG_TAG, &quot;Budget loader finished. Swapping in cursor&quot;);</span>
+<span class="nc" id="L125">        mBudgetRecyclerAdapter.swapCursor(cursor);</span>
+<span class="nc" id="L126">        mBudgetRecyclerAdapter.notifyDataSetChanged();</span>
+<span class="nc" id="L127">    }</span>
+
+    @Override
+    public void onLoaderReset(Loader&lt;Cursor&gt; arg0) {
+<span class="nc" id="L131">        Log.d(LOG_TAG, &quot;Resetting the accounts loader&quot;);</span>
+<span class="nc" id="L132">        mBudgetRecyclerAdapter.swapCursor(null);</span>
+<span class="nc" id="L133">    }</span>
+
+    @Override
+    public void onResume() {
+<span class="nc" id="L137">        super.onResume();</span>
+<span class="nc" id="L138">        refresh();</span>
+<span class="nc" id="L139">        getActivity().findViewById(R.id.fab_create_budget).setVisibility(View.VISIBLE);</span>
+<span class="nc" id="L140">        ((AppCompatActivity)getActivity()).getSupportActionBar().setTitle(&quot;Budgets&quot;);</span>
+<span class="nc" id="L141">    }</span>
+
+    @Override
+    public void refresh() {
+<span class="nc" id="L145">        getLoaderManager().restartLoader(0, null, this);</span>
+<span class="nc" id="L146">    }</span>
+
+    /**
+     * This method does nothing with the GUID.
+     * Is equivalent to calling {@link #refresh()}
+     * @param uid GUID of relevant item to be refreshed
+     */
+    @Override
+    public void refresh(String uid) {
+<span class="nc" id="L155">        refresh();</span>
+<span class="nc" id="L156">    }</span>
+
+    /**
+     * Opens the budget detail fragment
+     * @param budgetUID GUID of budget
+     */
+    public void onClickBudget(String budgetUID){
+<span class="nc" id="L163">        FragmentManager fragmentManager = getActivity().getSupportFragmentManager();</span>
+<span class="nc" id="L164">        FragmentTransaction fragmentTransaction = fragmentManager</span>
+<span class="nc" id="L165">                .beginTransaction();</span>
+
+<span class="nc" id="L167">        fragmentTransaction.replace(R.id.fragment_container, BudgetDetailFragment.newInstance(budgetUID));</span>
+<span class="nc" id="L168">        fragmentTransaction.addToBackStack(null);</span>
+<span class="nc" id="L169">        fragmentTransaction.commit();</span>
+<span class="nc" id="L170">    }</span>
+
+    /**
+     * Launches the FormActivity for editing the budget
+     * @param budgetId Db record Id of the budget
+     */
+    private void editBudget(long budgetId){
+<span class="nc" id="L177">        Intent addAccountIntent = new Intent(getActivity(), FormActivity.class);</span>
+<span class="nc" id="L178">        addAccountIntent.setAction(Intent.ACTION_INSERT_OR_EDIT);</span>
+<span class="nc" id="L179">        addAccountIntent.putExtra(UxArgument.FORM_TYPE, FormActivity.FormType.BUDGET.name());</span>
+<span class="nc" id="L180">        addAccountIntent.putExtra(UxArgument.BUDGET_UID, mBudgetsDbAdapter.getUID(budgetId));</span>
+<span class="nc" id="L181">        startActivityForResult(addAccountIntent, REQUEST_EDIT_BUDGET);</span>
+<span class="nc" id="L182">    }</span>
+
+    /**
+     * Delete the budget from the database
+     * @param budgetId Database record ID
+     */
+    private void deleteBudget(long budgetId){
+<span class="nc" id="L189">        BudgetsDbAdapter.getInstance().deleteRecord(budgetId);</span>
+<span class="nc" id="L190">        refresh();</span>
+<span class="nc" id="L191">    }</span>
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+<span class="nc bnc" id="L195" title="All 2 branches missed.">        if (resultCode == Activity.RESULT_OK){</span>
+<span class="nc" id="L196">            refresh();</span>
+        }
+<span class="nc" id="L198">    }</span>
+
+    class BudgetRecyclerAdapter extends CursorRecyclerAdapter&lt;BudgetRecyclerAdapter.BudgetViewHolder&gt;{
+
+<span class="nc" id="L202">        public BudgetRecyclerAdapter(Cursor cursor) {</span>
+<span class="nc" id="L203">            super(cursor);</span>
+<span class="nc" id="L204">        }</span>
+
+        @Override
+        public void onBindViewHolderCursor(BudgetViewHolder holder, Cursor cursor) {
+<span class="nc" id="L208">            final Budget budget = mBudgetsDbAdapter.buildModelInstance(cursor);</span>
+<span class="nc" id="L209">            holder.budgetId = mBudgetsDbAdapter.getID(budget.getUID());</span>
+
+<span class="nc" id="L211">            holder.budgetName.setText(budget.getName());</span>
+
+<span class="nc" id="L213">            AccountsDbAdapter accountsDbAdapter = AccountsDbAdapter.getInstance();</span>
+            String accountString;
+<span class="nc" id="L215">            int numberOfAccounts = budget.getNumberOfAccounts();</span>
+<span class="nc bnc" id="L216" title="All 2 branches missed.">            if (numberOfAccounts == 1){</span>
+<span class="nc" id="L217">                accountString = accountsDbAdapter.getAccountFullName(budget.getBudgetAmounts().get(0).getAccountUID());</span>
+            } else {
+<span class="nc" id="L219">                accountString = numberOfAccounts + &quot; budgeted accounts&quot;;</span>
+            }
+<span class="nc" id="L221">            holder.accountName.setText(accountString);</span>
+
+<span class="nc" id="L223">            holder.budgetRecurrence.setText(budget.getRecurrence().getRepeatString() + &quot; - &quot;</span>
+<span class="nc" id="L224">                    + budget.getRecurrence().getDaysLeftInCurrentPeriod() + &quot; days left&quot;);</span>
+
+<span class="nc" id="L226">            BigDecimal spentAmountValue = BigDecimal.ZERO;</span>
+<span class="nc bnc" id="L227" title="All 2 branches missed.">            for (BudgetAmount budgetAmount : budget.getCompactedBudgetAmounts()) {</span>
+<span class="nc" id="L228">                Money balance = accountsDbAdapter.getAccountBalance(budgetAmount.getAccountUID(),</span>
+<span class="nc" id="L229">                        budget.getStartofCurrentPeriod(), budget.getEndOfCurrentPeriod());</span>
+<span class="nc" id="L230">                spentAmountValue = spentAmountValue.add(balance.asBigDecimal());</span>
+<span class="nc" id="L231">            }</span>
+
+<span class="nc" id="L233">            Money budgetTotal = budget.getAmountSum();</span>
+<span class="nc" id="L234">            Commodity commodity = budgetTotal.getCommodity();</span>
+<span class="nc" id="L235">            String usedAmount = commodity.getSymbol() + spentAmountValue + &quot; of &quot;</span>
+<span class="nc" id="L236">                    + budgetTotal.formattedString();</span>
+<span class="nc" id="L237">            holder.budgetAmount.setText(usedAmount);</span>
+
+<span class="nc" id="L239">            double budgetProgress = spentAmountValue.divide(budgetTotal.asBigDecimal(),</span>
+<span class="nc" id="L240">                    commodity.getSmallestFractionDigits(), RoundingMode.HALF_EVEN)</span>
+<span class="nc" id="L241">                    .doubleValue();</span>
+<span class="nc" id="L242">            holder.budgetIndicator.setProgress((int) (budgetProgress * 100));</span>
+
+<span class="nc" id="L244">            holder.budgetAmount.setTextColor(BudgetsActivity.getBudgetProgressColor(1 - budgetProgress));</span>
+
+<span class="nc" id="L246">            holder.itemView.setOnClickListener(new View.OnClickListener() {</span>
+                @Override
+                public void onClick(View v) {
+<span class="nc" id="L249">                    onClickBudget(budget.getUID());</span>
+<span class="nc" id="L250">                }</span>
+            });
+<span class="nc" id="L252">        }</span>
+
+        @Override
+        public BudgetViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+<span class="nc" id="L256">            View v = LayoutInflater.from(parent.getContext())</span>
+<span class="nc" id="L257">                    .inflate(R.layout.cardview_budget, parent, false);</span>
+
+<span class="nc" id="L259">            return new BudgetViewHolder(v);</span>
+        }
+
+        class BudgetViewHolder extends RecyclerView.ViewHolder implements PopupMenu.OnMenuItemClickListener{
+            @BindView(R.id.primary_text)        TextView budgetName;
+            @BindView(R.id.secondary_text)      TextView accountName;
+            @BindView(R.id.budget_amount)       TextView budgetAmount;
+            @BindView(R.id.options_menu)        ImageView optionsMenu;
+            @BindView(R.id.budget_indicator)    ProgressBar budgetIndicator;
+            @BindView(R.id.budget_recurrence)   TextView budgetRecurrence;
+            long budgetId;
+
+<span class="nc" id="L271">            public BudgetViewHolder(View itemView) {</span>
+<span class="nc" id="L272">                super(itemView);</span>
+<span class="nc" id="L273">                ButterKnife.bind(this, itemView);</span>
+
+<span class="nc" id="L275">                optionsMenu.setOnClickListener(new View.OnClickListener() {</span>
+                    @Override
+                    public void onClick(View v) {
+<span class="nc" id="L278">                        android.support.v7.widget.PopupMenu popup = new android.support.v7.widget.PopupMenu(getActivity(), v);</span>
+<span class="nc" id="L279">                        popup.setOnMenuItemClickListener(BudgetViewHolder.this);</span>
+<span class="nc" id="L280">                        MenuInflater inflater = popup.getMenuInflater();</span>
+<span class="nc" id="L281">                        inflater.inflate(R.menu.budget_context_menu, popup.getMenu());</span>
+<span class="nc" id="L282">                        popup.show();</span>
+<span class="nc" id="L283">                    }</span>
+                });
+
+<span class="nc" id="L286">            }</span>
+
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+<span class="nc bnc" id="L290" title="All 3 branches missed.">                switch (item.getItemId()){</span>
+                    case R.id.context_menu_edit_budget:
+<span class="nc" id="L292">                        editBudget(budgetId);</span>
+<span class="nc" id="L293">                        return true;</span>
+
+                    case R.id.context_menu_delete:
+<span class="nc" id="L296">                        deleteBudget(budgetId);</span>
+<span class="nc" id="L297">                        return true;</span>
+
+                    default:
+<span class="nc" id="L300">                        return false;</span>
+                }
+            }
+        }
+    }
+
+    /**
+     * Loads Budgets asynchronously from the database
+     */
+    private static class BudgetsCursorLoader extends DatabaseCursorLoader {
+
+        /**
+         * Constructor
+         * Initializes the content observer
+         *
+         * @param context Application context
+         */
+        public BudgetsCursorLoader(Context context) {
+<span class="nc" id="L318">            super(context);</span>
+<span class="nc" id="L319">        }</span>
+
+        @Override
+        public Cursor loadInBackground() {
+<span class="nc" id="L323">            mDatabaseAdapter = BudgetsDbAdapter.getInstance();</span>
+<span class="nc" id="L324">            return mDatabaseAdapter.fetchAllRecords(null, null, DatabaseSchema.BudgetEntry.COLUMN_NAME + &quot; ASC&quot;);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

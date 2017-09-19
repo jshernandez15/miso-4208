@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Price.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.model</a> &gt; <span class="el_source">Price.java</span></div><h1>Price.java</h1><pre class="source lang-java linenums">package org.gnucash.android.model;
+
+import org.gnucash.android.util.TimestampHelper;
+
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.sql.Timestamp;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+
+/**
+ * Model for commodity prices
+ */
+public class Price extends BaseModel {
+
+    private String mCommodityUID;
+    private String mCurrencyUID;
+    private Timestamp mDate;
+    private String mSource;
+    private String mType;
+    private long mValueNum;
+    private long mValueDenom;
+
+    /**
+     * String indicating that the price was provided by the user
+     */
+    public static final String SOURCE_USER = &quot;user:xfer-dialog&quot;;
+
+<span class="fc" id="L29">    public Price(){</span>
+<span class="fc" id="L30">        mDate = TimestampHelper.getTimestampFromNow();</span>
+<span class="fc" id="L31">    }</span>
+
+    /**
+     * Create new instance with the GUIDs of the commodities
+     * @param commodityUID GUID of the origin commodity
+     * @param currencyUID GUID of the target commodity
+     */
+<span class="fc" id="L38">    public Price(String commodityUID, String currencyUID){</span>
+<span class="fc" id="L39">        this.mCommodityUID = commodityUID;</span>
+<span class="fc" id="L40">        this.mCurrencyUID = currencyUID;</span>
+<span class="fc" id="L41">        mDate = TimestampHelper.getTimestampFromNow();</span>
+<span class="fc" id="L42">    }</span>
+
+    /**
+     * Create new instance with the GUIDs of the commodities and the specified exchange rate.
+     * @param commodity1UID GUID of the origin commodity
+     * @param commodity2UID GUID of the target commodity
+     * @param exchangeRate exchange rate between the commodities
+     */
+    public Price(String commodity1UID, String commodity2UID, BigDecimal exchangeRate) {
+<span class="fc" id="L51">        this(commodity1UID, commodity2UID);</span>
+        // Store 0.1234 as 1234/10000
+<span class="fc" id="L53">        setValueNum(exchangeRate.unscaledValue().longValue());</span>
+<span class="fc" id="L54">        setValueDenom(BigDecimal.ONE.scaleByPowerOfTen(exchangeRate.scale()).longValue());</span>
+<span class="fc" id="L55">    }</span>
+
+    public String getCommodityUID() {
+<span class="nc" id="L58">        return mCommodityUID;</span>
+    }
+
+    public void setCommodityUID(String mCommodityUID) {
+<span class="nc" id="L62">        this.mCommodityUID = mCommodityUID;</span>
+<span class="nc" id="L63">    }</span>
+
+    public String getCurrencyUID() {
+<span class="nc" id="L66">        return mCurrencyUID;</span>
+    }
+
+    public void setCurrencyUID(String currencyUID) {
+<span class="nc" id="L70">        this.mCurrencyUID = currencyUID;</span>
+<span class="nc" id="L71">    }</span>
+
+    public Timestamp getDate() {
+<span class="nc" id="L74">        return mDate;</span>
+    }
+
+    public void setDate(Timestamp date) {
+<span class="nc" id="L78">        this.mDate = date;</span>
+<span class="nc" id="L79">    }</span>
+
+    public String getSource() {
+<span class="nc" id="L82">        return mSource;</span>
+    }
+
+    public void setSource(String source) {
+<span class="nc" id="L86">        this.mSource = source;</span>
+<span class="nc" id="L87">    }</span>
+
+    public String getType() {
+<span class="nc" id="L90">        return mType;</span>
+    }
+
+    public void setType(String type) {
+<span class="nc" id="L94">        this.mType = type;</span>
+<span class="nc" id="L95">    }</span>
+
+    public long getValueNum() {
+<span class="fc" id="L98">        reduce();</span>
+<span class="fc" id="L99">        return mValueNum;</span>
+    }
+
+    public void setValueNum(long valueNum) {
+<span class="fc" id="L103">        this.mValueNum = valueNum;</span>
+<span class="fc" id="L104">    }</span>
+
+    public long getValueDenom() {
+<span class="fc" id="L107">        reduce();</span>
+<span class="fc" id="L108">        return mValueDenom;</span>
+    }
+
+    public void setValueDenom(long valueDenom) {
+<span class="fc" id="L112">        this.mValueDenom = valueDenom;</span>
+<span class="fc" id="L113">    }</span>
+
+    private void reduce() {
+<span class="pc bpc" id="L116" title="1 of 2 branches missed.">        if (mValueDenom &lt; 0) {</span>
+<span class="nc" id="L117">            mValueDenom = -mValueDenom;</span>
+<span class="nc" id="L118">            mValueNum = -mValueNum;</span>
+        }
+<span class="pc bpc" id="L120" title="2 of 4 branches missed.">        if (mValueDenom != 0 &amp;&amp; mValueNum != 0) {</span>
+<span class="fc" id="L121">            long num1 = mValueNum;</span>
+<span class="pc bpc" id="L122" title="1 of 2 branches missed.">            if (num1 &lt; 0) {</span>
+<span class="nc" id="L123">                num1 = -num1;</span>
+            }
+<span class="fc" id="L125">            long num2 = mValueDenom;</span>
+<span class="fc" id="L126">            long commonDivisor = 1;</span>
+            for(;;) {
+<span class="fc" id="L128">                long r = num1 % num2;</span>
+<span class="pc bpc" id="L129" title="1 of 2 branches missed.">                if (r == 0) {</span>
+<span class="nc" id="L130">                    commonDivisor = num2;</span>
+<span class="nc" id="L131">                    break;</span>
+                }
+<span class="fc" id="L133">                num1 = r;</span>
+<span class="fc" id="L134">                r = num2 % num1;</span>
+<span class="pc bpc" id="L135" title="1 of 2 branches missed.">                if (r == 0) {</span>
+<span class="fc" id="L136">                    commonDivisor = num1;</span>
+<span class="fc" id="L137">                    break;</span>
+                }
+<span class="nc" id="L139">                num2 = r;</span>
+<span class="nc" id="L140">            }</span>
+<span class="fc" id="L141">            mValueNum /= commonDivisor;</span>
+<span class="fc" id="L142">            mValueDenom /= commonDivisor;</span>
+        }
+<span class="fc" id="L144">    }</span>
+
+    /**
+     * Returns the exchange rate as a string formatted with the default locale.
+     *
+     * &lt;p&gt;It will have up to 6 decimal places.
+     *
+     * &lt;p&gt;Example: &quot;0.123456&quot;
+     */
+    @Override
+    public String toString() {
+<span class="fc" id="L155">        BigDecimal numerator = new BigDecimal(mValueNum);</span>
+<span class="fc" id="L156">        BigDecimal denominator = new BigDecimal(mValueDenom);</span>
+<span class="fc" id="L157">        DecimalFormat formatter = (DecimalFormat) NumberFormat.getNumberInstance();</span>
+<span class="fc" id="L158">        formatter.setMaximumFractionDigits(6);</span>
+<span class="fc" id="L159">        return formatter.format(numerator.divide(denominator, MathContext.DECIMAL32));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

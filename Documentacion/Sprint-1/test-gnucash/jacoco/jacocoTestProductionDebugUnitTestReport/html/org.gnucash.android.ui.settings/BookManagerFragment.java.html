@@ -1,0 +1,325 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BookManagerFragment.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.ui.settings</a> &gt; <span class="el_source">BookManagerFragment.java</span></div><h1>BookManagerFragment.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2016 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.ui.settings;
+
+import android.content.Context;
+import android.content.DialogInterface;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.os.Bundle;
+import android.support.annotation.Nullable;
+import android.support.v4.app.ListFragment;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.ContextCompat;
+import android.support.v4.content.Loader;
+import android.support.v4.widget.SimpleCursorAdapter;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.AlertDialog;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.PopupMenu;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.ListView;
+import android.widget.TextView;
+
+import org.gnucash.android.R;
+import org.gnucash.android.app.GnuCashApplication;
+import org.gnucash.android.db.DatabaseCursorLoader;
+import org.gnucash.android.db.DatabaseHelper;
+import org.gnucash.android.db.DatabaseSchema.BookEntry;
+import org.gnucash.android.db.adapter.AccountsDbAdapter;
+import org.gnucash.android.db.adapter.BooksDbAdapter;
+import org.gnucash.android.db.adapter.SplitsDbAdapter;
+import org.gnucash.android.db.adapter.TransactionsDbAdapter;
+import org.gnucash.android.ui.account.AccountsActivity;
+import org.gnucash.android.ui.common.Refreshable;
+import org.gnucash.android.util.BookUtils;
+import org.gnucash.android.util.PreferencesHelper;
+
+import java.sql.Timestamp;
+
+/**
+ * Fragment for managing the books in the database
+ */
+<span class="nc bnc" id="L65" title="All 2 branches missed.">public class BookManagerFragment extends ListFragment implements</span>
+        LoaderManager.LoaderCallbacks&lt;Cursor&gt;, Refreshable{
+
+    private static final String LOG_TAG = &quot;BookManagerFragment&quot;;
+
+    private SimpleCursorAdapter mCursorAdapter;
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+<span class="nc" id="L74">        return inflater.inflate(R.layout.fragment_book_list, container, false);</span>
+    }
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+<span class="nc" id="L79">        super.onCreate(savedInstanceState);</span>
+
+<span class="nc" id="L81">        mCursorAdapter = new BooksCursorAdapter(getActivity(), R.layout.cardview_book,</span>
+                null, new String[]{BookEntry.COLUMN_DISPLAY_NAME, BookEntry.COLUMN_SOURCE_URI},
+                new int[]{R.id.primary_text, R.id.secondary_text});
+
+<span class="nc" id="L85">        setListAdapter(mCursorAdapter);</span>
+<span class="nc" id="L86">    }</span>
+
+    @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+<span class="nc" id="L90">        super.onActivityCreated(savedInstanceState);</span>
+
+<span class="nc" id="L92">        ActionBar actionBar = ((AppCompatActivity) getActivity()).getSupportActionBar();</span>
+<span class="nc bnc" id="L93" title="All 4 branches missed.">        assert actionBar != null;</span>
+<span class="nc" id="L94">        actionBar.setHomeButtonEnabled(true);</span>
+<span class="nc" id="L95">        actionBar.setDisplayHomeAsUpEnabled(true);</span>
+<span class="nc" id="L96">        actionBar.setTitle(R.string.title_manage_books);</span>
+<span class="nc" id="L97">        setHasOptionsMenu(true);</span>
+
+<span class="nc" id="L99">        getListView().setChoiceMode(ListView.CHOICE_MODE_NONE);</span>
+<span class="nc" id="L100">    }</span>
+
+    @Override
+    public void onResume() {
+<span class="nc" id="L104">        super.onResume();</span>
+<span class="nc" id="L105">        refresh();</span>
+<span class="nc" id="L106">    }</span>
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+<span class="nc" id="L110">        inflater.inflate(R.menu.book_list_actions, menu);</span>
+<span class="nc" id="L111">    }</span>
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+<span class="nc bnc" id="L115" title="All 2 branches missed.">        switch (item.getItemId()){</span>
+            case R.id.menu_create_book:
+<span class="nc" id="L117">                AccountsActivity.createDefaultAccounts(GnuCashApplication.getDefaultCurrencyCode(), getActivity());</span>
+<span class="nc" id="L118">                return true;</span>
+
+            default:
+<span class="nc" id="L121">                return false;</span>
+        }
+
+    }
+
+    @Override
+    public void refresh() {
+<span class="nc" id="L128">        getLoaderManager().restartLoader(0, null, this);</span>
+<span class="nc" id="L129">    }</span>
+
+    @Override
+    public void refresh(String uid) {
+<span class="nc" id="L133">        refresh();</span>
+<span class="nc" id="L134">    }</span>
+
+    @Override
+    public Loader&lt;Cursor&gt; onCreateLoader(int id, Bundle args) {
+<span class="nc" id="L138">        Log.d(LOG_TAG, &quot;Creating loader for books&quot;);</span>
+<span class="nc" id="L139">        return new BooksCursorLoader(getActivity());</span>
+    }
+
+    @Override
+    public void onLoadFinished(Loader&lt;Cursor&gt; loader, Cursor data) {
+<span class="nc" id="L144">        Log.d(LOG_TAG, &quot;Finished loading books from database&quot;);</span>
+<span class="nc" id="L145">        mCursorAdapter.swapCursor(data);</span>
+<span class="nc" id="L146">        mCursorAdapter.notifyDataSetChanged();</span>
+<span class="nc" id="L147">    }</span>
+
+    @Override
+    public void onLoaderReset(Loader&lt;Cursor&gt; loader) {
+<span class="nc" id="L151">        Log.d(LOG_TAG, &quot;Resetting books list loader&quot;);</span>
+<span class="nc" id="L152">        mCursorAdapter.swapCursor(null);</span>
+<span class="nc" id="L153">    }</span>
+
+    private class BooksCursorAdapter extends SimpleCursorAdapter {
+
+<span class="nc" id="L157">        BooksCursorAdapter(Context context, int layout, Cursor c, String[] from, int[] to) {</span>
+<span class="nc" id="L158">            super(context, layout, c, from, to, 0);</span>
+<span class="nc" id="L159">        }</span>
+
+        @Override
+        public void bindView(View view, final Context context, Cursor cursor) {
+<span class="nc" id="L163">            super.bindView(view, context, cursor);</span>
+
+<span class="nc" id="L165">            final String bookUID = cursor.getString(cursor.getColumnIndexOrThrow(BookEntry.COLUMN_UID));</span>
+
+<span class="nc" id="L167">            setLastExportedText(view, bookUID);</span>
+<span class="nc" id="L168">            setStatisticsText(view, bookUID);</span>
+<span class="nc" id="L169">            setUpMenu(view, context, cursor, bookUID);</span>
+
+<span class="nc" id="L171">            view.setOnClickListener(new View.OnClickListener() {</span>
+                @Override
+                public void onClick(View v) {
+                    //do nothing if the active book is tapped
+<span class="nc bnc" id="L175" title="All 2 branches missed.">                    if (!BooksDbAdapter.getInstance().getActiveBookUID().equals(bookUID)) {</span>
+<span class="nc" id="L176">                        BookUtils.loadBook(bookUID);</span>
+                    }
+<span class="nc" id="L178">                }</span>
+            });
+<span class="nc" id="L180">        }</span>
+
+        private void setUpMenu(View view, final Context context, Cursor cursor, final String bookUID) {
+<span class="nc" id="L183">            final String bookName = cursor.getString(</span>
+<span class="nc" id="L184">                    cursor.getColumnIndexOrThrow(BookEntry.COLUMN_DISPLAY_NAME));</span>
+<span class="nc" id="L185">            ImageView optionsMenu = (ImageView) view.findViewById(R.id.options_menu);</span>
+<span class="nc" id="L186">            optionsMenu.setOnClickListener(new View.OnClickListener() {</span>
+                @Override
+                public void onClick(View v) {
+<span class="nc" id="L189">                    PopupMenu popupMenu = new PopupMenu(context, v);</span>
+<span class="nc" id="L190">                    MenuInflater menuInflater = popupMenu.getMenuInflater();</span>
+<span class="nc" id="L191">                    menuInflater.inflate(R.menu.book_context_menu, popupMenu.getMenu());</span>
+
+<span class="nc" id="L193">                    popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {</span>
+                        @Override
+                        public boolean onMenuItemClick(MenuItem item) {
+<span class="nc bnc" id="L196" title="All 4 branches missed.">                            switch (item.getItemId()) {</span>
+                                case R.id.ctx_menu_rename_book:
+<span class="nc" id="L198">                                    return handleMenuRenameBook(bookName, bookUID);</span>
+                                case R.id.ctx_menu_sync_book:
+                                    //TODO implement sync
+<span class="nc" id="L201">                                    return false;</span>
+                                case R.id.ctx_menu_delete_book: {
+<span class="nc" id="L203">                                    AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity());</span>
+<span class="nc" id="L204">                                    dialogBuilder.setTitle(getString(R.string.title_confirm_delete_book))</span>
+<span class="nc" id="L205">                                            .setIcon(R.drawable.ic_close_black_24dp)</span>
+<span class="nc" id="L206">                                            .setMessage(getString(R.string.msg_all_book_data_will_be_deleted));</span>
+<span class="nc" id="L207">                                    dialogBuilder.setPositiveButton(getString(R.string.btn_delete_book), new DialogInterface.OnClickListener() {</span>
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
+<span class="nc" id="L210">                                            BooksDbAdapter.getInstance().deleteBook(bookUID);</span>
+<span class="nc" id="L211">                                            refresh();</span>
+<span class="nc" id="L212">                                        }</span>
+                                    });
+<span class="nc" id="L214">                                    dialogBuilder.setNegativeButton(R.string.btn_cancel, new DialogInterface.OnClickListener() {</span>
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
+<span class="nc" id="L217">                                            dialog.dismiss();</span>
+<span class="nc" id="L218">                                        }</span>
+                                    });
+<span class="nc" id="L220">                                    AlertDialog dialog = dialogBuilder.create();</span>
+<span class="nc" id="L221">                                    dialog.show(); //must be called before you can access buttons</span>
+<span class="nc" id="L222">                                    dialog.getButton(AlertDialog.BUTTON_POSITIVE)</span>
+<span class="nc" id="L223">                                            .setTextColor(ContextCompat.getColor(context, R.color.account_red));</span>
+                                }
+<span class="nc" id="L225">                                return true;</span>
+                                default:
+<span class="nc" id="L227">                                    return true;</span>
+                            }
+                        }
+                    });
+
+<span class="nc" id="L232">                    String activeBookUID = BooksDbAdapter.getInstance().getActiveBookUID();</span>
+<span class="nc bnc" id="L233" title="All 2 branches missed.">                    if (activeBookUID.equals(bookUID)) {//we cannot delete the active book</span>
+<span class="nc" id="L234">                        popupMenu.getMenu().findItem(R.id.ctx_menu_delete_book).setEnabled(false);</span>
+                    }
+<span class="nc" id="L236">                    popupMenu.show();</span>
+<span class="nc" id="L237">                }</span>
+            });
+<span class="nc" id="L239">        }</span>
+
+        /**
+         * Opens a dialog for renaming a book
+         * @param bookName Current name of the book
+         * @param bookUID GUID of the book
+         * @return {@code true}
+         */
+        private boolean handleMenuRenameBook(String bookName, final String bookUID) {
+<span class="nc" id="L248">            AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity());</span>
+<span class="nc" id="L249">            dialogBuilder.setTitle(R.string.title_rename_book)</span>
+<span class="nc" id="L250">                .setView(R.layout.dialog_rename_book)</span>
+<span class="nc" id="L251">                .setPositiveButton(R.string.btn_rename, new DialogInterface.OnClickListener() {</span>
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+<span class="nc" id="L254">                        EditText bookTitle = (EditText) ((AlertDialog)dialog).findViewById(R.id.input_book_title);</span>
+<span class="nc" id="L255">                        BooksDbAdapter.getInstance()</span>
+<span class="nc" id="L256">                                .updateRecord(bookUID,</span>
+                                        BookEntry.COLUMN_DISPLAY_NAME,
+<span class="nc" id="L258">                                        bookTitle.getText().toString().trim());</span>
+<span class="nc" id="L259">                        refresh();</span>
+<span class="nc" id="L260">                    }</span>
+                })
+<span class="nc" id="L262">                .setNegativeButton(R.string.btn_cancel, new DialogInterface.OnClickListener() {</span>
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+<span class="nc" id="L265">                        dialog.dismiss();</span>
+<span class="nc" id="L266">                    }</span>
+                });
+<span class="nc" id="L268">            AlertDialog dialog = dialogBuilder.create();</span>
+<span class="nc" id="L269">            dialog.show();</span>
+<span class="nc" id="L270">            ((TextView)dialog.findViewById(R.id.input_book_title)).setText(bookName);</span>
+<span class="nc" id="L271">            return true;</span>
+        }
+
+        private void setLastExportedText(View view, String bookUID) {
+<span class="nc" id="L275">            TextView labelLastSync = (TextView) view.findViewById(R.id.label_last_sync);</span>
+<span class="nc" id="L276">            labelLastSync.setText(R.string.label_last_export_time);</span>
+
+<span class="nc" id="L278">            Timestamp lastSyncTime = PreferencesHelper.getLastExportTime(bookUID);</span>
+<span class="nc" id="L279">            TextView lastSyncText = (TextView) view.findViewById(R.id.last_sync_time);</span>
+<span class="nc bnc" id="L280" title="All 2 branches missed.">            if (lastSyncTime.equals(new Timestamp(0)))</span>
+<span class="nc" id="L281">                lastSyncText.setText(R.string.last_export_time_never);</span>
+            else
+<span class="nc" id="L283">                lastSyncText.setText(lastSyncTime.toString());</span>
+<span class="nc" id="L284">        }</span>
+
+        private void setStatisticsText(View view, String bookUID) {
+<span class="nc" id="L287">            DatabaseHelper dbHelper = new DatabaseHelper(GnuCashApplication.getAppContext(), bookUID);</span>
+<span class="nc" id="L288">            SQLiteDatabase db = dbHelper.getReadableDatabase();</span>
+<span class="nc" id="L289">            TransactionsDbAdapter trnAdapter = new TransactionsDbAdapter(db, new SplitsDbAdapter(db));</span>
+<span class="nc" id="L290">            int transactionCount = (int) trnAdapter.getRecordsCount();</span>
+<span class="nc" id="L291">            String transactionStats = getResources().getQuantityString(R.plurals.book_transaction_stats, transactionCount, transactionCount);</span>
+
+<span class="nc" id="L293">            AccountsDbAdapter accountsDbAdapter = new AccountsDbAdapter(db, trnAdapter);</span>
+<span class="nc" id="L294">            int accountsCount = (int) accountsDbAdapter.getRecordsCount();</span>
+<span class="nc" id="L295">            String accountStats = getResources().getQuantityString(R.plurals.book_account_stats, accountsCount, accountsCount);</span>
+<span class="nc" id="L296">            String stats = accountStats + &quot;, &quot; + transactionStats;</span>
+<span class="nc" id="L297">            TextView statsText = (TextView) view.findViewById(R.id.secondary_text);</span>
+<span class="nc" id="L298">            statsText.setText(stats);</span>
+
+<span class="nc bnc" id="L300" title="All 2 branches missed.">            if (bookUID.equals(BooksDbAdapter.getInstance().getActiveBookUID())){</span>
+<span class="nc" id="L301">                ((TextView)view.findViewById(R.id.primary_text)).setTextColor(getResources().getColor(R.color.theme_primary));</span>
+            }
+<span class="nc" id="L303">        }</span>
+    }
+
+    /**
+     * {@link DatabaseCursorLoader} for loading the book list from the database
+     * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+     */
+    private static class BooksCursorLoader extends DatabaseCursorLoader {
+        BooksCursorLoader(Context context){
+<span class="nc" id="L312">            super(context);</span>
+<span class="nc" id="L313">        }</span>
+
+        @Override
+        public Cursor loadInBackground() {
+<span class="nc" id="L317">            BooksDbAdapter booksDbAdapter = BooksDbAdapter.getInstance();</span>
+<span class="nc" id="L318">            Cursor cursor = booksDbAdapter.fetchAllRecords();</span>
+
+<span class="nc" id="L320">            registerContentObserver(cursor);</span>
+<span class="nc" id="L321">            return cursor;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

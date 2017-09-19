@@ -1,0 +1,617 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AccountsListFragment.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.ui.account</a> &gt; <span class="el_source">AccountsListFragment.java</span></div><h1>AccountsListFragment.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2012 - 2015 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.ui.account;
+
+import android.app.Activity;
+import android.app.SearchManager;
+import android.content.ContentValues;
+import android.content.Context;
+import android.content.Intent;
+import android.content.res.Configuration;
+import android.database.Cursor;
+import android.graphics.Color;
+import android.os.AsyncTask;
+import android.os.Build;
+import android.os.Bundle;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.LoaderManager.LoaderCallbacks;
+import android.support.v4.content.Loader;
+import android.support.v4.view.MenuItemCompat;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.PopupMenu;
+import android.support.v7.widget.RecyclerView;
+import android.text.TextUtils;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.ProgressBar;
+import android.widget.TextView;
+
+import org.gnucash.android.R;
+import org.gnucash.android.app.GnuCashApplication;
+import org.gnucash.android.db.DatabaseCursorLoader;
+import org.gnucash.android.db.DatabaseSchema;
+import org.gnucash.android.db.adapter.AccountsDbAdapter;
+import org.gnucash.android.db.adapter.BudgetsDbAdapter;
+import org.gnucash.android.model.Account;
+import org.gnucash.android.model.Budget;
+import org.gnucash.android.model.Money;
+import org.gnucash.android.ui.common.FormActivity;
+import org.gnucash.android.ui.common.Refreshable;
+import org.gnucash.android.ui.common.UxArgument;
+import org.gnucash.android.ui.util.AccountBalanceTask;
+import org.gnucash.android.ui.util.CursorRecyclerAdapter;
+import org.gnucash.android.ui.util.widget.EmptyRecyclerView;
+
+import java.util.List;
+
+import butterknife.BindView;
+import butterknife.ButterKnife;
+
+/**
+ * Fragment for displaying the list of accounts in the database
+ *
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ */
+<span class="nc" id="L78">public class AccountsListFragment extends Fragment implements</span>
+        Refreshable,
+        LoaderCallbacks&lt;Cursor&gt;,
+        android.support.v7.widget.SearchView.OnQueryTextListener,
+        android.support.v7.widget.SearchView.OnCloseListener {
+
+    AccountRecyclerAdapter mAccountRecyclerAdapter;
+    @BindView(R.id.account_recycler_view)  EmptyRecyclerView mRecyclerView;
+    @BindView(R.id.empty_view) TextView mEmptyTextView;
+
+    /**
+     * Describes the kinds of accounts that should be loaded in the accounts list.
+     * This enhances reuse of the accounts list fragment
+     */
+<span class="nc" id="L92">    public enum DisplayMode {</span>
+<span class="nc" id="L93">        TOP_LEVEL, RECENT, FAVORITES</span>
+    }
+
+    /**
+     * Field indicating which kind of accounts to load.
+     * Default value is {@link DisplayMode#TOP_LEVEL}
+     */
+<span class="nc" id="L100">    private DisplayMode mDisplayMode = DisplayMode.TOP_LEVEL;</span>
+
+    /**
+     * Logging tag
+     */
+    protected static final String TAG = &quot;AccountsListFragment&quot;;
+
+    /**
+     * Tag to save {@link AccountsListFragment#mDisplayMode} to fragment state
+     */
+    private static final String STATE_DISPLAY_MODE = &quot;mDisplayMode&quot;;
+
+    /**
+     * Database adapter for loading Account records from the database
+     */
+    private AccountsDbAdapter mAccountsDbAdapter;
+    /**
+     * Listener to be notified when an account is clicked
+     */
+    private OnAccountClickedListener mAccountSelectedListener;
+
+    /**
+     * GUID of the account whose children will be loaded in the list fragment.
+     * If no parent account is specified, then all top-level accounts are loaded.
+     */
+<span class="nc" id="L125">    private String mParentAccountUID = null;</span>
+
+    /**
+     * Filter for which accounts should be displayed. Used by search interface
+     */
+    private String mCurrentFilter;
+
+    /**
+     * Search view for searching accounts
+     */
+    private android.support.v7.widget.SearchView mSearchView;
+
+    public static AccountsListFragment newInstance(DisplayMode displayMode){
+<span class="nc" id="L138">        AccountsListFragment fragment = new AccountsListFragment();</span>
+<span class="nc" id="L139">        fragment.mDisplayMode = displayMode;</span>
+<span class="nc" id="L140">        return fragment;</span>
+    }
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+<span class="nc" id="L146">        View v = inflater.inflate(R.layout.fragment_accounts_list, container,</span>
+                false);
+
+<span class="nc" id="L149">        ButterKnife.bind(this, v);</span>
+<span class="nc" id="L150">        mRecyclerView.setHasFixedSize(true);</span>
+<span class="nc" id="L151">        mRecyclerView.setEmptyView(mEmptyTextView);</span>
+
+<span class="nc bnc" id="L153" title="All 4 branches missed.">        switch (mDisplayMode){</span>
+
+            case TOP_LEVEL:
+<span class="nc" id="L156">                mEmptyTextView.setText(R.string.label_no_accounts);</span>
+<span class="nc" id="L157">                break;</span>
+            case RECENT:
+<span class="nc" id="L159">                mEmptyTextView.setText(R.string.label_no_recent_accounts);</span>
+<span class="nc" id="L160">                break;</span>
+            case FAVORITES:
+<span class="nc" id="L162">                mEmptyTextView.setText(R.string.label_no_favorite_accounts);</span>
+                break;
+        }
+
+<span class="nc bnc" id="L166" title="All 2 branches missed.">        if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {</span>
+<span class="nc" id="L167">            GridLayoutManager gridLayoutManager = new GridLayoutManager(getActivity(), 2);</span>
+<span class="nc" id="L168">            mRecyclerView.setLayoutManager(gridLayoutManager);</span>
+<span class="nc" id="L169">        } else {</span>
+<span class="nc" id="L170">            LinearLayoutManager mLayoutManager = new LinearLayoutManager(getActivity());</span>
+<span class="nc" id="L171">            mRecyclerView.setLayoutManager(mLayoutManager);</span>
+        }
+<span class="nc" id="L173">        return v;</span>
+    }
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+<span class="nc" id="L178">        super.onCreate(savedInstanceState);</span>
+
+<span class="nc" id="L180">        Bundle args = getArguments();</span>
+<span class="nc bnc" id="L181" title="All 2 branches missed.">        if (args != null)</span>
+<span class="nc" id="L182">            mParentAccountUID = args.getString(UxArgument.PARENT_ACCOUNT_UID);</span>
+
+<span class="nc bnc" id="L184" title="All 2 branches missed.">        if (savedInstanceState != null)</span>
+<span class="nc" id="L185">            mDisplayMode = (DisplayMode) savedInstanceState.getSerializable(STATE_DISPLAY_MODE);</span>
+<span class="nc" id="L186">    }</span>
+
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+<span class="nc" id="L190">        super.onActivityCreated(savedInstanceState);</span>
+
+<span class="nc" id="L192">        ActionBar actionbar = ((AppCompatActivity) getActivity()).getSupportActionBar();</span>
+<span class="nc" id="L193">        actionbar.setTitle(R.string.title_accounts);</span>
+<span class="nc" id="L194">        actionbar.setDisplayHomeAsUpEnabled(true);</span>
+<span class="nc" id="L195">        setHasOptionsMenu(true);</span>
+
+
+        // specify an adapter (see also next example)
+<span class="nc" id="L199">        mAccountRecyclerAdapter = new AccountRecyclerAdapter(null);</span>
+<span class="nc" id="L200">        mRecyclerView.setAdapter(mAccountRecyclerAdapter);</span>
+
+<span class="nc" id="L202">    }</span>
+
+    @Override
+    public void onStart() {
+<span class="nc" id="L206">        super.onStart();</span>
+<span class="nc" id="L207">        mAccountsDbAdapter = AccountsDbAdapter.getInstance();</span>
+<span class="nc" id="L208">    }</span>
+
+    @Override
+    public void onResume() {
+<span class="nc" id="L212">        super.onResume();</span>
+<span class="nc" id="L213">        refresh();</span>
+<span class="nc" id="L214">    }</span>
+
+    @Override
+    public void onAttach(Activity activity) {
+<span class="nc" id="L218">        super.onAttach(activity);</span>
+        try {
+<span class="nc" id="L220">            mAccountSelectedListener = (OnAccountClickedListener) activity;</span>
+<span class="nc" id="L221">        } catch (ClassCastException e) {</span>
+<span class="nc" id="L222">            throw new ClassCastException(activity.toString() + &quot; must implement OnAccountSelectedListener&quot;);</span>
+<span class="nc" id="L223">        }</span>
+<span class="nc" id="L224">    }</span>
+
+    public void onListItemClick(String accountUID) {
+<span class="nc" id="L227">        mAccountSelectedListener.accountSelected(accountUID);</span>
+<span class="nc" id="L228">    }</span>
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+<span class="nc bnc" id="L232" title="All 2 branches missed.">        if (resultCode == Activity.RESULT_CANCELED)</span>
+<span class="nc" id="L233">            return;</span>
+
+<span class="nc" id="L235">        refresh();</span>
+<span class="nc" id="L236">    }</span>
+
+    /**
+     * Delete the account with record ID &lt;code&gt;rowId&lt;/code&gt;
+     * It shows the delete confirmation dialog if the account has transactions,
+     * else deletes the account immediately
+     *
+     * @param rowId The record ID of the account
+     */
+    public void tryDeleteAccount(long rowId) {
+<span class="nc" id="L246">        Account acc = mAccountsDbAdapter.getRecord(rowId);</span>
+<span class="nc bnc" id="L247" title="All 4 branches missed.">        if (acc.getTransactionCount() &gt; 0 || mAccountsDbAdapter.getSubAccountCount(acc.getUID()) &gt; 0) {</span>
+<span class="nc" id="L248">            showConfirmationDialog(rowId);</span>
+        } else {
+            // Avoid calling AccountsDbAdapter.deleteRecord(long). See #654
+<span class="nc" id="L251">            String uid = mAccountsDbAdapter.getUID(rowId);</span>
+<span class="nc" id="L252">            mAccountsDbAdapter.deleteRecord(uid);</span>
+<span class="nc" id="L253">            refresh();</span>
+        }
+<span class="nc" id="L255">    }</span>
+
+    /**
+     * Shows the delete confirmation dialog
+     *
+     * @param id Record ID of account to be deleted after confirmation
+     */
+    public void showConfirmationDialog(long id) {
+<span class="nc" id="L263">        DeleteAccountDialogFragment alertFragment =</span>
+<span class="nc" id="L264">                DeleteAccountDialogFragment.newInstance(mAccountsDbAdapter.getUID(id));</span>
+<span class="nc" id="L265">        alertFragment.setTargetFragment(this, 0);</span>
+<span class="nc" id="L266">        alertFragment.show(getActivity().getSupportFragmentManager(), &quot;delete_confirmation_dialog&quot;);</span>
+<span class="nc" id="L267">    }</span>
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+<span class="nc bnc" id="L271" title="All 2 branches missed.">        if (mParentAccountUID != null)</span>
+<span class="nc" id="L272">            inflater.inflate(R.menu.sub_account_actions, menu);</span>
+        else {
+<span class="nc" id="L274">            inflater.inflate(R.menu.account_actions, menu);</span>
+            // Associate searchable configuration with the SearchView
+
+            SearchManager searchManager =
+<span class="nc" id="L278">                    (SearchManager) GnuCashApplication.getAppContext().getSystemService(Context.SEARCH_SERVICE);</span>
+<span class="nc" id="L279">            mSearchView = (android.support.v7.widget.SearchView)</span>
+<span class="nc" id="L280">                MenuItemCompat.getActionView(menu.findItem(R.id.menu_search));</span>
+<span class="nc bnc" id="L281" title="All 2 branches missed.">            if (mSearchView == null)</span>
+<span class="nc" id="L282">                return;</span>
+
+<span class="nc" id="L284">            mSearchView.setSearchableInfo(</span>
+<span class="nc" id="L285">                    searchManager.getSearchableInfo(getActivity().getComponentName()));</span>
+<span class="nc" id="L286">            mSearchView.setOnQueryTextListener(this);</span>
+<span class="nc" id="L287">            mSearchView.setOnCloseListener(this);</span>
+        }
+<span class="nc" id="L289">    }</span>
+
+
+    @Override
+    /**
+     * Refresh the account list as a sublist of another account
+     * @param parentAccountUID GUID of the parent account
+     */
+    public void refresh(String parentAccountUID) {
+<span class="nc" id="L298">        getArguments().putString(UxArgument.PARENT_ACCOUNT_UID, parentAccountUID);</span>
+<span class="nc" id="L299">        refresh();</span>
+<span class="nc" id="L300">    }</span>
+
+    /**
+     * Refreshes the list by restarting the {@link DatabaseCursorLoader} associated
+     * with the ListView
+     */
+    @Override
+    public void refresh() {
+<span class="nc" id="L308">        getLoaderManager().restartLoader(0, null, this);</span>
+<span class="nc" id="L309">    }</span>
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+<span class="nc" id="L313">        super.onSaveInstanceState(outState);</span>
+<span class="nc" id="L314">        outState.putSerializable(STATE_DISPLAY_MODE, mDisplayMode);</span>
+<span class="nc" id="L315">    }</span>
+
+    /**
+     * Closes any open database adapters used by the list
+     */
+    @Override
+    public void onDestroy() {
+<span class="nc" id="L322">        super.onDestroy();</span>
+<span class="nc bnc" id="L323" title="All 2 branches missed.">        if (mAccountRecyclerAdapter != null)</span>
+<span class="nc" id="L324">            mAccountRecyclerAdapter.swapCursor(null);</span>
+<span class="nc" id="L325">    }</span>
+
+    /**
+     * Opens a new activity for creating or editing an account.
+     * If the &lt;code&gt;accountId&lt;/code&gt; &amp;lt; 1, then create else edit the account.
+     * @param accountId Long record ID of account to be edited. Pass 0 to create a new account.
+     */
+    public void openCreateOrEditActivity(long accountId){
+<span class="nc" id="L333">        Intent editAccountIntent = new Intent(AccountsListFragment.this.getActivity(), FormActivity.class);</span>
+<span class="nc" id="L334">        editAccountIntent.setAction(Intent.ACTION_INSERT_OR_EDIT);</span>
+<span class="nc" id="L335">        editAccountIntent.putExtra(UxArgument.SELECTED_ACCOUNT_UID, mAccountsDbAdapter.getUID(accountId));</span>
+<span class="nc" id="L336">        editAccountIntent.putExtra(UxArgument.FORM_TYPE, FormActivity.FormType.ACCOUNT.name());</span>
+<span class="nc" id="L337">        startActivityForResult(editAccountIntent, AccountsActivity.REQUEST_EDIT_ACCOUNT);</span>
+<span class="nc" id="L338">    }</span>
+
+    @Override
+    public Loader&lt;Cursor&gt; onCreateLoader(int id, Bundle args) {
+<span class="nc" id="L342">        Log.d(TAG, &quot;Creating the accounts loader&quot;);</span>
+<span class="nc" id="L343">        Bundle arguments = getArguments();</span>
+<span class="nc bnc" id="L344" title="All 2 branches missed.">        String accountUID = arguments == null ? null : arguments.getString(UxArgument.PARENT_ACCOUNT_UID);</span>
+
+<span class="nc bnc" id="L346" title="All 2 branches missed.">        if (mCurrentFilter != null){</span>
+<span class="nc" id="L347">            return new AccountsCursorLoader(getActivity(), mCurrentFilter);</span>
+        } else {
+<span class="nc" id="L349">            return new AccountsCursorLoader(this.getActivity(), accountUID, mDisplayMode);</span>
+        }
+    }
+
+    @Override
+    public void onLoadFinished(Loader&lt;Cursor&gt; loaderCursor, Cursor cursor) {
+<span class="nc" id="L355">        Log.d(TAG, &quot;Accounts loader finished. Swapping in cursor&quot;);</span>
+<span class="nc" id="L356">        mAccountRecyclerAdapter.swapCursor(cursor);</span>
+<span class="nc" id="L357">        mAccountRecyclerAdapter.notifyDataSetChanged();</span>
+<span class="nc" id="L358">    }</span>
+
+    @Override
+    public void onLoaderReset(Loader&lt;Cursor&gt; arg0) {
+<span class="nc" id="L362">        Log.d(TAG, &quot;Resetting the accounts loader&quot;);</span>
+<span class="nc" id="L363">        mAccountRecyclerAdapter.swapCursor(null);</span>
+<span class="nc" id="L364">    }</span>
+
+    @Override
+    public boolean onQueryTextSubmit(String query) {
+        //nothing to see here, move along
+<span class="nc" id="L369">        return true;</span>
+    }
+
+    @Override
+    public boolean onQueryTextChange(String newText) {
+<span class="nc bnc" id="L374" title="All 2 branches missed.">        String newFilter = !TextUtils.isEmpty(newText) ? newText : null;</span>
+
+<span class="nc bnc" id="L376" title="All 4 branches missed.">        if (mCurrentFilter == null &amp;&amp; newFilter == null) {</span>
+<span class="nc" id="L377">            return true;</span>
+        }
+<span class="nc bnc" id="L379" title="All 4 branches missed.">        if (mCurrentFilter != null &amp;&amp; mCurrentFilter.equals(newFilter)) {</span>
+<span class="nc" id="L380">            return true;</span>
+        }
+<span class="nc" id="L382">        mCurrentFilter = newFilter;</span>
+<span class="nc" id="L383">        getLoaderManager().restartLoader(0, null, this);</span>
+<span class="nc" id="L384">        return true;</span>
+    }
+
+    @Override
+    public boolean onClose() {
+<span class="nc bnc" id="L389" title="All 2 branches missed.">        if (!TextUtils.isEmpty(mSearchView.getQuery())) {</span>
+<span class="nc" id="L390">            mSearchView.setQuery(null, true);</span>
+        }
+<span class="nc" id="L392">        return true;</span>
+    }
+
+    /**
+     * Extends {@link DatabaseCursorLoader} for loading of {@link Account} from the
+     * database asynchronously.
+     * &lt;p&gt;By default it loads only top-level accounts (accounts which have no parent or have GnuCash ROOT account as parent.
+     * By submitting a parent account ID in the constructor parameter, it will load child accounts of that parent.&lt;/p&gt;
+     * &lt;p&gt;Class must be static because the Android loader framework requires it to be so&lt;/p&gt;
+     * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+     */
+    private static final class AccountsCursorLoader extends DatabaseCursorLoader {
+<span class="nc" id="L404">        private String mParentAccountUID = null;</span>
+        private String mFilter;
+<span class="nc" id="L406">        private DisplayMode mDisplayMode = DisplayMode.TOP_LEVEL;</span>
+
+        /**
+         * Initializes the loader to load accounts from the database.
+         * If the &lt;code&gt;parentAccountId &lt;= 0&lt;/code&gt; then only top-level accounts are loaded.
+         * Else only the child accounts of the &lt;code&gt;parentAccountId&lt;/code&gt; will be loaded
+         * @param context Application context
+         * @param parentAccountUID GUID of the parent account
+         */
+        public AccountsCursorLoader(Context context, String parentAccountUID, DisplayMode displayMode) {
+<span class="nc" id="L416">            super(context);</span>
+<span class="nc" id="L417">            this.mParentAccountUID = parentAccountUID;</span>
+<span class="nc" id="L418">            this.mDisplayMode = displayMode;</span>
+<span class="nc" id="L419">        }</span>
+
+        /**
+         * Initializes the loader with a filter for account names.
+         * Only accounts whose name match the filter will be loaded.
+         * @param context Application context
+         * @param filter Account name filter string
+         */
+        public AccountsCursorLoader(Context context, String filter){
+<span class="nc" id="L428">            super(context);</span>
+<span class="nc" id="L429">            mFilter = filter;</span>
+<span class="nc" id="L430">        }</span>
+
+        @Override
+        public Cursor loadInBackground() {
+<span class="nc" id="L434">            mDatabaseAdapter = AccountsDbAdapter.getInstance();</span>
+            Cursor cursor;
+
+<span class="nc bnc" id="L437" title="All 2 branches missed.">            if (mFilter != null){</span>
+<span class="nc" id="L438">                cursor = ((AccountsDbAdapter)mDatabaseAdapter)</span>
+<span class="nc" id="L439">                        .fetchAccounts(DatabaseSchema.AccountEntry.COLUMN_HIDDEN + &quot;= 0 AND &quot;</span>
+                                + DatabaseSchema.AccountEntry.COLUMN_NAME + &quot; LIKE '%&quot; + mFilter + &quot;%'&quot;,
+                                null, null);
+            } else {
+<span class="nc bnc" id="L443" title="All 4 branches missed.">                if (mParentAccountUID != null &amp;&amp; mParentAccountUID.length() &gt; 0)</span>
+<span class="nc" id="L444">                    cursor = ((AccountsDbAdapter) mDatabaseAdapter).fetchSubAccounts(mParentAccountUID);</span>
+                else {
+<span class="nc bnc" id="L446" title="All 3 branches missed.">                    switch (this.mDisplayMode){</span>
+                        case RECENT:
+<span class="nc" id="L448">                            cursor = ((AccountsDbAdapter) mDatabaseAdapter).fetchRecentAccounts(10);</span>
+<span class="nc" id="L449">                            break;</span>
+                        case FAVORITES:
+<span class="nc" id="L451">                            cursor = ((AccountsDbAdapter) mDatabaseAdapter).fetchFavoriteAccounts();</span>
+<span class="nc" id="L452">                            break;</span>
+                        case TOP_LEVEL:
+                        default:
+<span class="nc" id="L455">                            cursor = ((AccountsDbAdapter) mDatabaseAdapter).fetchTopLevelAccounts();</span>
+                            break;
+                    }
+                }
+
+            }
+
+<span class="nc bnc" id="L462" title="All 2 branches missed.">            if (cursor != null)</span>
+<span class="nc" id="L463">                registerContentObserver(cursor);</span>
+<span class="nc" id="L464">            return cursor;</span>
+        }
+    }
+
+
+    class AccountRecyclerAdapter extends CursorRecyclerAdapter&lt;AccountRecyclerAdapter.AccountViewHolder&gt; {
+
+<span class="nc" id="L471">        public AccountRecyclerAdapter(Cursor cursor){</span>
+<span class="nc" id="L472">           super(cursor);</span>
+<span class="nc" id="L473">        }</span>
+
+        @Override
+        public AccountViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+<span class="nc" id="L477">            View v = LayoutInflater.from(parent.getContext())</span>
+<span class="nc" id="L478">                    .inflate(R.layout.cardview_account, parent, false);</span>
+
+<span class="nc" id="L480">            return new AccountViewHolder(v);</span>
+        }
+
+        @Override
+        public void onBindViewHolderCursor(final AccountViewHolder holder, final Cursor cursor) {
+<span class="nc" id="L485">            final String accountUID = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseSchema.AccountEntry.COLUMN_UID));</span>
+<span class="nc" id="L486">            mAccountsDbAdapter = AccountsDbAdapter.getInstance();</span>
+<span class="nc" id="L487">            holder.accoundId = mAccountsDbAdapter.getID(accountUID);</span>
+
+<span class="nc" id="L489">            holder.accountName.setText(cursor.getString(cursor.getColumnIndexOrThrow(DatabaseSchema.AccountEntry.COLUMN_NAME)));</span>
+<span class="nc" id="L490">            int subAccountCount = mAccountsDbAdapter.getSubAccountCount(accountUID);</span>
+<span class="nc bnc" id="L491" title="All 2 branches missed.">            if (subAccountCount &gt; 0) {</span>
+<span class="nc" id="L492">                holder.description.setVisibility(View.VISIBLE);</span>
+<span class="nc" id="L493">                String text = getResources().getQuantityString(R.plurals.label_sub_accounts, subAccountCount, subAccountCount);</span>
+<span class="nc" id="L494">                holder.description.setText(text);</span>
+<span class="nc" id="L495">            } else</span>
+<span class="nc" id="L496">                holder.description.setVisibility(View.GONE);</span>
+
+            // add a summary of transactions to the account view
+
+                // Make sure the balance task is truly multithread
+<span class="nc" id="L501">            new AccountBalanceTask(holder.accountBalance).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, accountUID);</span>
+
+<span class="nc" id="L503">            String accountColor = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseSchema.AccountEntry.COLUMN_COLOR_CODE));</span>
+<span class="nc bnc" id="L504" title="All 2 branches missed.">            int colorCode = accountColor == null ? Color.TRANSPARENT : Color.parseColor(accountColor);</span>
+<span class="nc" id="L505">            holder.colorStripView.setBackgroundColor(colorCode);</span>
+
+<span class="nc" id="L507">            boolean isPlaceholderAccount = mAccountsDbAdapter.isPlaceholderAccount(accountUID);</span>
+<span class="nc bnc" id="L508" title="All 2 branches missed.">            if (isPlaceholderAccount) {</span>
+<span class="nc" id="L509">                holder.createTransaction.setVisibility(View.GONE);</span>
+            } else {
+<span class="nc" id="L511">                holder.createTransaction.setOnClickListener(new View.OnClickListener() {</span>
+
+                    @Override
+                    public void onClick(View v) {
+<span class="nc" id="L515">                        Intent intent = new Intent(getActivity(), FormActivity.class);</span>
+<span class="nc" id="L516">                        intent.setAction(Intent.ACTION_INSERT_OR_EDIT);</span>
+<span class="nc" id="L517">                        intent.putExtra(UxArgument.SELECTED_ACCOUNT_UID, accountUID);</span>
+<span class="nc" id="L518">                        intent.putExtra(UxArgument.FORM_TYPE, FormActivity.FormType.TRANSACTION.name());</span>
+<span class="nc" id="L519">                        getActivity().startActivity(intent);</span>
+<span class="nc" id="L520">                    }</span>
+                });
+            }
+
+<span class="nc" id="L524">            List&lt;Budget&gt; budgets = BudgetsDbAdapter.getInstance().getAccountBudgets(accountUID);</span>
+            //TODO: include fetch only active budgets
+<span class="nc bnc" id="L526" title="All 2 branches missed.">            if (budgets.size() == 1){</span>
+<span class="nc" id="L527">                Budget budget = budgets.get(0);</span>
+<span class="nc" id="L528">                Money balance = mAccountsDbAdapter.getAccountBalance(accountUID, budget.getStartofCurrentPeriod(), budget.getEndOfCurrentPeriod());</span>
+<span class="nc" id="L529">                double budgetProgress = balance.divide(budget.getAmount(accountUID)).asBigDecimal().doubleValue() * 100;</span>
+
+<span class="nc" id="L531">                holder.budgetIndicator.setVisibility(View.VISIBLE);</span>
+<span class="nc" id="L532">                holder.budgetIndicator.setProgress((int) budgetProgress);</span>
+<span class="nc" id="L533">            } else {</span>
+<span class="nc" id="L534">                holder.budgetIndicator.setVisibility(View.GONE);</span>
+            }
+
+
+<span class="nc bnc" id="L538" title="All 2 branches missed.">            if (mAccountsDbAdapter.isFavoriteAccount(accountUID)){</span>
+<span class="nc" id="L539">                holder.favoriteStatus.setImageResource(R.drawable.ic_star_black_24dp);</span>
+            } else {
+<span class="nc" id="L541">                holder.favoriteStatus.setImageResource(R.drawable.ic_star_border_black_24dp);</span>
+            }
+
+<span class="nc" id="L544">            holder.favoriteStatus.setOnClickListener(new View.OnClickListener() {</span>
+                @Override
+                public void onClick(View v) {
+<span class="nc" id="L547">                    boolean isFavoriteAccount = mAccountsDbAdapter.isFavoriteAccount(accountUID);</span>
+
+<span class="nc" id="L549">                    ContentValues contentValues = new ContentValues();</span>
+<span class="nc bnc" id="L550" title="All 2 branches missed.">                    contentValues.put(DatabaseSchema.AccountEntry.COLUMN_FAVORITE, !isFavoriteAccount);</span>
+<span class="nc" id="L551">                    mAccountsDbAdapter.updateRecord(accountUID, contentValues);</span>
+
+<span class="nc bnc" id="L553" title="All 2 branches missed.">                    int drawableResource = !isFavoriteAccount ?</span>
+                            R.drawable.ic_star_black_24dp : R.drawable.ic_star_border_black_24dp;
+<span class="nc" id="L555">                    holder.favoriteStatus.setImageResource(drawableResource);</span>
+<span class="nc bnc" id="L556" title="All 2 branches missed.">                    if (mDisplayMode == DisplayMode.FAVORITES)</span>
+<span class="nc" id="L557">                        refresh();</span>
+<span class="nc" id="L558">                }</span>
+            });
+
+<span class="nc" id="L561">            holder.itemView.setOnClickListener(new View.OnClickListener() {</span>
+                @Override
+                public void onClick(View v) {
+<span class="nc" id="L564">                    onListItemClick(accountUID);</span>
+<span class="nc" id="L565">                }</span>
+            });
+<span class="nc" id="L567">        }</span>
+
+
+        class AccountViewHolder extends RecyclerView.ViewHolder implements PopupMenu.OnMenuItemClickListener{
+            @BindView(R.id.primary_text) TextView accountName;
+            @BindView(R.id.secondary_text) TextView description;
+            @BindView(R.id.account_balance) TextView accountBalance;
+            @BindView(R.id.create_transaction) ImageView createTransaction;
+            @BindView(R.id.favorite_status) ImageView favoriteStatus;
+            @BindView(R.id.options_menu) ImageView optionsMenu;
+            @BindView(R.id.account_color_strip) View colorStripView;
+            @BindView(R.id.budget_indicator) ProgressBar budgetIndicator;
+            long accoundId;
+
+<span class="nc" id="L581">            public AccountViewHolder(View itemView) {</span>
+<span class="nc" id="L582">                super(itemView);</span>
+<span class="nc" id="L583">                ButterKnife.bind(this, itemView);</span>
+
+<span class="nc" id="L585">                optionsMenu.setOnClickListener(new View.OnClickListener() {</span>
+                    @Override
+                    public void onClick(View v) {
+<span class="nc" id="L588">                        PopupMenu popup = new PopupMenu(getActivity(), v);</span>
+<span class="nc" id="L589">                        popup.setOnMenuItemClickListener(AccountViewHolder.this);</span>
+<span class="nc" id="L590">                        MenuInflater inflater = popup.getMenuInflater();</span>
+<span class="nc" id="L591">                        inflater.inflate(R.menu.account_context_menu, popup.getMenu());</span>
+<span class="nc" id="L592">                        popup.show();</span>
+<span class="nc" id="L593">                    }</span>
+                });
+
+<span class="nc" id="L596">            }</span>
+
+
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+<span class="nc bnc" id="L601" title="All 3 branches missed.">                switch (item.getItemId()){</span>
+                    case R.id.context_menu_edit_accounts:
+<span class="nc" id="L603">                        openCreateOrEditActivity(accoundId);</span>
+<span class="nc" id="L604">                        return true;</span>
+
+                    case R.id.context_menu_delete:
+<span class="nc" id="L607">                        tryDeleteAccount(accoundId);</span>
+<span class="nc" id="L608">                        return true;</span>
+
+                    default:
+<span class="nc" id="L611">                        return false;</span>
+                }
+            }
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

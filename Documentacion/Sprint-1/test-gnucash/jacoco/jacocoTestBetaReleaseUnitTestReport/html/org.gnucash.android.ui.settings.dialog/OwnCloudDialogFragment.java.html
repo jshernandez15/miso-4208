@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OwnCloudDialogFragment.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.ui.settings.dialog</a> &gt; <span class="el_source">OwnCloudDialogFragment.java</span></div><h1>OwnCloudDialogFragment.java</h1><pre class="source lang-java linenums">package org.gnucash.android.ui.settings.dialog;
+
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.net.Uri;
+import android.os.Bundle;
+import android.os.Handler;
+import android.support.v4.app.DialogFragment;
+import android.support.v4.content.ContextCompat;
+import android.support.v7.preference.CheckBoxPreference;
+import android.support.v7.preference.Preference;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
+
+import com.owncloud.android.lib.common.OwnCloudClient;
+import com.owncloud.android.lib.common.OwnCloudClientFactory;
+import com.owncloud.android.lib.common.OwnCloudCredentialsFactory;
+import com.owncloud.android.lib.common.operations.OnRemoteOperationListener;
+import com.owncloud.android.lib.common.operations.RemoteOperation;
+import com.owncloud.android.lib.common.operations.RemoteOperationResult;
+import com.owncloud.android.lib.resources.files.FileUtils;
+import com.owncloud.android.lib.resources.status.GetRemoteStatusOperation;
+import com.owncloud.android.lib.resources.users.GetRemoteUserNameOperation;
+
+import org.gnucash.android.R;
+
+/**
+ * A fragment for adding an ownCloud account.
+ */
+public class OwnCloudDialogFragment extends DialogFragment {
+
+    /**
+     * Dialog positive button. Ok to save and validate the data
+     */
+    private Button mOkButton;
+
+    /**
+     * Cancel button
+     */
+    private Button mCancelButton;
+
+    /**
+     * ownCloud vars
+     */
+    private String mOC_server;
+    private String mOC_username;
+    private String mOC_password;
+    private String mOC_dir;
+
+    private EditText mServer;
+    private EditText mUsername;
+    private EditText mPassword;
+    private EditText mDir;
+
+    private TextView mServerError;
+    private TextView mUsernameError;
+    private TextView mDirError;
+
+    private SharedPreferences mPrefs;
+    private Context mContext;
+
+    private static CheckBoxPreference ocCheckBox;
+
+    /**
+     * Use this factory method to create a new instance of
+     * this fragment using the provided parameters.
+     * @return A new instance of fragment OwnCloudDialogFragment.
+     */
+    public static OwnCloudDialogFragment newInstance(Preference pref) {
+<span class="nc" id="L75">        OwnCloudDialogFragment fragment = new OwnCloudDialogFragment();</span>
+<span class="nc bnc" id="L76" title="All 2 branches missed.">        ocCheckBox = pref == null ? null : (CheckBoxPreference) pref;</span>
+<span class="nc" id="L77">        return fragment;</span>
+    }
+
+<span class="nc" id="L80">    public OwnCloudDialogFragment() {</span>
+        // Required empty public constructor
+<span class="nc" id="L82">    }</span>
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+<span class="nc" id="L86">        super.onCreate(savedInstanceState);</span>
+<span class="nc" id="L87">        setStyle(DialogFragment.STYLE_NO_TITLE, 0);</span>
+
+<span class="nc" id="L89">        mContext = getActivity();</span>
+<span class="nc" id="L90">        mPrefs = mContext.getSharedPreferences(getString(R.string.owncloud_pref), Context.MODE_PRIVATE);</span>
+
+<span class="nc" id="L92">        mOC_server = mPrefs.getString(getString(R.string.key_owncloud_server), getString(R.string.owncloud_server));</span>
+<span class="nc" id="L93">        mOC_username = mPrefs.getString(getString(R.string.key_owncloud_username), null);</span>
+<span class="nc" id="L94">        mOC_password = mPrefs.getString(getString(R.string.key_owncloud_password), null);</span>
+<span class="nc" id="L95">        mOC_dir = mPrefs.getString(getString(R.string.key_owncloud_dir), getString(R.string.app_name));</span>
+<span class="nc" id="L96">    }</span>
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        // Inflate the layout for this fragment
+<span class="nc" id="L102">        View view = inflater.inflate(R.layout.dialog_owncloud_account, container, false);</span>
+
+<span class="nc" id="L104">        mServer = (EditText) view.findViewById(R.id.owncloud_hostname);</span>
+<span class="nc" id="L105">        mUsername = (EditText) view.findViewById(R.id.owncloud_username);</span>
+<span class="nc" id="L106">        mPassword = (EditText) view.findViewById(R.id.owncloud_password);</span>
+<span class="nc" id="L107">        mDir = (EditText) view.findViewById(R.id.owncloud_dir);</span>
+
+<span class="nc" id="L109">        mServer.setText(mOC_server);</span>
+<span class="nc" id="L110">        mDir.setText(mOC_dir);</span>
+<span class="nc" id="L111">        mPassword.setText(mOC_password); // TODO: Remove - debugging only</span>
+<span class="nc" id="L112">        mUsername.setText(mOC_username);</span>
+
+<span class="nc" id="L114">        mServerError = (TextView) view.findViewById(R.id.owncloud_hostname_invalid);</span>
+<span class="nc" id="L115">        mUsernameError = (TextView) view.findViewById(R.id.owncloud_username_invalid);</span>
+<span class="nc" id="L116">        mDirError = (TextView) view.findViewById(R.id.owncloud_dir_invalid);</span>
+<span class="nc" id="L117">        mServerError.setVisibility(View.GONE);</span>
+<span class="nc" id="L118">        mUsernameError.setVisibility(View.GONE);</span>
+<span class="nc" id="L119">        mDirError.setVisibility(View.GONE);</span>
+
+<span class="nc" id="L121">        mCancelButton = (Button) view.findViewById(R.id.btn_cancel);</span>
+<span class="nc" id="L122">        mOkButton = (Button) view.findViewById(R.id.btn_save);</span>
+<span class="nc" id="L123">        mOkButton.setText(R.string.btn_test);</span>
+
+<span class="nc" id="L125">        return view;</span>
+    }
+
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+<span class="nc" id="L130">        super.onActivityCreated(savedInstanceState);</span>
+
+<span class="nc" id="L132">        setListeners();</span>
+<span class="nc" id="L133">    }</span>
+
+    private void saveButton() {
+<span class="nc bnc" id="L136" title="All 2 branches missed.">        if (mDirError.getText().toString().equals(getString(R.string.owncloud_dir_ok)) &amp;&amp;</span>
+<span class="nc bnc" id="L137" title="All 2 branches missed.">                mUsernameError.getText().toString().equals(getString(R.string.owncloud_user_ok)) &amp;&amp;</span>
+<span class="nc bnc" id="L138" title="All 2 branches missed.">                mServerError.getText().toString().equals(getString(R.string.owncloud_server_ok)))</span>
+<span class="nc" id="L139">            mOkButton.setText(R.string.btn_save);</span>
+        else
+<span class="nc" id="L141">            mOkButton.setText(R.string.btn_test);</span>
+<span class="nc" id="L142">    }</span>
+
+    private void save() {
+<span class="nc" id="L145">        SharedPreferences.Editor edit = mPrefs.edit();</span>
+<span class="nc" id="L146">        edit.clear();</span>
+<span class="nc" id="L147">        edit.putString(getString(R.string.key_owncloud_server), mOC_server);</span>
+<span class="nc" id="L148">        edit.putString(getString(R.string.key_owncloud_username), mOC_username);</span>
+<span class="nc" id="L149">        edit.putString(getString(R.string.key_owncloud_password), mOC_password);</span>
+<span class="nc" id="L150">        edit.putString(getString(R.string.key_owncloud_dir), mOC_dir);</span>
+<span class="nc" id="L151">        edit.putBoolean(getString(R.string.owncloud_sync), true);</span>
+<span class="nc" id="L152">        edit.apply();</span>
+
+<span class="nc bnc" id="L154" title="All 2 branches missed.">        if (ocCheckBox != null) ocCheckBox.setChecked(true);</span>
+
+<span class="nc" id="L156">        dismiss();</span>
+<span class="nc" id="L157">    }</span>
+
+    private void checkData() {
+<span class="nc" id="L160">        mServerError.setVisibility(View.GONE);</span>
+<span class="nc" id="L161">        mUsernameError.setVisibility(View.GONE);</span>
+<span class="nc" id="L162">        mDirError.setVisibility(View.GONE);</span>
+
+<span class="nc" id="L164">        mOC_server = mServer.getText().toString().trim();</span>
+<span class="nc" id="L165">        mOC_username = mUsername.getText().toString().trim();</span>
+<span class="nc" id="L166">        mOC_password = mPassword.getText().toString().trim();</span>
+<span class="nc" id="L167">        mOC_dir = mDir.getText().toString().trim();</span>
+
+<span class="nc" id="L169">        Uri serverUri = Uri.parse(mOC_server);</span>
+<span class="nc" id="L170">        OwnCloudClient mClient = OwnCloudClientFactory.createOwnCloudClient(serverUri, mContext, true);</span>
+<span class="nc" id="L171">        mClient.setCredentials(</span>
+<span class="nc" id="L172">                OwnCloudCredentialsFactory.newBasicCredentials(mOC_username, mOC_password)</span>
+        );
+
+<span class="nc" id="L175">        final Handler mHandler = new Handler();</span>
+
+<span class="nc" id="L177">        OnRemoteOperationListener listener = new OnRemoteOperationListener() {</span>
+            @Override
+            public void onRemoteOperationFinish(RemoteOperation caller, RemoteOperationResult result) {
+<span class="nc bnc" id="L180" title="All 2 branches missed.">                if (!result.isSuccess()) {</span>
+<span class="nc" id="L181">                    Log.e(&quot;OC&quot;, result.getLogMessage(), result.getException());</span>
+
+<span class="nc bnc" id="L183" title="All 2 branches missed.">                    if (caller instanceof GetRemoteStatusOperation) {</span>
+<span class="nc" id="L184">                        mServerError.setTextColor(ContextCompat.getColor(getContext(), R.color.debit_red));</span>
+<span class="nc" id="L185">                        mServerError.setText(getString(R.string.owncloud_server_invalid));</span>
+<span class="nc" id="L186">                        mServerError.setVisibility(View.VISIBLE);</span>
+
+<span class="nc bnc" id="L188" title="All 2 branches missed.">                    } else if (caller instanceof GetRemoteUserNameOperation &amp;&amp;</span>
+<span class="nc bnc" id="L189" title="All 2 branches missed.">                            mServerError.getText().toString().equals(getString(R.string.owncloud_server_ok))) {</span>
+<span class="nc" id="L190">                        mUsernameError.setTextColor(ContextCompat.getColor(getContext(), R.color.debit_red));</span>
+<span class="nc" id="L191">                        mUsernameError.setText(getString(R.string.owncloud_user_invalid));</span>
+<span class="nc" id="L192">                        mUsernameError.setVisibility(View.VISIBLE);</span>
+                    }
+                } else {
+<span class="nc bnc" id="L195" title="All 2 branches missed.">                    if (caller instanceof GetRemoteStatusOperation) {</span>
+<span class="nc" id="L196">                        mServerError.setTextColor(ContextCompat.getColor(getContext(), R.color.theme_primary));</span>
+<span class="nc" id="L197">                        mServerError.setText(getString(R.string.owncloud_server_ok));</span>
+<span class="nc" id="L198">                        mServerError.setVisibility(View.VISIBLE);</span>
+<span class="nc bnc" id="L199" title="All 2 branches missed.">                    } else if (caller instanceof GetRemoteUserNameOperation) {</span>
+<span class="nc" id="L200">                        mUsernameError.setTextColor(ContextCompat.getColor(getContext(), R.color.theme_primary));</span>
+<span class="nc" id="L201">                        mUsernameError.setText(getString(R.string.owncloud_user_ok));</span>
+<span class="nc" id="L202">                        mUsernameError.setVisibility(View.VISIBLE);</span>
+                    }
+                }
+<span class="nc" id="L205">                saveButton();</span>
+<span class="nc" id="L206">            }</span>
+        };
+
+<span class="nc" id="L209">        GetRemoteStatusOperation g = new GetRemoteStatusOperation(mContext);</span>
+<span class="nc" id="L210">        g.execute(mClient, listener, mHandler);</span>
+
+<span class="nc" id="L212">        GetRemoteUserNameOperation gu = new GetRemoteUserNameOperation();</span>
+<span class="nc" id="L213">        gu.execute(mClient, listener, mHandler);</span>
+
+<span class="nc bnc" id="L215" title="All 2 branches missed.">        if (FileUtils.isValidPath(mOC_dir, false)) {</span>
+<span class="nc" id="L216">            mDirError.setTextColor(ContextCompat.getColor(getContext(), R.color.theme_primary));</span>
+<span class="nc" id="L217">            mDirError.setText(getString(R.string.owncloud_dir_ok));</span>
+<span class="nc" id="L218">            mDirError.setVisibility(View.VISIBLE);</span>
+        } else {
+<span class="nc" id="L220">            mDirError.setTextColor(ContextCompat.getColor(getContext(), R.color.debit_red));</span>
+<span class="nc" id="L221">            mDirError.setText(getString(R.string.owncloud_dir_invalid));</span>
+<span class="nc" id="L222">            mDirError.setVisibility(View.VISIBLE);</span>
+        }
+<span class="nc" id="L224">        saveButton();</span>
+<span class="nc" id="L225">    }</span>
+
+    /**
+     * Binds click listeners for the dialog buttons
+     */
+    private void setListeners(){
+
+<span class="nc" id="L232">        mCancelButton.setOnClickListener(new View.OnClickListener() {</span>
+
+            @Override
+            public void onClick(View v) {
+<span class="nc" id="L236">                dismiss();</span>
+<span class="nc" id="L237">            }</span>
+        });
+
+<span class="nc" id="L240">        mOkButton.setOnClickListener(new View.OnClickListener() {</span>
+
+            @Override
+            public void onClick(View v) {
+                // If data didn't change
+<span class="nc bnc" id="L245" title="All 2 branches missed.">                if(mOkButton.getText().toString().equals(getString(R.string.btn_save)) &amp;&amp;</span>
+<span class="nc bnc" id="L246" title="All 2 branches missed.">                        mOC_server.equals(mServer.getText().toString().trim()) &amp;&amp;</span>
+<span class="nc bnc" id="L247" title="All 2 branches missed.">                        mOC_username.equals(mUsername.getText().toString().trim()) &amp;&amp;</span>
+<span class="nc bnc" id="L248" title="All 2 branches missed.">                        mOC_password.equals(mPassword.getText().toString().trim()) &amp;&amp;</span>
+<span class="nc bnc" id="L249" title="All 2 branches missed.">                        mOC_dir.equals(mDir.getText().toString().trim())</span>
+                        )
+<span class="nc" id="L251">                    save();</span>
+                else
+<span class="nc" id="L253">                    checkData();</span>
+<span class="nc" id="L254">            }</span>
+        });
+<span class="nc" id="L256">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

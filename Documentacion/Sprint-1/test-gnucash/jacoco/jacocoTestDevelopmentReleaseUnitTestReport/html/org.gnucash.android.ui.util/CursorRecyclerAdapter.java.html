@@ -1,0 +1,369 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CursorRecyclerAdapter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.ui.util</a> &gt; <span class="el_source">CursorRecyclerAdapter.java</span></div><h1>CursorRecyclerAdapter.java</h1><pre class="source lang-java linenums">/*
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2014 Matthieu HarlÃ©
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the &quot;Software&quot;), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+package org.gnucash.android.ui.util;
+
+import android.database.ContentObserver;
+import android.database.Cursor;
+import android.database.DataSetObserver;
+import android.os.Handler;
+import android.support.v7.widget.RecyclerView;
+import android.widget.Filter;
+import android.widget.FilterQueryProvider;
+import android.widget.Filterable;
+
+/**
+ * Provide a {@link android.support.v7.widget.RecyclerView.Adapter} implementation with cursor
+ * support.
+ *
+ * Child classes only need to implement {@link #onCreateViewHolder(android.view.ViewGroup, int)} and
+ * {@link #onBindViewHolderCursor(android.support.v7.widget.RecyclerView.ViewHolder, android.database.Cursor)}.
+ *
+ * This class does not implement deprecated fields and methods from CursorAdapter! Incidentally,
+ * only {@link android.widget.CursorAdapter#FLAG_REGISTER_CONTENT_OBSERVER} is available, so the
+ * flag is implied, and only the Adapter behavior using this flag has been ported.
+ *
+ * @param &lt;VH&gt; {@inheritDoc}
+ *
+ * @see android.support.v7.widget.RecyclerView.Adapter
+ * @see android.widget.CursorAdapter
+ * @see android.widget.Filterable
+ * @see CursorFilter.CursorFilterClient
+ */
+public abstract class CursorRecyclerAdapter&lt;VH
+        extends android.support.v7.widget.RecyclerView.ViewHolder&gt; extends RecyclerView.Adapter&lt;VH&gt;
+        implements Filterable, CursorFilter.CursorFilterClient {
+    private boolean mDataValid;
+    private int mRowIDColumn;
+    private Cursor mCursor;
+    private ChangeObserver mChangeObserver;
+    private DataSetObserver mDataSetObserver;
+    private CursorFilter mCursorFilter;
+    private FilterQueryProvider mFilterQueryProvider;
+
+<span class="nc" id="L65">    public CursorRecyclerAdapter( Cursor cursor) {</span>
+<span class="nc" id="L66">        init(cursor);</span>
+<span class="nc" id="L67">    }</span>
+
+    void init(Cursor c) {
+<span class="nc bnc" id="L70" title="All 2 branches missed.">        boolean cursorPresent = c != null;</span>
+<span class="nc" id="L71">        mCursor = c;</span>
+<span class="nc" id="L72">        mDataValid = cursorPresent;</span>
+<span class="nc bnc" id="L73" title="All 2 branches missed.">        mRowIDColumn = cursorPresent ? c.getColumnIndexOrThrow(&quot;_id&quot;) : -1;</span>
+
+<span class="nc" id="L75">        mChangeObserver = new ChangeObserver();</span>
+<span class="nc" id="L76">        mDataSetObserver = new MyDataSetObserver();</span>
+
+<span class="nc bnc" id="L78" title="All 2 branches missed.">        if (cursorPresent) {</span>
+<span class="nc bnc" id="L79" title="All 2 branches missed.">            if (mChangeObserver != null) c.registerContentObserver(mChangeObserver);</span>
+<span class="nc bnc" id="L80" title="All 2 branches missed.">            if (mDataSetObserver != null) c.registerDataSetObserver(mDataSetObserver);</span>
+        }
+<span class="nc" id="L82">    }</span>
+
+    /**
+     * This method will move the Cursor to the correct position and call
+     * {@link #onBindViewHolderCursor(android.support.v7.widget.RecyclerView.ViewHolder,
+     * android.database.Cursor)}.
+     *
+     * @param holder {@inheritDoc}
+     * @param i {@inheritDoc}
+     */
+    @Override
+    public void onBindViewHolder(VH holder, int i){
+<span class="nc bnc" id="L94" title="All 2 branches missed.">        if (!mDataValid) {</span>
+<span class="nc" id="L95">            throw new IllegalStateException(&quot;this should only be called when the cursor is valid&quot;);</span>
+        }
+<span class="nc bnc" id="L97" title="All 2 branches missed.">        if (!mCursor.moveToPosition(i)) {</span>
+<span class="nc" id="L98">            throw new IllegalStateException(&quot;couldn't move cursor to position &quot; + i);</span>
+        }
+<span class="nc" id="L100">        onBindViewHolderCursor(holder, mCursor);</span>
+<span class="nc" id="L101">    }</span>
+
+    /**
+     * See {@link android.widget.CursorAdapter#bindView(android.view.View, android.content.Context,
+     * android.database.Cursor)},
+     * {@link #onBindViewHolder(android.support.v7.widget.RecyclerView.ViewHolder, int)}
+     *
+     * @param holder View holder.
+     * @param cursor The cursor from which to get the data. The cursor is already
+     * moved to the correct position.
+     */
+    public abstract void onBindViewHolderCursor(VH holder, Cursor cursor);
+
+    @Override
+    public int getItemCount() {
+<span class="nc bnc" id="L116" title="All 4 branches missed.">        if (mDataValid &amp;&amp; mCursor != null) {</span>
+<span class="nc" id="L117">            return mCursor.getCount();</span>
+        } else {
+<span class="nc" id="L119">            return 0;</span>
+        }
+    }
+
+    /**
+     * @see android.widget.ListAdapter#getItemId(int)
+     */
+    @Override
+    public long getItemId(int position) {
+<span class="nc bnc" id="L128" title="All 4 branches missed.">        if (mDataValid &amp;&amp; mCursor != null) {</span>
+<span class="nc bnc" id="L129" title="All 2 branches missed.">            if (mCursor.moveToPosition(position)) {</span>
+<span class="nc" id="L130">                return mCursor.getLong(mRowIDColumn);</span>
+            } else {
+<span class="nc" id="L132">                return 0;</span>
+            }
+        } else {
+<span class="nc" id="L135">            return 0;</span>
+        }
+    }
+
+    public Cursor getCursor(){
+<span class="nc" id="L140">        return mCursor;</span>
+    }
+
+    /**
+     * Change the underlying cursor to a new cursor. If there is an existing cursor it will be
+     * closed.
+     *
+     * @param cursor The new cursor to be used
+     */
+    public void changeCursor(Cursor cursor) {
+<span class="nc" id="L150">        Cursor old = swapCursor(cursor);</span>
+<span class="nc bnc" id="L151" title="All 2 branches missed.">        if (old != null) {</span>
+<span class="nc" id="L152">            old.close();</span>
+        }
+<span class="nc" id="L154">    }</span>
+
+    /**
+     * Swap in a new Cursor, returning the old Cursor.  Unlike
+     * {@link #changeCursor(Cursor)}, the returned old Cursor is &lt;em&gt;not&lt;/em&gt;
+     * closed.
+     *
+     * @param newCursor The new cursor to be used.
+     * @return Returns the previously set Cursor, or null if there was not one.
+     * If the given new Cursor is the same instance is the previously set
+     * Cursor, null is also returned.
+     */
+    public Cursor swapCursor(Cursor newCursor) {
+<span class="nc bnc" id="L167" title="All 2 branches missed.">        if (newCursor == mCursor) {</span>
+<span class="nc" id="L168">            return null;</span>
+        }
+<span class="nc" id="L170">        Cursor oldCursor = mCursor;</span>
+<span class="nc bnc" id="L171" title="All 2 branches missed.">        if (oldCursor != null) {</span>
+<span class="nc bnc" id="L172" title="All 2 branches missed.">            if (mChangeObserver != null) oldCursor.unregisterContentObserver(mChangeObserver);</span>
+<span class="nc bnc" id="L173" title="All 2 branches missed.">            if (mDataSetObserver != null) oldCursor.unregisterDataSetObserver(mDataSetObserver);</span>
+        }
+<span class="nc" id="L175">        mCursor = newCursor;</span>
+<span class="nc bnc" id="L176" title="All 2 branches missed.">        if (newCursor != null) {</span>
+<span class="nc bnc" id="L177" title="All 2 branches missed.">            if (mChangeObserver != null) newCursor.registerContentObserver(mChangeObserver);</span>
+<span class="nc bnc" id="L178" title="All 2 branches missed.">            if (mDataSetObserver != null) newCursor.registerDataSetObserver(mDataSetObserver);</span>
+<span class="nc" id="L179">            mRowIDColumn = newCursor.getColumnIndexOrThrow(&quot;_id&quot;);</span>
+<span class="nc" id="L180">            mDataValid = true;</span>
+            // notify the observers about the new cursor
+<span class="nc" id="L182">            notifyDataSetChanged();</span>
+        } else {
+<span class="nc" id="L184">            mRowIDColumn = -1;</span>
+<span class="nc" id="L185">            mDataValid = false;</span>
+            // notify the observers about the lack of a data set
+            // notifyDataSetInvalidated();
+<span class="nc" id="L188">            notifyItemRangeRemoved(0, getItemCount());</span>
+        }
+<span class="nc" id="L190">        return oldCursor;</span>
+    }
+
+    /**
+     * &lt;p&gt;Converts the cursor into a CharSequence. Subclasses should override this
+     * method to convert their results. The default implementation returns an
+     * empty String for null values or the default String representation of
+     * the value.&lt;/p&gt;
+     *
+     * @param cursor the cursor to convert to a CharSequence
+     * @return a CharSequence representing the value
+     */
+    public CharSequence convertToString(Cursor cursor) {
+<span class="nc bnc" id="L203" title="All 2 branches missed.">        return cursor == null ? &quot;&quot; : cursor.toString();</span>
+    }
+
+    /**
+     * Runs a query with the specified constraint. This query is requested
+     * by the filter attached to this adapter.
+     *
+     * The query is provided by a
+     * {@link android.widget.FilterQueryProvider}.
+     * If no provider is specified, the current cursor is not filtered and returned.
+     *
+     * After this method returns the resulting cursor is passed to {@link #changeCursor(Cursor)}
+     * and the previous cursor is closed.
+     *
+     * This method is always executed on a background thread, not on the
+     * application's main thread (or UI thread.)
+     *
+     * Contract: when constraint is null or empty, the original results,
+     * prior to any filtering, must be returned.
+     *
+     * @param constraint the constraint with which the query must be filtered
+     *
+     * @return a Cursor representing the results of the new query
+     *
+     * @see #getFilter()
+     * @see #getFilterQueryProvider()
+     * @see #setFilterQueryProvider(android.widget.FilterQueryProvider)
+     */
+    public Cursor runQueryOnBackgroundThread(CharSequence constraint) {
+<span class="nc bnc" id="L232" title="All 2 branches missed.">        if (mFilterQueryProvider != null) {</span>
+<span class="nc" id="L233">            return mFilterQueryProvider.runQuery(constraint);</span>
+        }
+
+<span class="nc" id="L236">        return mCursor;</span>
+    }
+
+    public Filter getFilter() {
+<span class="nc bnc" id="L240" title="All 2 branches missed.">        if (mCursorFilter == null) {</span>
+<span class="nc" id="L241">            mCursorFilter = new CursorFilter(this);</span>
+        }
+<span class="nc" id="L243">        return mCursorFilter;</span>
+    }
+
+    /**
+     * Returns the query filter provider used for filtering. When the
+     * provider is null, no filtering occurs.
+     *
+     * @return the current filter query provider or null if it does not exist
+     *
+     * @see #setFilterQueryProvider(android.widget.FilterQueryProvider)
+     * @see #runQueryOnBackgroundThread(CharSequence)
+     */
+    public FilterQueryProvider getFilterQueryProvider() {
+<span class="nc" id="L256">        return mFilterQueryProvider;</span>
+    }
+
+    /**
+     * Sets the query filter provider used to filter the current Cursor.
+     * The provider's
+     * {@link android.widget.FilterQueryProvider#runQuery(CharSequence)}
+     * method is invoked when filtering is requested by a client of
+     * this adapter.
+     *
+     * @param filterQueryProvider the filter query provider or null to remove it
+     *
+     * @see #getFilterQueryProvider()
+     * @see #runQueryOnBackgroundThread(CharSequence)
+     */
+    public void setFilterQueryProvider(FilterQueryProvider filterQueryProvider) {
+<span class="nc" id="L272">        mFilterQueryProvider = filterQueryProvider;</span>
+<span class="nc" id="L273">    }</span>
+
+    /**
+     * Called when the {@link ContentObserver} on the cursor receives a change notification.
+     * Can be implemented by sub-class.
+     *
+     * @see ContentObserver#onChange(boolean)
+     */
+    protected void onContentChanged() {
+<span class="nc" id="L282">        notifyDataSetChanged();</span>
+<span class="nc" id="L283">    }</span>
+
+    private class ChangeObserver extends ContentObserver {
+<span class="nc" id="L286">        public ChangeObserver() {</span>
+<span class="nc" id="L287">            super(new Handler());</span>
+<span class="nc" id="L288">        }</span>
+
+        @Override
+        public boolean deliverSelfNotifications() {
+<span class="nc" id="L292">            return true;</span>
+        }
+
+        @Override
+        public void onChange(boolean selfChange) {
+<span class="nc" id="L297">            onContentChanged();</span>
+<span class="nc" id="L298">        }</span>
+    }
+
+<span class="nc" id="L301">    private class MyDataSetObserver extends DataSetObserver {</span>
+        @Override
+        public void onChanged() {
+<span class="nc" id="L304">            mDataValid = true;</span>
+<span class="nc" id="L305">            notifyDataSetChanged();</span>
+<span class="nc" id="L306">        }</span>
+
+        @Override
+        public void onInvalidated() {
+<span class="nc" id="L310">            mDataValid = false;</span>
+            // notifyDataSetInvalidated();
+<span class="nc" id="L312">            notifyItemRangeRemoved(0, getItemCount());</span>
+<span class="nc" id="L313">        }</span>
+    }
+
+    /**
+     * &lt;p&gt;The CursorFilter delegates most of the work to the CursorAdapter.
+     * Subclasses should override these delegate methods to run the queries
+     * and convert the results into String that can be used by auto-completion
+     * widgets.&lt;/p&gt;
+     */
+
+}
+
+class CursorFilter extends Filter {
+
+    CursorFilterClient mClient;
+
+    interface CursorFilterClient {
+        CharSequence convertToString(Cursor cursor);
+        Cursor runQueryOnBackgroundThread(CharSequence constraint);
+        Cursor getCursor();
+        void changeCursor(Cursor cursor);
+    }
+
+<span class="nc" id="L336">    CursorFilter(CursorFilterClient client) {</span>
+<span class="nc" id="L337">        mClient = client;</span>
+<span class="nc" id="L338">    }</span>
+
+    @Override
+    public CharSequence convertResultToString(Object resultValue) {
+<span class="nc" id="L342">        return mClient.convertToString((Cursor) resultValue);</span>
+    }
+
+    @Override
+    protected FilterResults performFiltering(CharSequence constraint) {
+<span class="nc" id="L347">        Cursor cursor = mClient.runQueryOnBackgroundThread(constraint);</span>
+
+<span class="nc" id="L349">        FilterResults results = new FilterResults();</span>
+<span class="nc bnc" id="L350" title="All 2 branches missed.">        if (cursor != null) {</span>
+<span class="nc" id="L351">            results.count = cursor.getCount();</span>
+<span class="nc" id="L352">            results.values = cursor;</span>
+        } else {
+<span class="nc" id="L354">            results.count = 0;</span>
+<span class="nc" id="L355">            results.values = null;</span>
+        }
+<span class="nc" id="L357">        return results;</span>
+    }
+
+    @Override
+    protected void publishResults(CharSequence constraint, FilterResults results) {
+<span class="nc" id="L362">        Cursor oldCursor = mClient.getCursor();</span>
+
+<span class="nc bnc" id="L364" title="All 4 branches missed.">        if (results.values != null &amp;&amp; results.values != oldCursor) {</span>
+<span class="nc" id="L365">            mClient.changeCursor((Cursor) results.values);</span>
+        }
+<span class="nc" id="L367">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

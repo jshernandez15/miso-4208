@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TransactionsDeleteConfirmationDialogFragment.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.ui.transaction.dialog</a> &gt; <span class="el_source">TransactionsDeleteConfirmationDialogFragment.java</span></div><h1>TransactionsDeleteConfirmationDialogFragment.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2013 - 2014 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ * Copyright (c) 2014 Yongxin Wang &lt;fefe.wyx@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.gnucash.android.ui.transaction.dialog;
+
+import android.app.AlertDialog;
+import android.app.Dialog;
+import android.content.DialogInterface;
+import android.os.Bundle;
+import android.support.v4.app.DialogFragment;
+
+import org.gnucash.android.R;
+import org.gnucash.android.app.GnuCashApplication;
+import org.gnucash.android.db.adapter.AccountsDbAdapter;
+import org.gnucash.android.db.adapter.DatabaseAdapter;
+import org.gnucash.android.db.adapter.TransactionsDbAdapter;
+import org.gnucash.android.export.xml.GncXmlExporter;
+import org.gnucash.android.model.Transaction;
+import org.gnucash.android.ui.common.Refreshable;
+import org.gnucash.android.ui.common.UxArgument;
+import org.gnucash.android.ui.homescreen.WidgetConfigurationActivity;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Displays a delete confirmation dialog for transactions
+ * If the transaction ID parameter is 0, then all transactions will be deleted
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ */
+<span class="nc" id="L45">public class TransactionsDeleteConfirmationDialogFragment extends DialogFragment {</span>
+
+    public static TransactionsDeleteConfirmationDialogFragment newInstance(int title, long id) {
+<span class="nc" id="L48">        TransactionsDeleteConfirmationDialogFragment frag = new TransactionsDeleteConfirmationDialogFragment();</span>
+<span class="nc" id="L49">        Bundle args = new Bundle();</span>
+<span class="nc" id="L50">        args.putInt(&quot;title&quot;, title);</span>
+<span class="nc" id="L51">        args.putLong(UxArgument.SELECTED_TRANSACTION_IDS, id);</span>
+<span class="nc" id="L52">        frag.setArguments(args);</span>
+<span class="nc" id="L53">        return frag;</span>
+    }
+
+    @Override    public Dialog onCreateDialog(Bundle savedInstanceState) {
+<span class="nc" id="L57">        int title = getArguments().getInt(&quot;title&quot;);</span>
+<span class="nc" id="L58">        final long rowId = getArguments().getLong(UxArgument.SELECTED_TRANSACTION_IDS);</span>
+<span class="nc bnc" id="L59" title="All 2 branches missed.">        int message = rowId == 0 ? R.string.msg_delete_all_transactions_confirmation : R.string.msg_delete_transaction_confirmation;</span>
+<span class="nc" id="L60">        return new AlertDialog.Builder(getActivity())</span>
+<span class="nc" id="L61">                .setIcon(android.R.drawable.ic_delete)</span>
+<span class="nc" id="L62">                .setTitle(title).setMessage(message)</span>
+<span class="nc" id="L63">                .setPositiveButton(R.string.alert_dialog_ok_delete,</span>
+<span class="nc" id="L64">                        new DialogInterface.OnClickListener() {</span>
+                            public void onClick(DialogInterface dialog, int whichButton) {
+<span class="nc" id="L66">                                TransactionsDbAdapter transactionsDbAdapter = TransactionsDbAdapter.getInstance();</span>
+<span class="nc bnc" id="L67" title="All 2 branches missed.">                                if (rowId == 0) {</span>
+<span class="nc" id="L68">                                    GncXmlExporter.createBackup(); //create backup before deleting everything</span>
+<span class="nc" id="L69">                                    List&lt;Transaction&gt; openingBalances = new ArrayList&lt;Transaction&gt;();</span>
+<span class="nc" id="L70">                                    boolean preserveOpeningBalances = GnuCashApplication.shouldSaveOpeningBalances(false);</span>
+<span class="nc bnc" id="L71" title="All 2 branches missed.">                                    if (preserveOpeningBalances) {</span>
+<span class="nc" id="L72">                                        openingBalances = AccountsDbAdapter.getInstance().getAllOpeningBalanceTransactions();</span>
+                                    }
+
+<span class="nc" id="L75">                                    transactionsDbAdapter.deleteAllRecords();</span>
+
+<span class="nc bnc" id="L77" title="All 2 branches missed.">                                    if (preserveOpeningBalances) {</span>
+<span class="nc" id="L78">                                        transactionsDbAdapter.bulkAddRecords(openingBalances, DatabaseAdapter.UpdateMethod.insert);</span>
+                                    }
+<span class="nc" id="L80">                                } else {</span>
+<span class="nc" id="L81">                                    transactionsDbAdapter.deleteRecord(rowId);</span>
+                                }
+<span class="nc bnc" id="L83" title="All 2 branches missed.">                                if (getTargetFragment() instanceof Refreshable) {</span>
+<span class="nc" id="L84">                                    ((Refreshable) getTargetFragment()).refresh();</span>
+                                }
+<span class="nc" id="L86">                                WidgetConfigurationActivity.updateAllWidgets(getActivity());</span>
+<span class="nc" id="L87">                            }</span>
+                        }
+                )
+<span class="nc" id="L90">                .setNegativeButton(R.string.alert_dialog_cancel,</span>
+<span class="nc" id="L91">                        new DialogInterface.OnClickListener() {</span>
+                            public void onClick(DialogInterface dialog, int whichButton) {
+<span class="nc" id="L93">                                dismiss();</span>
+<span class="nc" id="L94">                            }</span>
+                        }
+                )
+<span class="nc" id="L97">                .create();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

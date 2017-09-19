@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ReportsOverviewFragment.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.ui.report</a> &gt; <span class="el_source">ReportsOverviewFragment.java</span></div><h1>ReportsOverviewFragment.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2015 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.gnucash.android.ui.report;
+
+import android.content.res.ColorStateList;
+import android.os.Build;
+import android.os.Bundle;
+import android.support.annotation.Nullable;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.view.ViewCompat;
+import android.support.v7.widget.AppCompatButton;
+import android.view.Menu;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+
+import com.github.mikephil.charting.charts.PieChart;
+import com.github.mikephil.charting.components.Legend;
+import com.github.mikephil.charting.components.Legend.LegendForm;
+import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.data.PieData;
+import com.github.mikephil.charting.data.PieDataSet;
+
+import org.gnucash.android.R;
+import org.gnucash.android.db.adapter.AccountsDbAdapter;
+import org.gnucash.android.model.Account;
+import org.gnucash.android.model.AccountType;
+import org.gnucash.android.model.Money;
+import org.gnucash.android.ui.report.barchart.StackedBarChartFragment;
+import org.gnucash.android.ui.report.linechart.CashFlowLineChartFragment;
+import org.gnucash.android.ui.report.piechart.PieChartFragment;
+import org.gnucash.android.ui.report.sheet.BalanceSheetFragment;
+import org.gnucash.android.ui.transaction.TransactionsActivity;
+import org.joda.time.LocalDate;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import butterknife.BindView;
+import butterknife.OnClick;
+
+import static com.github.mikephil.charting.components.Legend.LegendPosition;
+
+/**
+ * Shows a summary of reports
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ */
+<span class="nc" id="L62">public class ReportsOverviewFragment extends BaseReportFragment {</span>
+
+    public static final int LEGEND_TEXT_SIZE = 14;
+
+    @BindView(R.id.btn_pie_chart) Button mPieChartButton;
+    @BindView(R.id.btn_bar_chart) Button mBarChartButton;
+    @BindView(R.id.btn_line_chart) Button mLineChartButton;
+    @BindView(R.id.btn_balance_sheet) Button mBalanceSheetButton;
+
+    @BindView(R.id.pie_chart) PieChart mChart;
+    @BindView(R.id.total_assets) TextView mTotalAssets;
+    @BindView(R.id.total_liabilities) TextView mTotalLiabilities;
+    @BindView(R.id.net_worth) TextView mNetWorth;
+
+    private AccountsDbAdapter mAccountsDbAdapter;
+    private Money mAssetsBalance;
+    private Money mLiabilitiesBalance;
+
+<span class="nc" id="L80">    private boolean mChartHasData = false;</span>
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+<span class="nc" id="L84">        super.onCreate(savedInstanceState);</span>
+<span class="nc" id="L85">        mAccountsDbAdapter = AccountsDbAdapter.getInstance();</span>
+<span class="nc" id="L86">    }</span>
+
+    @Override
+    public int getLayoutResource() {
+<span class="nc" id="L90">        return R.layout.fragment_report_summary;</span>
+    }
+
+    @Override
+    public int getTitle() {
+<span class="nc" id="L95">        return R.string.title_reports;</span>
+    }
+
+    @Override
+    public ReportType getReportType() {
+<span class="nc" id="L100">        return ReportType.NONE;</span>
+    }
+
+    @Override
+    public boolean requiresAccountTypeOptions() {
+<span class="nc" id="L105">        return false;</span>
+    }
+
+    @Override
+    public boolean requiresTimeRangeOptions() {
+<span class="nc" id="L110">        return false;</span>
+    }
+
+    @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+<span class="nc" id="L115">        super.onActivityCreated(savedInstanceState);</span>
+
+<span class="nc" id="L117">        setHasOptionsMenu(false);</span>
+
+<span class="nc" id="L119">        mChart.setCenterTextSize(PieChartFragment.CENTER_TEXT_SIZE);</span>
+<span class="nc" id="L120">        mChart.setDescription(&quot;&quot;);</span>
+<span class="nc" id="L121">        mChart.setDrawSliceText(false);</span>
+<span class="nc" id="L122">        Legend legend = mChart.getLegend();</span>
+<span class="nc" id="L123">        legend.setEnabled(true);</span>
+<span class="nc" id="L124">        legend.setWordWrapEnabled(true);</span>
+<span class="nc" id="L125">        legend.setForm(LegendForm.CIRCLE);</span>
+<span class="nc" id="L126">        legend.setPosition(LegendPosition.RIGHT_OF_CHART_CENTER);</span>
+<span class="nc" id="L127">        legend.setTextSize(LEGEND_TEXT_SIZE);</span>
+
+<span class="nc" id="L129">        ColorStateList csl = new ColorStateList(new int[][]{new int[0]}, new int[]{getResources().getColor(R.color.account_green)});</span>
+<span class="nc" id="L130">        setButtonTint(mPieChartButton, csl);</span>
+<span class="nc" id="L131">        csl = new ColorStateList(new int[][]{new int[0]}, new int[]{getResources().getColor(R.color.account_red)});</span>
+<span class="nc" id="L132">        setButtonTint(mBarChartButton, csl);</span>
+<span class="nc" id="L133">        csl = new ColorStateList(new int[][]{new int[0]}, new int[]{getResources().getColor(R.color.account_blue)});</span>
+<span class="nc" id="L134">        setButtonTint(mLineChartButton, csl);</span>
+<span class="nc" id="L135">        csl = new ColorStateList(new int[][]{new int[0]}, new int[]{getResources().getColor(R.color.account_purple)});</span>
+<span class="nc" id="L136">        setButtonTint(mBalanceSheetButton, csl);</span>
+<span class="nc" id="L137">    }</span>
+
+    @Override
+    public void onPrepareOptionsMenu(Menu menu) {
+<span class="nc" id="L141">        menu.findItem(R.id.menu_group_reports_by).setVisible(false);</span>
+<span class="nc" id="L142">    }</span>
+
+    @Override
+    protected void generateReport() {
+<span class="nc" id="L146">        PieData pieData = PieChartFragment.groupSmallerSlices(getData(), getActivity());</span>
+<span class="nc bnc" id="L147" title="All 4 branches missed.">        if (pieData != null &amp;&amp; pieData.getYValCount() != 0) {</span>
+<span class="nc" id="L148">            mChart.setData(pieData);</span>
+<span class="nc" id="L149">            float sum = mChart.getData().getYValueSum();</span>
+<span class="nc" id="L150">            String total = getResources().getString(R.string.label_chart_total);</span>
+<span class="nc" id="L151">            String currencySymbol = mCommodity.getSymbol();</span>
+<span class="nc" id="L152">            mChart.setCenterText(String.format(PieChartFragment.TOTAL_VALUE_LABEL_PATTERN, total, sum, currencySymbol));</span>
+<span class="nc" id="L153">            mChartHasData = true;</span>
+<span class="nc" id="L154">        } else {</span>
+<span class="nc" id="L155">            mChart.setData(getEmptyData());</span>
+<span class="nc" id="L156">            mChart.setCenterText(getResources().getString(R.string.label_chart_no_data));</span>
+<span class="nc" id="L157">            mChart.getLegend().setEnabled(false);</span>
+<span class="nc" id="L158">            mChartHasData = false;</span>
+        }
+
+<span class="nc" id="L161">        List&lt;AccountType&gt; accountTypes = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L162">        accountTypes.add(AccountType.ASSET);</span>
+<span class="nc" id="L163">        accountTypes.add(AccountType.CASH);</span>
+<span class="nc" id="L164">        accountTypes.add(AccountType.BANK);</span>
+<span class="nc" id="L165">        mAssetsBalance = mAccountsDbAdapter.getAccountBalance(accountTypes, -1, System.currentTimeMillis());</span>
+
+<span class="nc" id="L167">        accountTypes.clear();</span>
+<span class="nc" id="L168">        accountTypes.add(AccountType.LIABILITY);</span>
+<span class="nc" id="L169">        accountTypes.add(AccountType.CREDIT);</span>
+<span class="nc" id="L170">        mLiabilitiesBalance = mAccountsDbAdapter.getAccountBalance(accountTypes, -1, System.currentTimeMillis());</span>
+<span class="nc" id="L171">    }</span>
+
+    /**
+     * Returns {@code PieData} instance with data entries, colors and labels
+     * @return {@code PieData} instance
+     */
+    private PieData getData() {
+<span class="nc" id="L178">        PieDataSet dataSet = new PieDataSet(null, &quot;&quot;);</span>
+<span class="nc" id="L179">        List&lt;String&gt; labels = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L180">        List&lt;Integer&gt; colors = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L181" title="All 2 branches missed.">        for (Account account : mAccountsDbAdapter.getSimpleAccountList()) {</span>
+<span class="nc bnc" id="L182" title="All 2 branches missed.">            if (account.getAccountType() == AccountType.EXPENSE</span>
+<span class="nc bnc" id="L183" title="All 2 branches missed.">                    &amp;&amp; !account.isPlaceholderAccount()</span>
+<span class="nc bnc" id="L184" title="All 2 branches missed.">                    &amp;&amp; account.getCommodity().equals(mCommodity)) {</span>
+
+<span class="nc" id="L186">                long start = new LocalDate().minusMonths(2).dayOfMonth().withMinimumValue().toDate().getTime();</span>
+<span class="nc" id="L187">                long end = new LocalDate().plusDays(1).toDate().getTime();</span>
+<span class="nc" id="L188">                double balance = mAccountsDbAdapter.getAccountsBalance(</span>
+<span class="nc" id="L189">                        Collections.singletonList(account.getUID()), start, end).asDouble();</span>
+<span class="nc bnc" id="L190" title="All 2 branches missed.">                if (balance &gt; 0) {</span>
+<span class="nc" id="L191">                    dataSet.addEntry(new Entry((float) balance, dataSet.getEntryCount()));</span>
+<span class="nc bnc" id="L192" title="All 2 branches missed.">                    colors.add(account.getColor() != Account.DEFAULT_COLOR</span>
+<span class="nc" id="L193">                            ? account.getColor()</span>
+<span class="nc" id="L194">                            : ReportsActivity.COLORS[(dataSet.getEntryCount() - 1) % ReportsActivity.COLORS.length]);</span>
+<span class="nc" id="L195">                    labels.add(account.getName());</span>
+                }
+            }
+<span class="nc" id="L198">        }</span>
+<span class="nc" id="L199">        dataSet.setColors(colors);</span>
+<span class="nc" id="L200">        dataSet.setSliceSpace(PieChartFragment.SPACE_BETWEEN_SLICES);</span>
+<span class="nc" id="L201">        return new PieData(labels, dataSet);</span>
+    }
+
+    @Override
+    protected void displayReport() {
+<span class="nc bnc" id="L206" title="All 2 branches missed.">        if (mChartHasData){</span>
+<span class="nc" id="L207">            mChart.animateXY(1800, 1800);</span>
+<span class="nc" id="L208">            mChart.setTouchEnabled(true);</span>
+        } else {
+<span class="nc" id="L210">            mChart.setTouchEnabled(false);</span>
+        }
+<span class="nc" id="L212">        mChart.highlightValues(null);</span>
+<span class="nc" id="L213">        mChart.invalidate();</span>
+
+<span class="nc" id="L215">        TransactionsActivity.displayBalance(mTotalAssets, mAssetsBalance);</span>
+<span class="nc" id="L216">        TransactionsActivity.displayBalance(mTotalLiabilities, mLiabilitiesBalance);</span>
+<span class="nc" id="L217">        TransactionsActivity.displayBalance(mNetWorth, mAssetsBalance.subtract(mLiabilitiesBalance));</span>
+<span class="nc" id="L218">    }</span>
+
+    /**
+     * Returns a data object that represents situation when no user data available
+     * @return a {@code PieData} instance for situation when no user data available
+     */
+    private PieData getEmptyData() {
+<span class="nc" id="L225">        PieDataSet dataSet = new PieDataSet(null, getResources().getString(R.string.label_chart_no_data));</span>
+<span class="nc" id="L226">        dataSet.addEntry(new Entry(1, 0));</span>
+<span class="nc" id="L227">        dataSet.setColor(PieChartFragment.NO_DATA_COLOR);</span>
+<span class="nc" id="L228">        dataSet.setDrawValues(false);</span>
+<span class="nc" id="L229">        return new PieData(Collections.singletonList(&quot;&quot;), dataSet);</span>
+    }
+
+    @OnClick({R.id.btn_bar_chart, R.id.btn_pie_chart, R.id.btn_line_chart, R.id.btn_balance_sheet})
+    public void onClickChartTypeButton(View view){
+        BaseReportFragment fragment;
+<span class="nc bnc" id="L235" title="All 5 branches missed.">        switch (view.getId()){</span>
+            case R.id.btn_pie_chart:
+<span class="nc" id="L237">                fragment = new PieChartFragment();</span>
+<span class="nc" id="L238">                break;</span>
+            case R.id.btn_bar_chart:
+<span class="nc" id="L240">                fragment = new StackedBarChartFragment();</span>
+<span class="nc" id="L241">                break;</span>
+            case R.id.btn_line_chart:
+<span class="nc" id="L243">                fragment = new CashFlowLineChartFragment();</span>
+<span class="nc" id="L244">                break;</span>
+            case R.id.btn_balance_sheet:
+<span class="nc" id="L246">                fragment = new BalanceSheetFragment();</span>
+<span class="nc" id="L247">                break;</span>
+            default:
+<span class="nc" id="L249">                fragment = this;</span>
+                break;
+        }
+<span class="nc" id="L252">        FragmentManager fragmentManager = getActivity().getSupportFragmentManager();</span>
+<span class="nc" id="L253">        fragmentManager.beginTransaction()</span>
+<span class="nc" id="L254">                .replace(R.id.fragment_container, fragment)</span>
+<span class="nc" id="L255">                .commit();</span>
+<span class="nc" id="L256">    }</span>
+
+    public void setButtonTint(Button button, ColorStateList tint) {
+<span class="nc bnc" id="L259" title="All 4 branches missed.">        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.LOLLIPOP &amp;&amp; button instanceof AppCompatButton) {</span>
+<span class="nc" id="L260">            ((AppCompatButton) button).setSupportBackgroundTintList(tint);</span>
+        } else {
+<span class="nc" id="L262">            ViewCompat.setBackgroundTintList(button, tint);</span>
+        }
+<span class="nc" id="L264">        button.setTextColor(getResources().getColor(android.R.color.white));</span>
+<span class="nc" id="L265">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

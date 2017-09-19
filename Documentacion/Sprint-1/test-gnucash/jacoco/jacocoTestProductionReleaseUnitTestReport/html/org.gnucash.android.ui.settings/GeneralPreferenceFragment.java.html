@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GeneralPreferenceFragment.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.ui.settings</a> &gt; <span class="el_source">GeneralPreferenceFragment.java</span></div><h1>GeneralPreferenceFragment.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2014 - 2015 Oleksandr Tyshkovets &lt;olexandr.tyshkovets@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.ui.settings;
+
+import android.app.Activity;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.os.Bundle;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.preference.CheckBoxPreference;
+import android.support.v7.preference.Preference;
+import android.support.v7.preference.PreferenceFragmentCompat;
+import android.widget.Toast;
+
+import org.gnucash.android.R;
+import org.gnucash.android.ui.common.UxArgument;
+import org.gnucash.android.ui.passcode.PasscodeLockScreenActivity;
+import org.gnucash.android.ui.passcode.PasscodePreferenceActivity;
+
+/**
+ * Fragment for general preferences. Currently caters to the passcode and reporting preferences
+ * @author Oleksandr Tyshkovets &lt;olexandr.tyshkovets@gmail.com&gt;
+ */
+<span class="nc" id="L39">public class GeneralPreferenceFragment extends PreferenceFragmentCompat implements</span>
+        android.support.v7.preference.Preference.OnPreferenceChangeListener, Preference.OnPreferenceClickListener {
+
+    /**
+     * Request code for retrieving passcode to store
+     */
+    public static final int PASSCODE_REQUEST_CODE = 0x2;
+    /**
+     * Request code for disabling passcode
+     */
+    public static final int REQUEST_DISABLE_PASSCODE = 0x3;
+    /**
+     * Request code for changing passcode
+     */
+    public static final int REQUEST_CHANGE_PASSCODE = 0x4;
+
+    private SharedPreferences.Editor mEditor;
+    private CheckBoxPreference mCheckBoxPreference;
+
+    @Override
+    public void onCreatePreferences(Bundle bundle, String s) {
+<span class="nc" id="L60">        addPreferencesFromResource(R.xml.fragment_general_preferences);</span>
+<span class="nc" id="L61">    }</span>
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+<span class="nc" id="L65">        super.onCreate(savedInstanceState);</span>
+
+<span class="nc" id="L67">        ActionBar actionBar = ((AppCompatActivity) getActivity()).getSupportActionBar();</span>
+<span class="nc" id="L68">        actionBar.setHomeButtonEnabled(true);</span>
+<span class="nc" id="L69">        actionBar.setDisplayHomeAsUpEnabled(true);</span>
+<span class="nc" id="L70">        actionBar.setTitle(R.string.title_general_prefs);</span>
+<span class="nc" id="L71">    }</span>
+
+    @Override
+    public void onResume() {
+<span class="nc" id="L75">        super.onResume();</span>
+
+<span class="nc" id="L77">        final Intent intent = new Intent(getActivity(), PasscodePreferenceActivity.class);</span>
+
+<span class="nc" id="L79">        mCheckBoxPreference = (CheckBoxPreference) findPreference(getString(R.string.key_enable_passcode));</span>
+<span class="nc" id="L80">        mCheckBoxPreference.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {</span>
+            @Override
+            public boolean onPreferenceChange(Preference preference, Object newValue) {
+<span class="nc bnc" id="L83" title="All 2 branches missed.">                if ((Boolean) newValue) {</span>
+<span class="nc" id="L84">                    startActivityForResult(intent, PASSCODE_REQUEST_CODE);</span>
+                } else {
+<span class="nc" id="L86">                    Intent passIntent = new Intent(getActivity(), PasscodeLockScreenActivity.class);</span>
+<span class="nc" id="L87">                    passIntent.putExtra(UxArgument.DISABLE_PASSCODE, UxArgument.DISABLE_PASSCODE);</span>
+<span class="nc" id="L88">                    startActivityForResult(passIntent, REQUEST_DISABLE_PASSCODE);</span>
+                }
+<span class="nc" id="L90">                return true;</span>
+            }
+        });
+<span class="nc" id="L93">        findPreference(getString(R.string.key_change_passcode)).setOnPreferenceClickListener(this);</span>
+<span class="nc" id="L94">    }</span>
+
+    @Override
+    public boolean onPreferenceClick(Preference preference) {
+<span class="nc" id="L98">        String key = preference.getKey();</span>
+<span class="nc bnc" id="L99" title="All 2 branches missed.">        if (key.equals(getString(R.string.key_change_passcode))) {</span>
+<span class="nc" id="L100">            startActivityForResult(</span>
+<span class="nc" id="L101">                    new Intent(getActivity(), PasscodePreferenceActivity.class),</span>
+                    REQUEST_CHANGE_PASSCODE
+            );
+<span class="nc" id="L104">            return true;</span>
+        }
+<span class="nc" id="L106">        return false;</span>
+    }
+
+    @Override
+    public boolean onPreferenceChange(Preference preference, Object newValue) {
+<span class="nc bnc" id="L111" title="All 2 branches missed.">        if (preference.getKey().equals(getString(R.string.key_enable_passcode))) {</span>
+<span class="nc bnc" id="L112" title="All 2 branches missed.">            if ((Boolean) newValue) {</span>
+<span class="nc" id="L113">                startActivityForResult(new Intent(getActivity(), PasscodePreferenceActivity.class),</span>
+                        GeneralPreferenceFragment.PASSCODE_REQUEST_CODE);
+            } else {
+<span class="nc" id="L116">                Intent passIntent = new Intent(getActivity(), PasscodeLockScreenActivity.class);</span>
+<span class="nc" id="L117">                passIntent.putExtra(UxArgument.DISABLE_PASSCODE, UxArgument.DISABLE_PASSCODE);</span>
+<span class="nc" id="L118">                startActivityForResult(passIntent, GeneralPreferenceFragment.REQUEST_DISABLE_PASSCODE);</span>
+            }
+        }
+
+<span class="nc bnc" id="L122" title="All 2 branches missed.">        if (preference.getKey().equals(getString(R.string.key_use_account_color))) {</span>
+<span class="nc" id="L123">            getPreferenceManager().getSharedPreferences()</span>
+<span class="nc" id="L124">                    .edit()</span>
+<span class="nc" id="L125">                    .putBoolean(getString(R.string.key_use_account_color), Boolean.valueOf(newValue.toString()))</span>
+<span class="nc" id="L126">                    .commit();</span>
+        }
+<span class="nc" id="L128">        return true;</span>
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+<span class="nc" id="L133">        super.onActivityResult(requestCode, resultCode, data);</span>
+
+<span class="nc bnc" id="L135" title="All 2 branches missed.">        if (mEditor == null){</span>
+<span class="nc" id="L136">            mEditor = getPreferenceManager().getSharedPreferences().edit();</span>
+        }
+
+<span class="nc bnc" id="L139" title="All 4 branches missed.">        switch (requestCode) {</span>
+            case PASSCODE_REQUEST_CODE:
+<span class="nc bnc" id="L141" title="All 4 branches missed.">                if (resultCode == Activity.RESULT_OK &amp;&amp; data != null) {</span>
+<span class="nc" id="L142">                    mEditor.putString(UxArgument.PASSCODE, data.getStringExtra(UxArgument.PASSCODE));</span>
+<span class="nc" id="L143">                    mEditor.putBoolean(UxArgument.ENABLED_PASSCODE, true);</span>
+<span class="nc" id="L144">                    Toast.makeText(getActivity(), R.string.toast_passcode_set, Toast.LENGTH_SHORT).show();</span>
+                }
+<span class="nc bnc" id="L146" title="All 2 branches missed.">                if (resultCode == Activity.RESULT_CANCELED) {</span>
+<span class="nc" id="L147">                    mEditor.putBoolean(UxArgument.ENABLED_PASSCODE, false);</span>
+<span class="nc" id="L148">                    mCheckBoxPreference.setChecked(false);</span>
+                }
+                break;
+            case REQUEST_DISABLE_PASSCODE:
+<span class="nc bnc" id="L152" title="All 2 branches missed.">                boolean flag = resultCode != Activity.RESULT_OK;</span>
+<span class="nc" id="L153">                mEditor.putBoolean(UxArgument.ENABLED_PASSCODE, flag);</span>
+<span class="nc" id="L154">                mCheckBoxPreference.setChecked(flag);</span>
+<span class="nc" id="L155">                break;</span>
+            case REQUEST_CHANGE_PASSCODE:
+<span class="nc bnc" id="L157" title="All 4 branches missed.">                if (resultCode == Activity.RESULT_OK &amp;&amp; data != null) {</span>
+<span class="nc" id="L158">                    mEditor.putString(UxArgument.PASSCODE, data.getStringExtra(UxArgument.PASSCODE));</span>
+<span class="nc" id="L159">                    mEditor.putBoolean(UxArgument.ENABLED_PASSCODE, true);</span>
+<span class="nc" id="L160">                    Toast.makeText(getActivity(), R.string.toast_passcode_set, Toast.LENGTH_SHORT).show();</span>
+                }
+                break;
+        }
+<span class="nc" id="L164">        mEditor.commit();</span>
+<span class="nc" id="L165">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

@@ -1,0 +1,524 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Account.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.model</a> &gt; <span class="el_source">Account.java</span></div><h1>Account.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2012 - 2014 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.model;
+
+
+import android.graphics.Color;
+import android.support.annotation.NonNull;
+
+import org.gnucash.android.BuildConfig;
+import org.gnucash.android.export.ofx.OfxHelper;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * An account represents a transaction account in with {@link Transaction}s may be recorded
+ * Accounts have different types as specified by {@link AccountType} and also a currency with
+ * which transactions may be recorded in the account
+ * By default, an account is made an {@link AccountType#CASH} and the default currency is
+ * the currency of the Locale of the device on which the software is running. US Dollars is used
+ * if the platform locale cannot be determined.
+ *
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ * @see AccountType
+ */
+public class Account extends BaseModel {
+
+    /**
+     * The MIME type for accounts in GnucashMobile
+     * This is used when sending intents from third-party applications
+     */
+    public static final String MIME_TYPE = &quot;vnd.android.cursor.item/vnd.&quot; + BuildConfig.APPLICATION_ID + &quot;.account&quot;;
+
+    /**
+     * Default color, if not set explicitly through {@link #setColor(String)}.
+     */
+    // TODO: get it from a theme value?
+    public static final int DEFAULT_COLOR = Color.LTGRAY;
+
+    /**
+     * Accounts types which are used by the OFX standard
+     */
+<span class="nc" id="L60">    public enum OfxAccountType {</span>
+<span class="nc" id="L61">        CHECKING, SAVINGS, MONEYMRKT, CREDITLINE</span>
+    }
+
+    /**
+     * Name of this account
+     */
+    private String mName;
+
+    /**
+     * Fully qualified name of this account including the parent hierarchy.
+     * On instantiation of an account, the full name is set to the name by default
+     */
+    private String mFullName;
+
+    /**
+     * Account description
+     */
+<span class="nc" id="L78">    private String mDescription = &quot;&quot;;</span>
+
+    /**
+     * Commodity used by this account
+     */
+    private Commodity mCommodity;
+
+
+    /**
+     * Type of account
+     * Defaults to {@link AccountType#CASH}
+     */
+<span class="nc" id="L90">    private AccountType mAccountType = AccountType.CASH;</span>
+
+    /**
+     * List of transactions in this account
+     */
+<span class="nc" id="L95">    private List&lt;Transaction&gt; mTransactionsList = new ArrayList&lt;&gt;();</span>
+
+    /**
+     * Account UID of the parent account. Can be null
+     */
+    private String mParentAccountUID;
+
+    /**
+     * Save UID of a default account for transfers.
+     * All transactions in this account will by default be transfers to the other account
+     */
+    private String mDefaultTransferAccountUID;
+
+    /**
+     * Flag for placeholder accounts.
+     * These accounts cannot have transactions
+     */
+    private boolean mIsPlaceholderAccount;
+
+    /**
+     * Account color field in hex format #rrggbb
+     */
+<span class="nc" id="L117">    private int mColor = DEFAULT_COLOR;</span>
+
+    /**
+     * Flag which marks this account as a favorite account
+     */
+    private boolean mIsFavorite;
+
+    /**
+     * Flag which indicates if this account is a hidden account or not
+     */
+    private boolean mIsHidden;
+
+    /**
+     * An extra key for passing the currency code (according ISO 4217) in an intent
+     */
+    public static final String EXTRA_CURRENCY_CODE = &quot;org.gnucash.android.extra.currency_code&quot;;
+
+    /**
+     * Extra key for passing the unique ID of the parent account when creating a
+     * new account using Intents
+     */
+    public static final String EXTRA_PARENT_UID = &quot;org.gnucash.android.extra.parent_uid&quot;;
+
+    /**
+     * Constructor
+     * Creates a new account with the default currency and a generated unique ID
+     * @param name Name of the account
+     */
+<span class="nc" id="L145">    public Account(String name) {</span>
+<span class="nc" id="L146">        setName(name);</span>
+<span class="nc" id="L147">        this.mFullName = mName;</span>
+<span class="nc" id="L148">        setCommodity(Commodity.DEFAULT_COMMODITY);</span>
+<span class="nc" id="L149">    }</span>
+
+    /**
+     * Overloaded constructor
+     * @param name      Name of the account
+     * @param commodity {@link Commodity} to be used by transactions in this account
+     */
+<span class="nc" id="L156">    public Account(String name, @NonNull Commodity commodity) {</span>
+<span class="nc" id="L157">        setName(name);</span>
+<span class="nc" id="L158">        this.mFullName = mName;</span>
+<span class="nc" id="L159">        setCommodity(commodity);</span>
+<span class="nc" id="L160">    }</span>
+
+    /**
+     * Sets the name of the account
+     * @param name String name of the account
+     */
+    public void setName(String name) {
+<span class="nc" id="L167">        this.mName = name.trim();</span>
+<span class="nc" id="L168">    }</span>
+
+    /**
+     * Returns the name of the account
+     * @return String containing name of the account
+     */
+    public String getName() {
+<span class="nc" id="L175">        return mName;</span>
+    }
+
+    /**
+     * Returns the full name of this account.
+     * The full name is the full account hierarchy name
+     * @return Fully qualified name of the account
+     */
+    public String getFullName() {
+<span class="nc" id="L184">        return mFullName;</span>
+    }
+
+    /**
+     * Sets the fully qualified name of the account
+     * @param fullName Fully qualified account name
+     */
+    public void setFullName(String fullName) {
+<span class="nc" id="L192">        this.mFullName = fullName;</span>
+<span class="nc" id="L193">    }</span>
+
+    /**
+     * Returns the account description
+     * @return String with description
+     */
+    public String getDescription() {
+<span class="nc" id="L200">        return mDescription;</span>
+    }
+
+    /**
+     * Sets the account description
+     * @param description Account description
+     */
+    public void setDescription(@NonNull String description) {
+<span class="nc" id="L208">        this.mDescription = description;</span>
+<span class="nc" id="L209">    }</span>
+
+    /**
+     * Get the type of account
+     * @return {@link AccountType} type of account
+     */
+    public AccountType getAccountType() {
+<span class="nc" id="L216">        return mAccountType;</span>
+    }
+
+    /**
+     * Sets the type of account
+     * @param mAccountType Type of account
+     * @see AccountType
+     */
+    public void setAccountType(AccountType mAccountType) {
+<span class="nc" id="L225">        this.mAccountType = mAccountType;</span>
+<span class="nc" id="L226">    }</span>
+
+    /**
+     * Adds a transaction to this account
+     * @param transaction {@link Transaction} to be added to the account
+     */
+    public void addTransaction(Transaction transaction) {
+<span class="nc" id="L233">        transaction.setCommodity(mCommodity);</span>
+<span class="nc" id="L234">        mTransactionsList.add(transaction);</span>
+<span class="nc" id="L235">    }</span>
+
+    /**
+     * Sets a list of transactions for this account.
+     * Overrides any previous transactions with those in the list.
+     * The account UID and currency of the transactions will be set to the unique ID
+     * and currency of the account respectively
+     * @param transactionsList List of {@link Transaction}s to be set.
+     */
+    public void setTransactions(List&lt;Transaction&gt; transactionsList) {
+<span class="nc" id="L245">        this.mTransactionsList = transactionsList;</span>
+<span class="nc" id="L246">    }</span>
+
+    /**
+     * Returns a list of transactions for this account
+     * @return Array list of transactions for the account
+     */
+    public List&lt;Transaction&gt; getTransactions() {
+<span class="nc" id="L253">        return mTransactionsList;</span>
+    }
+
+    /**
+     * Returns the number of transactions in this account
+     * @return Number transactions in account
+     */
+    public int getTransactionCount() {
+<span class="nc" id="L261">        return mTransactionsList.size();</span>
+    }
+
+    /**
+     * Returns the aggregate of all transactions in this account.
+     * It takes into account debit and credit amounts, it does not however consider sub-accounts
+     * @return {@link Money} aggregate amount of all transactions in account.
+     */
+    public Money getBalance() {
+<span class="nc" id="L270">        Money balance = Money.createZeroInstance(mCommodity.getCurrencyCode());</span>
+<span class="nc bnc" id="L271" title="All 2 branches missed.">        for (Transaction transaction : mTransactionsList) {</span>
+<span class="nc" id="L272">            balance.add(transaction.getBalance(getUID()));</span>
+<span class="nc" id="L273">        }</span>
+<span class="nc" id="L274">        return balance;</span>
+    }
+
+    /**
+     * Returns the color of the account.
+     * @return Color of the account as an int as returned by {@link Color}.
+     */
+    public int getColor() {
+<span class="nc" id="L282">        return mColor;</span>
+    }
+
+    /**
+     * Sets the color of the account.
+     * @param color Color as an int as returned by {@link Color}.
+     * @throws java.lang.IllegalArgumentException if the color is transparent,
+     *   which is not supported.
+     */
+    public void setColor(int color) {
+<span class="nc bnc" id="L292" title="All 2 branches missed.">        if (Color.alpha(color) &lt; 255)</span>
+<span class="nc" id="L293">            throw new IllegalArgumentException(&quot;Transparent colors are not supported: &quot; + color);</span>
+<span class="nc" id="L294">        mColor = color;</span>
+<span class="nc" id="L295">    }</span>
+
+    /**
+     * Sets the color of the account.
+     * @param colorCode Color code to be set in the format #rrggbb
+     * @throws java.lang.IllegalArgumentException if the color code is not properly formatted or
+	 *   the color is transparent.
+     */
+    //TODO: Allow use of #aarrggbb format as well
+    public void setColor(@NonNull String colorCode) {
+<span class="nc" id="L305">        setColor(Color.parseColor(colorCode));</span>
+<span class="nc" id="L306">    }</span>
+
+    /**
+     * Tests if this account is a favorite account or not
+     * @return &lt;code&gt;true&lt;/code&gt; if account is flagged as favorite, &lt;code&gt;false&lt;/code&gt; otherwise
+     */
+    public boolean isFavorite() {
+<span class="nc" id="L313">        return mIsFavorite;</span>
+    }
+
+    /**
+     * Toggles the favorite flag on this account on or off
+     * @param isFavorite &lt;code&gt;true&lt;/code&gt; if account should be flagged as favorite, &lt;code&gt;false&lt;/code&gt; otherwise
+     */
+    public void setFavorite(boolean isFavorite) {
+<span class="nc" id="L321">        this.mIsFavorite = isFavorite;</span>
+<span class="nc" id="L322">    }</span>
+
+    /**
+     * Return the commodity for this account
+     */
+    @NonNull
+    public Commodity getCommodity() {
+<span class="nc" id="L329">        return mCommodity;</span>
+    }
+
+    /**
+     * Sets the commodity of this account
+     * @param commodity Commodity of the account
+     */
+    public void setCommodity(@NonNull Commodity commodity) {
+<span class="nc" id="L337">        this.mCommodity = commodity;</span>
+        //todo: should we also change commodity of transactions? Transactions can have splits from different accounts
+<span class="nc" id="L339">    }</span>
+
+    /**
+     * Sets the Unique Account Identifier of the parent account
+     * @param parentUID String Unique ID of parent account
+     */
+    public void setParentUID(String parentUID) {
+<span class="nc" id="L346">        mParentAccountUID = parentUID;</span>
+<span class="nc" id="L347">    }</span>
+
+    /**
+     * Returns the Unique Account Identifier of the parent account
+     * @return String Unique ID of parent account
+     */
+    public String getParentUID() {
+<span class="nc" id="L354">        return mParentAccountUID;</span>
+    }
+
+    /**
+     * Returns &lt;code&gt;true&lt;/code&gt; if this account is a placeholder account, &lt;code&gt;false&lt;/code&gt; otherwise.
+     * @return &lt;code&gt;true&lt;/code&gt; if this account is a placeholder account, &lt;code&gt;false&lt;/code&gt; otherwise
+     */
+    public boolean isPlaceholderAccount() {
+<span class="nc" id="L362">        return mIsPlaceholderAccount;</span>
+    }
+
+    /**
+     * Returns the hidden property of this account.
+     * &lt;p&gt;Hidden accounts are not visible in the UI&lt;/p&gt;
+     * @return &lt;code&gt;true&lt;/code&gt; if the account is hidden, &lt;code&gt;false&lt;/code&gt; otherwise.
+     */
+    public boolean isHidden() {
+<span class="nc" id="L371">        return mIsHidden;</span>
+    }
+
+    /**
+     * Toggles the hidden property of the account.
+     * &lt;p&gt;Hidden accounts are not visible in the UI&lt;/p&gt;
+     * @param hidden boolean specifying is hidden or not
+     */
+    public void setHidden(boolean hidden) {
+<span class="nc" id="L380">        this.mIsHidden = hidden;</span>
+<span class="nc" id="L381">    }</span>
+
+    /**
+     * Sets the placeholder flag for this account.
+     * Placeholder accounts cannot have transactions
+     * @param isPlaceholder Boolean flag indicating if the account is a placeholder account or not
+     */
+    public void setPlaceHolderFlag(boolean isPlaceholder) {
+<span class="nc" id="L389">        mIsPlaceholderAccount = isPlaceholder;</span>
+<span class="nc" id="L390">    }</span>
+
+    /**
+     * Return the unique ID of accounts to which to default transfer transactions to
+     * @return Unique ID string of default transfer account
+     */
+    public String getDefaultTransferAccountUID() {
+<span class="nc" id="L397">        return mDefaultTransferAccountUID;</span>
+    }
+
+    /**
+     * Set the unique ID of account which is the default transfer target
+     * @param defaultTransferAccountUID Unique ID string of default transfer account
+     */
+    public void setDefaultTransferAccountUID(String defaultTransferAccountUID) {
+<span class="nc" id="L405">        this.mDefaultTransferAccountUID = defaultTransferAccountUID;</span>
+<span class="nc" id="L406">    }</span>
+
+
+    /**
+     * Maps the &lt;code&gt;accountType&lt;/code&gt; to the corresponding account type.
+     * &lt;code&gt;accountType&lt;/code&gt; have corresponding values to GnuCash desktop
+     * @param accountType {@link AccountType} of an account
+     * @return Corresponding {@link OfxAccountType} for the &lt;code&gt;accountType&lt;/code&gt;
+     * @see AccountType
+     * @see OfxAccountType
+     */
+    public static OfxAccountType convertToOfxAccountType(AccountType accountType) {
+<span class="nc bnc" id="L418" title="All 5 branches missed.">        switch (accountType) {</span>
+            case CREDIT:
+            case LIABILITY:
+<span class="nc" id="L421">                return OfxAccountType.CREDITLINE;</span>
+
+            case CASH:
+            case INCOME:
+            case EXPENSE:
+            case PAYABLE:
+            case RECEIVABLE:
+<span class="nc" id="L428">                return OfxAccountType.CHECKING;</span>
+
+            case BANK:
+            case ASSET:
+<span class="nc" id="L432">                return OfxAccountType.SAVINGS;</span>
+
+            case MUTUAL:
+            case STOCK:
+            case EQUITY:
+            case CURRENCY:
+<span class="nc" id="L438">                return OfxAccountType.MONEYMRKT;</span>
+
+            default:
+<span class="nc" id="L441">                return OfxAccountType.CHECKING;</span>
+        }
+    }
+
+    /**
+     * Converts this account's transactions into XML and adds them to the DOM document
+     * @param doc             XML DOM document for the OFX data
+     * @param parent          Parent node to which to add this account's transactions in XML
+     * @param exportStartTime Time from which to export transactions which are created/modified after
+     */
+    public void toOfx(Document doc, Element parent, Timestamp exportStartTime) {
+<span class="nc" id="L452">        Element currency = doc.createElement(OfxHelper.TAG_CURRENCY_DEF);</span>
+<span class="nc" id="L453">        currency.appendChild(doc.createTextNode(mCommodity.getCurrencyCode()));</span>
+
+        //================= BEGIN BANK ACCOUNT INFO (BANKACCTFROM) =================================
+
+<span class="nc" id="L457">        Element bankId = doc.createElement(OfxHelper.TAG_BANK_ID);</span>
+<span class="nc" id="L458">        bankId.appendChild(doc.createTextNode(OfxHelper.APP_ID));</span>
+
+<span class="nc" id="L460">        Element acctId = doc.createElement(OfxHelper.TAG_ACCOUNT_ID);</span>
+<span class="nc" id="L461">        acctId.appendChild(doc.createTextNode(getUID()));</span>
+
+<span class="nc" id="L463">        Element accttype = doc.createElement(OfxHelper.TAG_ACCOUNT_TYPE);</span>
+<span class="nc" id="L464">        String ofxAccountType = convertToOfxAccountType(mAccountType).toString();</span>
+<span class="nc" id="L465">        accttype.appendChild(doc.createTextNode(ofxAccountType));</span>
+
+<span class="nc" id="L467">        Element bankFrom = doc.createElement(OfxHelper.TAG_BANK_ACCOUNT_FROM);</span>
+<span class="nc" id="L468">        bankFrom.appendChild(bankId);</span>
+<span class="nc" id="L469">        bankFrom.appendChild(acctId);</span>
+<span class="nc" id="L470">        bankFrom.appendChild(accttype);</span>
+
+        //================= END BANK ACCOUNT INFO ============================================
+
+
+        //================= BEGIN ACCOUNT BALANCE INFO =================================
+<span class="nc" id="L476">        String balance = getBalance().toPlainString();</span>
+<span class="nc" id="L477">        String formattedCurrentTimeString = OfxHelper.getFormattedCurrentTime();</span>
+
+<span class="nc" id="L479">        Element balanceAmount = doc.createElement(OfxHelper.TAG_BALANCE_AMOUNT);</span>
+<span class="nc" id="L480">        balanceAmount.appendChild(doc.createTextNode(balance));</span>
+<span class="nc" id="L481">        Element dtasof = doc.createElement(OfxHelper.TAG_DATE_AS_OF);</span>
+<span class="nc" id="L482">        dtasof.appendChild(doc.createTextNode(formattedCurrentTimeString));</span>
+
+<span class="nc" id="L484">        Element ledgerBalance = doc.createElement(OfxHelper.TAG_LEDGER_BALANCE);</span>
+<span class="nc" id="L485">        ledgerBalance.appendChild(balanceAmount);</span>
+<span class="nc" id="L486">        ledgerBalance.appendChild(dtasof);</span>
+
+        //================= END ACCOUNT BALANCE INFO =================================
+
+
+        //================= BEGIN TIME PERIOD INFO =================================
+
+<span class="nc" id="L493">        Element dtstart = doc.createElement(OfxHelper.TAG_DATE_START);</span>
+<span class="nc" id="L494">        dtstart.appendChild(doc.createTextNode(formattedCurrentTimeString));</span>
+
+<span class="nc" id="L496">        Element dtend = doc.createElement(OfxHelper.TAG_DATE_END);</span>
+<span class="nc" id="L497">        dtend.appendChild(doc.createTextNode(formattedCurrentTimeString));</span>
+
+        //================= END TIME PERIOD INFO =================================
+
+
+        //================= BEGIN TRANSACTIONS LIST =================================
+<span class="nc" id="L503">        Element bankTransactionsList = doc.createElement(OfxHelper.TAG_BANK_TRANSACTION_LIST);</span>
+<span class="nc" id="L504">        bankTransactionsList.appendChild(dtstart);</span>
+<span class="nc" id="L505">        bankTransactionsList.appendChild(dtend);</span>
+
+<span class="nc bnc" id="L507" title="All 2 branches missed.">        for (Transaction transaction : mTransactionsList) {</span>
+<span class="nc bnc" id="L508" title="All 2 branches missed.">            if (transaction.getModifiedTimestamp().before(exportStartTime))</span>
+<span class="nc" id="L509">                continue;</span>
+<span class="nc" id="L510">            bankTransactionsList.appendChild(transaction.toOFX(doc, getUID()));</span>
+<span class="nc" id="L511">        }</span>
+        //================= END TRANSACTIONS LIST =================================
+
+<span class="nc" id="L514">        Element statementTransactions = doc.createElement(OfxHelper.TAG_STATEMENT_TRANSACTIONS);</span>
+<span class="nc" id="L515">        statementTransactions.appendChild(currency);</span>
+<span class="nc" id="L516">        statementTransactions.appendChild(bankFrom);</span>
+<span class="nc" id="L517">        statementTransactions.appendChild(bankTransactionsList);</span>
+<span class="nc" id="L518">        statementTransactions.appendChild(ledgerBalance);</span>
+
+<span class="nc" id="L520">        parent.appendChild(statementTransactions);</span>
+
+<span class="nc" id="L522">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

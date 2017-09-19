@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BudgetsDbAdapter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.db.adapter</a> &gt; <span class="el_source">BudgetsDbAdapter.java</span></div><h1>BudgetsDbAdapter.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2015 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.db.adapter;
+
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteQueryBuilder;
+import android.database.sqlite.SQLiteStatement;
+import android.support.annotation.NonNull;
+
+import org.gnucash.android.app.GnuCashApplication;
+import org.gnucash.android.db.DatabaseSchema.BudgetAmountEntry;
+import org.gnucash.android.db.DatabaseSchema.BudgetEntry;
+import org.gnucash.android.model.Budget;
+import org.gnucash.android.model.BudgetAmount;
+import org.gnucash.android.model.Money;
+import org.gnucash.android.model.Recurrence;
+
+import java.util.ArrayList;
+import java.util.List;
+
+
+/**
+ * Database adapter for accessing {@link org.gnucash.android.model.Budget} records
+ */
+public class BudgetsDbAdapter extends DatabaseAdapter&lt;Budget&gt;{
+
+    private RecurrenceDbAdapter mRecurrenceDbAdapter;
+    private BudgetAmountsDbAdapter mBudgetAmountsDbAdapter;
+
+    /**
+     * Opens the database adapter with an existing database
+     *
+     * @param db        SQLiteDatabase object
+     */
+    public BudgetsDbAdapter(SQLiteDatabase db, BudgetAmountsDbAdapter budgetAmountsDbAdapter,
+                            RecurrenceDbAdapter recurrenceDbAdapter) {
+<span class="nc" id="L52">        super(db, BudgetEntry.TABLE_NAME, new String[]{</span>
+                BudgetEntry.COLUMN_NAME,
+                BudgetEntry.COLUMN_DESCRIPTION,
+                BudgetEntry.COLUMN_RECURRENCE_UID,
+                BudgetEntry.COLUMN_NUM_PERIODS
+        });
+<span class="nc" id="L58">        mRecurrenceDbAdapter = recurrenceDbAdapter;</span>
+<span class="nc" id="L59">        mBudgetAmountsDbAdapter = budgetAmountsDbAdapter;</span>
+<span class="nc" id="L60">    }</span>
+
+    /**
+     * Returns an instance of the budget database adapter
+     * @return BudgetsDbAdapter instance
+     */
+    public static BudgetsDbAdapter getInstance(){
+<span class="nc" id="L67">        return GnuCashApplication.getBudgetDbAdapter();</span>
+    }
+
+    @Override
+    public void addRecord(@NonNull Budget budget, UpdateMethod updateMethod) {
+<span class="nc bnc" id="L72" title="All 2 branches missed.">        if (budget.getBudgetAmounts().size() == 0)</span>
+<span class="nc" id="L73">            throw new IllegalArgumentException(&quot;Budgets must have budget amounts&quot;);</span>
+
+<span class="nc" id="L75">        mRecurrenceDbAdapter.addRecord(budget.getRecurrence(), updateMethod);</span>
+<span class="nc" id="L76">        super.addRecord(budget, updateMethod);</span>
+<span class="nc" id="L77">        mBudgetAmountsDbAdapter.deleteBudgetAmountsForBudget(budget.getUID());</span>
+<span class="nc bnc" id="L78" title="All 2 branches missed.">        for (BudgetAmount budgetAmount : budget.getBudgetAmounts()) {</span>
+<span class="nc" id="L79">            mBudgetAmountsDbAdapter.addRecord(budgetAmount, updateMethod);</span>
+<span class="nc" id="L80">        }</span>
+<span class="nc" id="L81">    }</span>
+
+    @Override
+    public long bulkAddRecords(@NonNull List&lt;Budget&gt; budgetList, UpdateMethod updateMethod) {
+<span class="nc" id="L85">        List&lt;BudgetAmount&gt; budgetAmountList = new ArrayList&lt;&gt;(budgetList.size()*2);</span>
+<span class="nc bnc" id="L86" title="All 2 branches missed.">        for (Budget budget : budgetList) {</span>
+<span class="nc" id="L87">            budgetAmountList.addAll(budget.getBudgetAmounts());</span>
+<span class="nc" id="L88">        }</span>
+
+        //first add the recurrences, they have no dependencies (foreign key constraints)
+<span class="nc" id="L91">        List&lt;Recurrence&gt; recurrenceList = new ArrayList&lt;&gt;(budgetList.size());</span>
+<span class="nc bnc" id="L92" title="All 2 branches missed.">        for (Budget budget : budgetList) {</span>
+<span class="nc" id="L93">            recurrenceList.add(budget.getRecurrence());</span>
+<span class="nc" id="L94">        }</span>
+<span class="nc" id="L95">        mRecurrenceDbAdapter.bulkAddRecords(recurrenceList, updateMethod);</span>
+
+        //now add the budgets themselves
+<span class="nc" id="L98">        long nRow = super.bulkAddRecords(budgetList, updateMethod);</span>
+
+        //then add the budget amounts, they require the budgets to exist
+<span class="nc bnc" id="L101" title="All 4 branches missed.">        if (nRow &gt; 0 &amp;&amp; !budgetAmountList.isEmpty()){</span>
+<span class="nc" id="L102">            mBudgetAmountsDbAdapter.bulkAddRecords(budgetAmountList, updateMethod);</span>
+        }
+
+<span class="nc" id="L105">        return nRow;</span>
+    }
+
+    @Override
+    public Budget buildModelInstance(@NonNull Cursor cursor) {
+<span class="nc" id="L110">        String name = cursor.getString(cursor.getColumnIndexOrThrow(BudgetEntry.COLUMN_NAME));</span>
+<span class="nc" id="L111">        String description = cursor.getString(cursor.getColumnIndexOrThrow(BudgetEntry.COLUMN_DESCRIPTION));</span>
+<span class="nc" id="L112">        String recurrenceUID = cursor.getString(cursor.getColumnIndexOrThrow(BudgetEntry.COLUMN_RECURRENCE_UID));</span>
+<span class="nc" id="L113">        long numPeriods = cursor.getLong(cursor.getColumnIndexOrThrow(BudgetEntry.COLUMN_NUM_PERIODS));</span>
+
+
+<span class="nc" id="L116">        Budget budget = new Budget(name);</span>
+<span class="nc" id="L117">        budget.setDescription(description);</span>
+<span class="nc" id="L118">        budget.setRecurrence(mRecurrenceDbAdapter.getRecord(recurrenceUID));</span>
+<span class="nc" id="L119">        budget.setNumberOfPeriods(numPeriods);</span>
+<span class="nc" id="L120">        populateBaseModelAttributes(cursor, budget);</span>
+<span class="nc" id="L121">        budget.setBudgetAmounts(mBudgetAmountsDbAdapter.getBudgetAmountsForBudget(budget.getUID()));</span>
+
+<span class="nc" id="L123">        return budget;</span>
+    }
+
+    @Override
+    protected @NonNull SQLiteStatement setBindings(@NonNull SQLiteStatement stmt, @NonNull final Budget budget) {
+<span class="nc" id="L128">        stmt.clearBindings();</span>
+<span class="nc" id="L129">        stmt.bindString(1, budget.getName());</span>
+<span class="nc bnc" id="L130" title="All 2 branches missed.">        if (budget.getDescription() != null)</span>
+<span class="nc" id="L131">            stmt.bindString(2, budget.getDescription());</span>
+<span class="nc" id="L132">        stmt.bindString(3, budget.getRecurrence().getUID());</span>
+<span class="nc" id="L133">        stmt.bindLong(4, budget.getNumberOfPeriods());</span>
+<span class="nc" id="L134">        stmt.bindString(5, budget.getUID());</span>
+
+<span class="nc" id="L136">        return stmt;</span>
+    }
+
+    /**
+     * Fetch all budgets which have an amount specified for the account
+     * @param accountUID GUID of account
+     * @return Cursor with budgets data
+     */
+    public Cursor fetchBudgetsForAccount(String accountUID){
+<span class="nc" id="L145">        SQLiteQueryBuilder queryBuilder = new SQLiteQueryBuilder();</span>
+<span class="nc" id="L146">        queryBuilder.setTables(BudgetEntry.TABLE_NAME + &quot;,&quot; + BudgetAmountEntry.TABLE_NAME</span>
+                + &quot; ON &quot; + BudgetEntry.TABLE_NAME + &quot;.&quot; + BudgetEntry.COLUMN_UID + &quot; = &quot;
+                + BudgetAmountEntry.TABLE_NAME + &quot;.&quot; + BudgetAmountEntry.COLUMN_BUDGET_UID);
+
+<span class="nc" id="L150">        queryBuilder.setDistinct(true);</span>
+<span class="nc" id="L151">        String[] projectionIn = new String[]{BudgetEntry.TABLE_NAME + &quot;.*&quot;};</span>
+<span class="nc" id="L152">        String selection = BudgetAmountEntry.TABLE_NAME + &quot;.&quot; + BudgetAmountEntry.COLUMN_ACCOUNT_UID + &quot; = ?&quot;;</span>
+<span class="nc" id="L153">        String[] selectionArgs = new String[]{accountUID};</span>
+<span class="nc" id="L154">        String sortOrder = BudgetEntry.TABLE_NAME + &quot;.&quot; + BudgetEntry.COLUMN_NAME + &quot; ASC&quot;;</span>
+
+<span class="nc" id="L156">        return queryBuilder.query(mDb, projectionIn, selection, selectionArgs, null, null, sortOrder);</span>
+    }
+
+    /**
+     * Returns the budgets associated with a specific account
+     * @param accountUID GUID of the account
+     * @return List of budgets for the account
+     */
+    public List&lt;Budget&gt; getAccountBudgets(String accountUID) {
+<span class="nc" id="L165">        Cursor cursor = fetchBudgetsForAccount(accountUID);</span>
+<span class="nc" id="L166">        List&lt;Budget&gt; budgets = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L167" title="All 2 branches missed.">        while(cursor.moveToNext()){</span>
+<span class="nc" id="L168">            budgets.add(buildModelInstance(cursor));</span>
+        }
+<span class="nc" id="L170">        cursor.close();</span>
+<span class="nc" id="L171">        return budgets;</span>
+    }
+
+    /**
+     * Returns the sum of the account balances for all accounts in a budget for a specified time period
+     * &lt;p&gt;This represents the total amount spent within the account of this budget in a given period&lt;/p&gt;
+     * @param budgetUID GUID of budget
+     * @param periodStart Start of the budgeting period in millis
+     * @param periodEnd End of the budgeting period in millis
+     * @return Balance of all the accounts
+     */
+    public Money getAccountSum(String budgetUID, long periodStart, long periodEnd){
+<span class="nc" id="L183">        List&lt;BudgetAmount&gt; budgetAmounts = mBudgetAmountsDbAdapter.getBudgetAmountsForBudget(budgetUID);</span>
+<span class="nc" id="L184">        List&lt;String&gt; accountUIDs = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L185" title="All 2 branches missed.">        for (BudgetAmount budgetAmount : budgetAmounts) {</span>
+<span class="nc" id="L186">            accountUIDs.add(budgetAmount.getAccountUID());</span>
+<span class="nc" id="L187">        }</span>
+
+<span class="nc" id="L189">        return new AccountsDbAdapter(mDb).getAccountsBalance(accountUIDs, periodStart, periodEnd);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

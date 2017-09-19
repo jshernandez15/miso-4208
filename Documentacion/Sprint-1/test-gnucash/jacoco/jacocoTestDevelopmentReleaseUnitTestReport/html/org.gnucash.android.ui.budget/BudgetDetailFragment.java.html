@@ -1,0 +1,311 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BudgetDetailFragment.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.ui.budget</a> &gt; <span class="el_source">BudgetDetailFragment.java</span></div><h1>BudgetDetailFragment.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2015 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.ui.budget;
+
+import android.app.Activity;
+import android.content.Intent;
+import android.content.res.Configuration;
+import android.graphics.Color;
+import android.os.Bundle;
+import android.support.annotation.Nullable;
+import android.support.v4.app.Fragment;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
+import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ProgressBar;
+import android.widget.TextView;
+
+import com.github.mikephil.charting.charts.BarChart;
+import com.github.mikephil.charting.components.LimitLine;
+import com.github.mikephil.charting.data.BarData;
+import com.github.mikephil.charting.data.BarDataSet;
+import com.github.mikephil.charting.data.BarEntry;
+
+import org.gnucash.android.R;
+import org.gnucash.android.db.DatabaseSchema;
+import org.gnucash.android.db.adapter.AccountsDbAdapter;
+import org.gnucash.android.db.adapter.BudgetsDbAdapter;
+import org.gnucash.android.model.Budget;
+import org.gnucash.android.model.BudgetAmount;
+import org.gnucash.android.model.Money;
+import org.gnucash.android.ui.common.FormActivity;
+import org.gnucash.android.ui.common.Refreshable;
+import org.gnucash.android.ui.common.UxArgument;
+import org.gnucash.android.ui.transaction.TransactionsActivity;
+import org.gnucash.android.ui.util.widget.EmptyRecyclerView;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.List;
+
+import butterknife.BindView;
+import butterknife.ButterKnife;
+
+/**
+ * Fragment for displaying budget details
+ */
+<span class="nc bnc" id="L70" title="All 2 branches missed.">public class BudgetDetailFragment extends Fragment implements Refreshable {</span>
+    @BindView(R.id.primary_text)        TextView mBudgetNameTextView;
+    @BindView(R.id.secondary_text)      TextView mBudgetDescriptionTextView;
+    @BindView(R.id.budget_recurrence)   TextView mBudgetRecurrence;
+    @BindView(R.id.budget_amount_recycler) EmptyRecyclerView mRecyclerView;
+
+    private String mBudgetUID;
+    private BudgetsDbAdapter mBudgetsDbAdapter;
+
+    public static BudgetDetailFragment newInstance(String budgetUID){
+<span class="nc" id="L80">        BudgetDetailFragment fragment = new BudgetDetailFragment();</span>
+<span class="nc" id="L81">        Bundle args = new Bundle();</span>
+<span class="nc" id="L82">        args.putString(UxArgument.BUDGET_UID, budgetUID);</span>
+<span class="nc" id="L83">        fragment.setArguments(args);</span>
+<span class="nc" id="L84">        return fragment;</span>
+    }
+
+    @Nullable
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+<span class="nc" id="L90">        View view = inflater.inflate(R.layout.fragment_budget_detail, container, false);</span>
+<span class="nc" id="L91">        ButterKnife.bind(this, view);</span>
+<span class="nc" id="L92">        mBudgetDescriptionTextView.setMaxLines(3);</span>
+
+<span class="nc" id="L94">        mRecyclerView.setHasFixedSize(true);</span>
+
+<span class="nc bnc" id="L96" title="All 2 branches missed.">        if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {</span>
+<span class="nc" id="L97">            GridLayoutManager gridLayoutManager = new GridLayoutManager(getActivity(), 2);</span>
+<span class="nc" id="L98">            mRecyclerView.setLayoutManager(gridLayoutManager);</span>
+<span class="nc" id="L99">        } else {</span>
+<span class="nc" id="L100">            LinearLayoutManager mLayoutManager = new LinearLayoutManager(getActivity());</span>
+<span class="nc" id="L101">            mRecyclerView.setLayoutManager(mLayoutManager);</span>
+        }
+<span class="nc" id="L103">        return view;</span>
+    }
+
+
+    @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+<span class="nc" id="L109">        super.onActivityCreated(savedInstanceState);</span>
+
+<span class="nc" id="L111">        mBudgetsDbAdapter = BudgetsDbAdapter.getInstance();</span>
+<span class="nc" id="L112">        mBudgetUID = getArguments().getString(UxArgument.BUDGET_UID);</span>
+<span class="nc" id="L113">        bindViews();</span>
+
+<span class="nc" id="L115">        setHasOptionsMenu(true);</span>
+<span class="nc" id="L116">    }</span>
+
+    private void bindViews(){
+<span class="nc" id="L119">        Budget budget = mBudgetsDbAdapter.getRecord(mBudgetUID);</span>
+<span class="nc" id="L120">        mBudgetNameTextView.setText(budget.getName());</span>
+
+<span class="nc" id="L122">        String description = budget.getDescription();</span>
+<span class="nc bnc" id="L123" title="All 4 branches missed.">        if (description != null &amp;&amp; !description.isEmpty())</span>
+<span class="nc" id="L124">            mBudgetDescriptionTextView.setText(description);</span>
+        else {
+<span class="nc" id="L126">            mBudgetDescriptionTextView.setVisibility(View.GONE);</span>
+        }
+<span class="nc" id="L128">        mBudgetRecurrence.setText(budget.getRecurrence().getRepeatString());</span>
+
+<span class="nc" id="L130">        mRecyclerView.setAdapter(new BudgetAmountAdapter());</span>
+<span class="nc" id="L131">    }</span>
+
+    @Override
+    public void onResume() {
+<span class="nc" id="L135">        super.onResume();</span>
+<span class="nc" id="L136">        refresh();</span>
+
+<span class="nc" id="L138">        View view = getActivity().findViewById(R.id.fab_create_budget);</span>
+<span class="nc bnc" id="L139" title="All 2 branches missed.">        if (view != null){</span>
+<span class="nc" id="L140">            view.setVisibility(View.GONE);</span>
+        }
+<span class="nc" id="L142">    }</span>
+
+    @Override
+    public void refresh() {
+<span class="nc" id="L146">        bindViews();</span>
+<span class="nc" id="L147">        String budgetName = mBudgetsDbAdapter.getAttribute(mBudgetUID, DatabaseSchema.BudgetEntry.COLUMN_NAME);</span>
+<span class="nc" id="L148">        ActionBar actionBar = ((AppCompatActivity) getActivity()).getSupportActionBar();</span>
+<span class="nc bnc" id="L149" title="All 4 branches missed.">        assert actionBar != null;</span>
+<span class="nc" id="L150">        actionBar.setTitle(&quot;Budget: &quot; + budgetName);</span>
+<span class="nc" id="L151">    }</span>
+
+    @Override
+    public void refresh(String budgetUID) {
+<span class="nc" id="L155">        mBudgetUID = budgetUID;</span>
+<span class="nc" id="L156">        refresh();</span>
+<span class="nc" id="L157">    }</span>
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+<span class="nc" id="L161">        inflater.inflate(R.menu.budget_actions, menu);</span>
+<span class="nc" id="L162">    }</span>
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+<span class="nc bnc" id="L166" title="All 2 branches missed.">        switch (item.getItemId()){</span>
+            case R.id.menu_edit_budget:
+<span class="nc" id="L168">                Intent addAccountIntent = new Intent(getActivity(), FormActivity.class);</span>
+<span class="nc" id="L169">                addAccountIntent.setAction(Intent.ACTION_INSERT_OR_EDIT);</span>
+<span class="nc" id="L170">                addAccountIntent.putExtra(UxArgument.FORM_TYPE, FormActivity.FormType.BUDGET.name());</span>
+<span class="nc" id="L171">                addAccountIntent.putExtra(UxArgument.BUDGET_UID, mBudgetUID);</span>
+<span class="nc" id="L172">                startActivityForResult(addAccountIntent, 0x11);</span>
+<span class="nc" id="L173">                return true;</span>
+
+            default:
+<span class="nc" id="L176">                return false;</span>
+        }
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+<span class="nc bnc" id="L182" title="All 2 branches missed.">        if (resultCode == Activity.RESULT_OK){</span>
+<span class="nc" id="L183">            refresh();</span>
+        }
+<span class="nc" id="L185">    }</span>
+
+
+    public class BudgetAmountAdapter extends RecyclerView.Adapter&lt;BudgetAmountAdapter.BudgetAmountViewHolder&gt;{
+        private List&lt;BudgetAmount&gt; mBudgetAmounts;
+        private Budget mBudget;
+
+<span class="nc" id="L192">        public BudgetAmountAdapter(){</span>
+<span class="nc" id="L193">            mBudget = mBudgetsDbAdapter.getRecord(mBudgetUID);</span>
+<span class="nc" id="L194">            mBudgetAmounts = mBudget.getCompactedBudgetAmounts();</span>
+<span class="nc" id="L195">        }</span>
+
+        @Override
+        public BudgetAmountViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+<span class="nc" id="L199">            View view = LayoutInflater.from(getActivity()).inflate(R.layout.cardview_budget_amount, parent, false);</span>
+<span class="nc" id="L200">            return new BudgetAmountViewHolder(view);</span>
+        }
+
+        @Override
+        public void onBindViewHolder(BudgetAmountViewHolder holder, final int position) {
+<span class="nc" id="L205">            BudgetAmount budgetAmount = mBudgetAmounts.get(position);</span>
+<span class="nc" id="L206">            Money projectedAmount = budgetAmount.getAmount();</span>
+<span class="nc" id="L207">            AccountsDbAdapter accountsDbAdapter = AccountsDbAdapter.getInstance();</span>
+
+<span class="nc" id="L209">            holder.budgetAccount.setText(accountsDbAdapter.getAccountFullName(budgetAmount.getAccountUID()));</span>
+<span class="nc" id="L210">            holder.budgetAmount.setText(projectedAmount.formattedString());</span>
+
+<span class="nc" id="L212">            Money spentAmount = accountsDbAdapter.getAccountBalance(budgetAmount.getAccountUID(),</span>
+<span class="nc" id="L213">                    mBudget.getStartofCurrentPeriod(), mBudget.getEndOfCurrentPeriod());</span>
+
+<span class="nc" id="L215">            holder.budgetSpent.setText(spentAmount.abs().formattedString());</span>
+<span class="nc" id="L216">            holder.budgetLeft.setText(projectedAmount.subtract(spentAmount.abs()).formattedString());</span>
+
+<span class="nc" id="L218">            double budgetProgress = 0;</span>
+<span class="nc bnc" id="L219" title="All 2 branches missed.">            if (projectedAmount.asDouble() != 0){</span>
+<span class="nc" id="L220">                budgetProgress = spentAmount.asBigDecimal().divide(projectedAmount.asBigDecimal(),</span>
+<span class="nc" id="L221">                        spentAmount.getCommodity().getSmallestFractionDigits(),</span>
+<span class="nc" id="L222">                        RoundingMode.HALF_EVEN).doubleValue();</span>
+            }
+
+<span class="nc" id="L225">            holder.budgetIndicator.setProgress((int) (budgetProgress * 100));</span>
+<span class="nc" id="L226">            holder.budgetSpent.setTextColor(BudgetsActivity.getBudgetProgressColor(1 - budgetProgress));</span>
+<span class="nc" id="L227">            holder.budgetLeft.setTextColor(BudgetsActivity.getBudgetProgressColor(1 - budgetProgress));</span>
+
+<span class="nc" id="L229">            generateChartData(holder.budgetChart, budgetAmount);</span>
+
+<span class="nc" id="L231">            holder.itemView.setOnClickListener(new View.OnClickListener() {</span>
+                @Override
+                public void onClick(View v) {
+<span class="nc" id="L234">                    Intent intent = new Intent(getActivity(), TransactionsActivity.class);</span>
+<span class="nc" id="L235">                    intent.putExtra(UxArgument.SELECTED_ACCOUNT_UID, mBudgetAmounts.get(position).getAccountUID());</span>
+<span class="nc" id="L236">                    startActivityForResult(intent, 0x10);</span>
+<span class="nc" id="L237">                }</span>
+            });
+<span class="nc" id="L239">        }</span>
+
+        /**
+         * Generate the chart data for the chart
+         * @param barChart View where to display the chart
+         * @param budgetAmount BudgetAmount to visualize
+         */
+        public void generateChartData(BarChart barChart, BudgetAmount budgetAmount) {
+            // FIXME: 25.10.15 chart is broken
+
+<span class="nc" id="L249">            AccountsDbAdapter accountsDbAdapter = AccountsDbAdapter.getInstance();</span>
+
+<span class="nc" id="L251">            List&lt;BarEntry&gt; barEntries = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L252">            List&lt;String&gt; xVals = new ArrayList&lt;&gt;();</span>
+
+            //todo: refactor getNumberOfPeriods into budget
+<span class="nc" id="L255">            int budgetPeriods = (int) mBudget.getNumberOfPeriods();</span>
+<span class="nc bnc" id="L256" title="All 2 branches missed.">            budgetPeriods = budgetPeriods == 0 ? 12 : budgetPeriods;</span>
+<span class="nc" id="L257">            int periods = mBudget.getRecurrence().getNumberOfPeriods(budgetPeriods); //// FIXME: 15.08.2016 why do we need number of periods</span>
+
+<span class="nc bnc" id="L259" title="All 2 branches missed.">            for (int periodNum = 1; periodNum &lt;= periods; periodNum++) {</span>
+<span class="nc" id="L260">                BigDecimal amount = accountsDbAdapter.getAccountBalance(budgetAmount.getAccountUID(),</span>
+<span class="nc" id="L261">                        mBudget.getStartOfPeriod(periodNum), mBudget.getEndOfPeriod(periodNum))</span>
+<span class="nc" id="L262">                        .asBigDecimal();</span>
+
+<span class="nc bnc" id="L264" title="All 2 branches missed.">                if (amount.equals(BigDecimal.ZERO))</span>
+<span class="nc" id="L265">                    continue;</span>
+
+<span class="nc" id="L267">                barEntries.add(new BarEntry(amount.floatValue(), periodNum));</span>
+<span class="nc" id="L268">                xVals.add(mBudget.getRecurrence().getTextOfCurrentPeriod(periodNum));</span>
+            }
+
+<span class="nc" id="L271">            String label = accountsDbAdapter.getAccountName(budgetAmount.getAccountUID());</span>
+<span class="nc" id="L272">            BarDataSet barDataSet = new BarDataSet(barEntries, label);</span>
+
+<span class="nc" id="L274">            BarData barData = new BarData(xVals, barDataSet);</span>
+<span class="nc" id="L275">            LimitLine limitLine = new LimitLine(budgetAmount.getAmount().asBigDecimal().floatValue());</span>
+<span class="nc" id="L276">            limitLine.setLineWidth(2f);</span>
+<span class="nc" id="L277">            limitLine.setLineColor(Color.RED);</span>
+
+
+<span class="nc" id="L280">            barChart.setData(barData);</span>
+<span class="nc" id="L281">            barChart.getAxisLeft().addLimitLine(limitLine);</span>
+<span class="nc" id="L282">            BigDecimal maxValue = budgetAmount.getAmount().add(budgetAmount.getAmount().multiply(new BigDecimal(&quot;0.2&quot;))).asBigDecimal();</span>
+<span class="nc" id="L283">            barChart.getAxisLeft().setAxisMaxValue(maxValue.floatValue());</span>
+<span class="nc" id="L284">            barChart.animateX(1000);</span>
+<span class="nc" id="L285">            barChart.setAutoScaleMinMaxEnabled(true);</span>
+<span class="nc" id="L286">            barChart.setDrawValueAboveBar(true);</span>
+<span class="nc" id="L287">            barChart.invalidate();</span>
+<span class="nc" id="L288">        }</span>
+
+        @Override
+        public int getItemCount() {
+<span class="nc" id="L292">            return mBudgetAmounts.size();</span>
+        }
+
+        class BudgetAmountViewHolder extends RecyclerView.ViewHolder {
+            @BindView(R.id.budget_account)      TextView budgetAccount;
+            @BindView(R.id.budget_amount)       TextView budgetAmount;
+            @BindView(R.id.budget_spent)        TextView budgetSpent;
+            @BindView(R.id.budget_left)         TextView budgetLeft;
+            @BindView(R.id.budget_indicator)    ProgressBar budgetIndicator;
+            @BindView(R.id.budget_chart)        BarChart budgetChart;
+
+<span class="nc" id="L303">            public BudgetAmountViewHolder(View itemView) {</span>
+<span class="nc" id="L304">                super(itemView);</span>
+<span class="nc" id="L305">                ButterKnife.bind(this, itemView);</span>
+<span class="nc" id="L306">            }</span>
+
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PricesDbAdapter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.db.adapter</a> &gt; <span class="el_source">PricesDbAdapter.java</span></div><h1>PricesDbAdapter.java</h1><pre class="source lang-java linenums">package org.gnucash.android.db.adapter;
+
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteStatement;
+import android.support.annotation.NonNull;
+import android.util.Pair;
+
+import org.gnucash.android.app.GnuCashApplication;
+import org.gnucash.android.model.Price;
+import org.gnucash.android.util.TimestampHelper;
+
+import static org.gnucash.android.db.DatabaseSchema.PriceEntry;
+
+/**
+ * Database adapter for prices
+ */
+public class PricesDbAdapter extends DatabaseAdapter&lt;Price&gt; {
+    /**
+     * Opens the database adapter with an existing database
+     * @param db SQLiteDatabase object
+     */
+    public PricesDbAdapter(SQLiteDatabase db) {
+<span class="nc" id="L24">        super(db, PriceEntry.TABLE_NAME, new String[]{</span>
+                PriceEntry.COLUMN_COMMODITY_UID,
+                PriceEntry.COLUMN_CURRENCY_UID,
+                PriceEntry.COLUMN_DATE,
+                PriceEntry.COLUMN_SOURCE,
+                PriceEntry.COLUMN_TYPE,
+                PriceEntry.COLUMN_VALUE_NUM,
+                PriceEntry.COLUMN_VALUE_DENOM
+        });
+<span class="nc" id="L33">    }</span>
+
+    public static PricesDbAdapter getInstance(){
+<span class="nc" id="L36">        return GnuCashApplication.getPricesDbAdapter();</span>
+    }
+
+    @Override
+    protected @NonNull SQLiteStatement setBindings(@NonNull SQLiteStatement stmt, @NonNull final Price price) {
+<span class="nc" id="L41">        stmt.clearBindings();</span>
+<span class="nc" id="L42">        stmt.bindString(1, price.getCommodityUID());</span>
+<span class="nc" id="L43">        stmt.bindString(2, price.getCurrencyUID());</span>
+<span class="nc" id="L44">        stmt.bindString(3, price.getDate().toString());</span>
+<span class="nc bnc" id="L45" title="All 2 branches missed.">        if (price.getSource() != null) {</span>
+<span class="nc" id="L46">            stmt.bindString(4, price.getSource());</span>
+        }
+<span class="nc bnc" id="L48" title="All 2 branches missed.">        if (price.getType() != null) {</span>
+<span class="nc" id="L49">            stmt.bindString(5, price.getType());</span>
+        }
+<span class="nc" id="L51">        stmt.bindLong(6, price.getValueNum());</span>
+<span class="nc" id="L52">        stmt.bindLong(7, price.getValueDenom());</span>
+<span class="nc" id="L53">        stmt.bindString(8, price.getUID());</span>
+
+<span class="nc" id="L55">        return stmt;</span>
+    }
+
+    @Override
+    public Price buildModelInstance(@NonNull final Cursor cursor) {
+<span class="nc" id="L60">        String commodityUID = cursor.getString(cursor.getColumnIndexOrThrow(PriceEntry.COLUMN_COMMODITY_UID));</span>
+<span class="nc" id="L61">        String currencyUID  = cursor.getString(cursor.getColumnIndexOrThrow(PriceEntry.COLUMN_CURRENCY_UID));</span>
+<span class="nc" id="L62">        String dateString   = cursor.getString(cursor.getColumnIndexOrThrow(PriceEntry.COLUMN_DATE));</span>
+<span class="nc" id="L63">        String source       = cursor.getString(cursor.getColumnIndexOrThrow(PriceEntry.COLUMN_SOURCE));</span>
+<span class="nc" id="L64">        String type         = cursor.getString(cursor.getColumnIndexOrThrow(PriceEntry.COLUMN_TYPE));</span>
+<span class="nc" id="L65">        long valueNum     = cursor.getLong(cursor.getColumnIndexOrThrow(PriceEntry.COLUMN_VALUE_NUM));</span>
+<span class="nc" id="L66">        long valueDenom   = cursor.getLong(cursor.getColumnIndexOrThrow(PriceEntry.COLUMN_VALUE_DENOM));</span>
+
+<span class="nc" id="L68">        Price price = new Price(commodityUID, currencyUID);</span>
+<span class="nc" id="L69">        price.setDate(TimestampHelper.getTimestampFromUtcString(dateString));</span>
+<span class="nc" id="L70">        price.setSource(source);</span>
+<span class="nc" id="L71">        price.setType(type);</span>
+<span class="nc" id="L72">        price.setValueNum(valueNum);</span>
+<span class="nc" id="L73">        price.setValueDenom(valueDenom);</span>
+
+<span class="nc" id="L75">        populateBaseModelAttributes(cursor, price);</span>
+<span class="nc" id="L76">        return price;</span>
+    }
+
+    /**
+     * Get the price for commodity / currency pair.
+     * The price can be used to convert from one commodity to another. The 'commodity' is the origin and the 'currency' is the target for the conversion.
+     *
+     * &lt;p&gt;Pair is used instead of Price object because we must sometimes invert the commodity/currency in DB,
+     * rendering the Price UID invalid.&lt;/p&gt;
+     *
+     * @param commodityUID GUID of the commodity which is starting point for conversion
+     * @param currencyUID GUID of target commodity for the conversion
+     *
+     * @return The numerator/denominator pair for commodity / currency pair
+     */
+    public Pair&lt;Long, Long&gt; getPrice(@NonNull String commodityUID, @NonNull String currencyUID) {
+<span class="nc" id="L92">        Pair&lt;Long, Long&gt; pairZero = new Pair&lt;&gt;(0L, 0L);</span>
+<span class="nc bnc" id="L93" title="All 2 branches missed.">        if (commodityUID.equals(currencyUID))</span>
+        {
+<span class="nc" id="L95">            return new Pair&lt;Long, Long&gt;(1L, 1L);</span>
+        }
+<span class="nc" id="L97">        Cursor cursor = mDb.query(PriceEntry.TABLE_NAME, null,</span>
+                // the commodity and currency can be swapped
+                &quot;( &quot; + PriceEntry.COLUMN_COMMODITY_UID + &quot; = ? AND &quot; + PriceEntry.COLUMN_CURRENCY_UID + &quot; = ? ) OR ( &quot;
+                + PriceEntry.COLUMN_COMMODITY_UID + &quot; = ? AND &quot; + PriceEntry.COLUMN_CURRENCY_UID + &quot; = ? )&quot;,
+                new String[]{commodityUID, currencyUID, currencyUID, commodityUID}, null, null,
+                // only get the latest price
+                PriceEntry.COLUMN_DATE + &quot; DESC&quot;, &quot;1&quot;);
+        try {
+<span class="nc bnc" id="L105" title="All 2 branches missed.">            if (cursor.moveToNext()) {</span>
+<span class="nc" id="L106">                String commodityUIDdb = cursor.getString(cursor.getColumnIndexOrThrow(PriceEntry.COLUMN_COMMODITY_UID));</span>
+<span class="nc" id="L107">                long valueNum     = cursor.getLong(cursor.getColumnIndexOrThrow(PriceEntry.COLUMN_VALUE_NUM));</span>
+<span class="nc" id="L108">                long valueDenom   = cursor.getLong(cursor.getColumnIndexOrThrow(PriceEntry.COLUMN_VALUE_DENOM));</span>
+<span class="nc bnc" id="L109" title="All 4 branches missed.">                if (valueNum &lt; 0 || valueDenom &lt; 0) {</span>
+                    // this should not happen
+<span class="nc" id="L111">                    return pairZero;</span>
+                }
+<span class="nc bnc" id="L113" title="All 2 branches missed.">                if (!commodityUIDdb.equals(commodityUID)) {</span>
+                    // swap Num and denom
+<span class="nc" id="L115">                    long t = valueNum;</span>
+<span class="nc" id="L116">                    valueNum = valueDenom;</span>
+<span class="nc" id="L117">                    valueDenom = t;</span>
+                }
+<span class="nc" id="L119">                return new Pair&lt;Long, Long&gt;(valueNum, valueDenom);</span>
+            } else {
+<span class="nc" id="L121">                return pairZero;</span>
+            }
+        } finally {
+<span class="nc" id="L124">            cursor.close();</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

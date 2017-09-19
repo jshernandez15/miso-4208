@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RecurrenceParser.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.ui.util</a> &gt; <span class="el_source">RecurrenceParser.java</span></div><h1>RecurrenceParser.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2014 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.ui.util;
+
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.text.format.Time;
+
+import com.codetroopers.betterpickers.recurrencepicker.EventRecurrence;
+
+import org.gnucash.android.model.PeriodType;
+import org.gnucash.android.model.Recurrence;
+
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.List;
+
+/**
+ * Parses {@link EventRecurrence}s to generate
+ * {@link org.gnucash.android.model.ScheduledAction}s
+ *
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ */
+<span class="nc" id="L40">public class RecurrenceParser {</span>
+    //these are time millisecond constants which are used for scheduled actions.
+    //they may not be calendar accurate, but they serve the purpose for scheduling approximate time for background service execution
+    public static final long SECOND_MILLIS  = 1000;
+    public static final long MINUTE_MILLIS  = 60 * SECOND_MILLIS;
+    public static final long HOUR_MILLIS    = 60 * MINUTE_MILLIS;
+    public static final long DAY_MILLIS     = 24 * HOUR_MILLIS;
+    public static final long WEEK_MILLIS    = 7 * DAY_MILLIS;
+    public static final long MONTH_MILLIS   = 30 * DAY_MILLIS;
+    public static final long YEAR_MILLIS    = 12 * MONTH_MILLIS;
+
+    /**
+     * Parse an {@link EventRecurrence} into a {@link Recurrence} object
+     * @param eventRecurrence EventRecurrence object
+     * @return Recurrence object
+     */
+    public static Recurrence parse(EventRecurrence eventRecurrence){
+<span class="nc bnc" id="L57" title="All 2 branches missed.">        if (eventRecurrence == null)</span>
+<span class="nc" id="L58">            return null;</span>
+
+        PeriodType periodType;
+<span class="nc bnc" id="L61" title="All 6 branches missed.">        switch(eventRecurrence.freq){</span>
+            case EventRecurrence.HOURLY:
+<span class="nc" id="L63">                periodType = PeriodType.HOUR;</span>
+<span class="nc" id="L64">                break;</span>
+
+            case EventRecurrence.DAILY:
+<span class="nc" id="L67">                periodType = PeriodType.DAY;</span>
+<span class="nc" id="L68">                break;</span>
+
+            case EventRecurrence.WEEKLY:
+<span class="nc" id="L71">                periodType = PeriodType.WEEK;</span>
+<span class="nc" id="L72">                break;</span>
+
+            case EventRecurrence.MONTHLY:
+<span class="nc" id="L75">                periodType = PeriodType.MONTH;</span>
+<span class="nc" id="L76">                break;</span>
+
+            case EventRecurrence.YEARLY:
+<span class="nc" id="L79">                periodType = PeriodType.YEAR;</span>
+<span class="nc" id="L80">                break;</span>
+
+            default:
+<span class="nc" id="L83">                periodType = PeriodType.MONTH;</span>
+                break;
+        }
+
+<span class="nc bnc" id="L87" title="All 2 branches missed.">        int interval = eventRecurrence.interval == 0 ? 1 : eventRecurrence.interval; //bug from betterpickers library sometimes returns 0 as the interval</span>
+<span class="nc" id="L88">        Recurrence recurrence = new Recurrence(periodType);</span>
+<span class="nc" id="L89">        recurrence.setMultiplier(interval);</span>
+<span class="nc" id="L90">        parseEndTime(eventRecurrence, recurrence);</span>
+<span class="nc" id="L91">        recurrence.setByDays(parseByDay(eventRecurrence.byday));</span>
+<span class="nc bnc" id="L92" title="All 2 branches missed.">        if (eventRecurrence.startDate != null)</span>
+<span class="nc" id="L93">            recurrence.setPeriodStart(new Timestamp(eventRecurrence.startDate.toMillis(false)));</span>
+
+<span class="nc" id="L95">        return recurrence;</span>
+    }
+
+    /**
+     * Parses the end time from an EventRecurrence object and sets it to the &lt;code&gt;scheduledEvent&lt;/code&gt;.
+     * The end time is specified in the dialog either by number of occurrences or a date.
+     * @param eventRecurrence Event recurrence pattern obtained from dialog
+     * @param recurrence Recurrence event to set the end period to
+     */
+    private static void parseEndTime(EventRecurrence eventRecurrence, Recurrence recurrence) {
+<span class="nc bnc" id="L105" title="All 4 branches missed.">        if (eventRecurrence.until != null &amp;&amp; eventRecurrence.until.length() &gt; 0) {</span>
+<span class="nc" id="L106">            Time endTime = new Time();</span>
+<span class="nc" id="L107">            endTime.parse(eventRecurrence.until);</span>
+<span class="nc" id="L108">            recurrence.setPeriodEnd(new Timestamp(endTime.toMillis(false)));</span>
+<span class="nc bnc" id="L109" title="All 2 branches missed.">        } else if (eventRecurrence.count &gt; 0){</span>
+<span class="nc" id="L110">            recurrence.setPeriodEnd(eventRecurrence.count);</span>
+        }
+<span class="nc" id="L112">    }</span>
+
+    /**
+     * Parses an array of byDay values to return a list of days of week
+     * constants from {@link Calendar}.
+     *
+     * &lt;p&gt;Currently only supports byDay values for weeks.&lt;/p&gt;
+     *
+     * @param byDay Array of byDay values
+     * @return list of days of week constants from Calendar.
+     */
+    private static @NonNull List&lt;Integer&gt; parseByDay(@Nullable int[] byDay) {
+<span class="nc bnc" id="L124" title="All 2 branches missed.">        if (byDay == null) {</span>
+<span class="nc" id="L125">            return Collections.emptyList();</span>
+        }
+
+<span class="nc" id="L128">        List&lt;Integer&gt; byDaysList = new ArrayList&lt;&gt;(byDay.length);</span>
+<span class="nc bnc" id="L129" title="All 2 branches missed.">        for (int day : byDay) {</span>
+<span class="nc" id="L130">            byDaysList.add(EventRecurrence.day2CalendarDay(day));</span>
+        }
+
+<span class="nc" id="L133">        return byDaysList;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

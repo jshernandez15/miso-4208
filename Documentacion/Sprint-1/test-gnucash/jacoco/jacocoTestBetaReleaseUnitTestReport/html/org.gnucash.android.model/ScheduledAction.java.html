@@ -1,0 +1,600 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ScheduledAction.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.model</a> &gt; <span class="el_source">ScheduledAction.java</span></div><h1>ScheduledAction.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2014 - 2015 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.gnucash.android.model;
+
+import android.content.Context;
+import android.support.annotation.NonNull;
+
+import org.gnucash.android.R;
+import org.gnucash.android.app.GnuCashApplication;
+import org.joda.time.LocalDateTime;
+
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Locale;
+import java.util.TimeZone;
+
+/**
+* Represents a scheduled event which is stored in the database and run at regular mPeriod
+*
+* @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+*/
+public class ScheduledAction extends BaseModel{
+
+    private long mStartDate;
+    private long mEndDate;
+    private String mTag;
+
+    /**
+     * Recurrence of this scheduled action
+     */
+    private Recurrence mRecurrence;
+
+    /**
+     * Types of events which can be scheduled
+     */
+<span class="pc" id="L51">    public enum ActionType {TRANSACTION, BACKUP}</span>
+
+    /**
+     * Next scheduled run of Event
+     */
+<span class="fc" id="L56">    private long mLastRun = 0;</span>
+
+    /**
+     * Unique ID of the template from which the recurring event will be executed.
+     * For example, transaction UID
+     */
+    private String mActionUID;
+
+    /**
+     * Flag indicating if this event is enabled or not
+     */
+    private boolean mIsEnabled;
+
+    /**
+     * Type of event being scheduled
+     */
+    private ActionType mActionType;
+
+    /**
+     * Number of times this event is planned to be executed
+     */
+<span class="fc" id="L77">    private int mTotalFrequency = 0;</span>
+
+    /**
+     * How many times this action has already been executed
+     */
+<span class="fc" id="L82">    private int mExecutionCount = 0;</span>
+
+    /**
+     * Flag for whether the scheduled transaction should be auto-created
+     */
+<span class="fc" id="L87">    private boolean mAutoCreate = true;</span>
+<span class="fc" id="L88">    private boolean mAutoNotify = false;</span>
+<span class="fc" id="L89">    private int mAdvanceCreateDays = 0;</span>
+<span class="fc" id="L90">    private int mAdvanceNotifyDays = 0;</span>
+    private String mTemplateAccountUID;
+
+<span class="fc" id="L93">    public ScheduledAction(ActionType actionType){</span>
+<span class="fc" id="L94">        mActionType = actionType;</span>
+<span class="fc" id="L95">        mEndDate = 0;</span>
+<span class="fc" id="L96">        mIsEnabled = true; //all actions are enabled by default</span>
+<span class="fc" id="L97">    }</span>
+
+    /**
+     * Returns the type of action to be performed by this scheduled action
+     * @return ActionType of the scheduled action
+     */
+    public ActionType getActionType() {
+<span class="nc" id="L104">        return mActionType;</span>
+    }
+
+    /**
+     * Sets the {@link ActionType}
+     * @param actionType Type of action
+     */
+    public void setActionType(ActionType actionType) {
+<span class="nc" id="L112">        this.mActionType = actionType;</span>
+<span class="nc" id="L113">    }</span>
+
+    /**
+     * Returns the GUID of the action covered by this scheduled action
+     * @return GUID of action
+     */
+    public String getActionUID() {
+<span class="nc" id="L120">        return mActionUID;</span>
+    }
+
+    /**
+     * Sets the GUID of the action being scheduled
+     * @param actionUID GUID of the action
+     */
+    public void setActionUID(String actionUID) {
+<span class="nc" id="L128">        this.mActionUID = actionUID;</span>
+<span class="nc" id="L129">    }</span>
+
+    /**
+     * Returns the timestamp of the last execution of this scheduled action
+     * &lt;p&gt;This is not necessarily the time when the scheduled action was due, only when it was actually last executed.&lt;/p&gt;
+     * @return Timestamp in milliseconds since Epoch
+     */
+    public long getLastRunTime() {
+<span class="fc" id="L137">        return mLastRun;</span>
+    }
+
+    /**
+     * Returns the time when the last schedule in the sequence of planned executions was executed.
+     * This relies on the number of executions of the scheduled action
+     * &lt;p&gt;This is different from {@link #getLastRunTime()} which returns the date when the system last
+     * run the scheduled action.&lt;/p&gt;
+     * @return Time of last schedule, or -1 if the scheduled action has never been run
+     */
+    public long getTimeOfLastSchedule(){
+<span class="fc bfc" id="L148" title="All 2 branches covered.">        if (mExecutionCount == 0)</span>
+<span class="fc" id="L149">            return  -1;</span>
+
+<span class="fc" id="L151">        LocalDateTime startTime = LocalDateTime.fromDateFields(new Date(mStartDate));</span>
+<span class="fc" id="L152">        int multiplier = mRecurrence.getMultiplier();</span>
+
+<span class="fc" id="L154">        int factor = (mExecutionCount-1) * multiplier;</span>
+<span class="pc bpc" id="L155" title="4 of 6 branches missed.">        switch (mRecurrence.getPeriodType()){</span>
+            case HOUR:
+<span class="nc" id="L157">                startTime = startTime.plusHours(factor);</span>
+<span class="nc" id="L158">                break;</span>
+            case DAY:
+<span class="nc" id="L160">                startTime = startTime.plusDays(factor);</span>
+<span class="nc" id="L161">                break;</span>
+            case WEEK:
+<span class="fc" id="L163">                startTime = startTime.plusWeeks(factor);</span>
+<span class="fc" id="L164">                break;</span>
+            case MONTH:
+<span class="fc" id="L166">                startTime = startTime.plusMonths(factor);</span>
+<span class="fc" id="L167">                break;</span>
+            case YEAR:
+<span class="nc" id="L169">                startTime = startTime.plusYears(factor);</span>
+                break;
+        }
+
+<span class="fc" id="L173">        return startTime.toDate().getTime();</span>
+    }
+
+    /**
+     * Computes the next time that this scheduled action is supposed to be
+     * executed based on the execution count.
+     *
+     * &lt;p&gt;This method does not consider the end time, or number of times it should be run.
+     * It only considers when the next execution would theoretically be due.&lt;/p&gt;
+     *
+     * @return Next run time in milliseconds
+     */
+    public long computeNextCountBasedScheduledExecutionTime(){
+<span class="fc" id="L186">        return computeNextScheduledExecutionTimeStartingAt(getTimeOfLastSchedule());</span>
+    }
+
+    /**
+     * Computes the next time that this scheduled action is supposed to be
+     * executed based on the time of the last run.
+     *
+     * &lt;p&gt;This method does not consider the end time, or number of times it should be run.
+     * It only considers when the next execution would theoretically be due.&lt;/p&gt;
+     *
+     * @return Next run time in milliseconds
+     */
+    public long computeNextTimeBasedScheduledExecutionTime() {
+<span class="fc" id="L199">        return computeNextScheduledExecutionTimeStartingAt(getLastRunTime());</span>
+    }
+
+    /**
+     * Computes the next time that this scheduled action is supposed to be
+     * executed starting at startTime.
+     *
+     * &lt;p&gt;This method does not consider the end time, or number of times it should be run.
+     * It only considers when the next execution would theoretically be due.&lt;/p&gt;
+     *
+     * @param startTime time in milliseconds to use as start to compute the next schedule.
+     *
+     * @return Next run time in milliseconds
+     */
+    private long computeNextScheduledExecutionTimeStartingAt(long startTime) {
+<span class="fc bfc" id="L214" title="All 2 branches covered.">        if (startTime &lt;= 0){ // has never been run</span>
+<span class="fc" id="L215">            return mStartDate;</span>
+        }
+
+<span class="fc" id="L218">        int multiplier = mRecurrence.getMultiplier();</span>
+<span class="fc" id="L219">        LocalDateTime nextScheduledExecution = LocalDateTime.fromDateFields(new Date(startTime));</span>
+<span class="pc bpc" id="L220" title="4 of 6 branches missed.">        switch (mRecurrence.getPeriodType()) {</span>
+            case HOUR:
+<span class="nc" id="L222">                nextScheduledExecution = nextScheduledExecution.plusHours(multiplier);</span>
+<span class="nc" id="L223">                break;</span>
+            case DAY:
+<span class="nc" id="L225">                nextScheduledExecution = nextScheduledExecution.plusDays(multiplier);</span>
+<span class="nc" id="L226">                break;</span>
+            case WEEK:
+<span class="fc" id="L228">                nextScheduledExecution = computeNextWeeklyExecutionStartingAt(nextScheduledExecution);</span>
+<span class="fc" id="L229">                break;</span>
+            case MONTH:
+<span class="fc" id="L231">                nextScheduledExecution = nextScheduledExecution.plusMonths(multiplier);</span>
+<span class="fc" id="L232">                break;</span>
+            case YEAR:
+<span class="nc" id="L234">                nextScheduledExecution = nextScheduledExecution.plusYears(multiplier);</span>
+                break;
+        }
+<span class="fc" id="L237">        return nextScheduledExecution.toDate().getTime();</span>
+    }
+
+    /**
+     * Computes the next time that this weekly scheduled action is supposed to be
+     * executed starting at startTime.
+     *
+     * If no days of the week have been set (GnuCash desktop allows it), it will return a
+     * date in the future to ensure ScheduledActionService doesn't execute it.
+     *
+     * @param startTime LocalDateTime to use as start to compute the next schedule.
+     *
+     * @return Next run time as a LocalDateTime. A date in the future, if no days of the week
+     *      were set in the Recurrence.
+     */
+    @NonNull
+    private LocalDateTime computeNextWeeklyExecutionStartingAt(LocalDateTime startTime) {
+<span class="fc bfc" id="L254" title="All 2 branches covered.">        if (mRecurrence.getByDays().isEmpty())</span>
+<span class="fc" id="L255">            return LocalDateTime.now().plusDays(1); // Just a date in the future</span>
+
+        // Look into the week of startTime for another scheduled day of the week
+<span class="fc bfc" id="L258" title="All 2 branches covered.">        for (int dayOfWeek : mRecurrence.getByDays() ) {</span>
+<span class="fc" id="L259">            int jodaDayOfWeek = convertCalendarDayOfWeekToJoda(dayOfWeek);</span>
+<span class="fc" id="L260">            LocalDateTime candidateNextDueTime = startTime.withDayOfWeek(jodaDayOfWeek);</span>
+<span class="fc bfc" id="L261" title="All 2 branches covered.">            if (candidateNextDueTime.isAfter(startTime))</span>
+<span class="fc" id="L262">                return candidateNextDueTime;</span>
+<span class="fc" id="L263">        }</span>
+
+        // Return the first scheduled day of the week from the next due week
+<span class="fc" id="L266">        int firstScheduledDayOfWeek = convertCalendarDayOfWeekToJoda(mRecurrence.getByDays().get(0));</span>
+<span class="fc" id="L267">        return startTime.plusWeeks(mRecurrence.getMultiplier())</span>
+<span class="fc" id="L268">                        .withDayOfWeek(firstScheduledDayOfWeek);</span>
+    }
+
+    /**
+     * Converts a java.util.Calendar day of the week constant to the
+     * org.joda.time.DateTimeConstants equivalent.
+     *
+     * @param calendarDayOfWeek day of the week constant from java.util.Calendar
+     * @return day of the week constant equivalent from org.joda.time.DateTimeConstants
+     */
+    private int convertCalendarDayOfWeekToJoda(int calendarDayOfWeek) {
+<span class="fc" id="L279">        Calendar cal = Calendar.getInstance();</span>
+<span class="fc" id="L280">        cal.set(Calendar.DAY_OF_WEEK, calendarDayOfWeek);</span>
+<span class="fc" id="L281">        return LocalDateTime.fromCalendarFields(cal).getDayOfWeek();</span>
+    }
+
+    /**
+     * Set time of last execution of the scheduled action
+     * @param nextRun Timestamp in milliseconds since Epoch
+     */
+    public void setLastRun(long nextRun) {
+<span class="fc" id="L289">        this.mLastRun = nextRun;</span>
+<span class="fc" id="L290">    }</span>
+
+    /**
+     * Returns the period of this scheduled action in milliseconds.
+     * @return Period in milliseconds since Epoch
+     * @deprecated Uses fixed values for time of months and years (which actually vary depending on number of days in month or leap year)
+     */
+    public long getPeriod() {
+<span class="nc" id="L298">        return mRecurrence.getPeriod();</span>
+    }
+
+    /**
+     * Returns the time of first execution of the scheduled action
+     * @return Start time of scheduled action in milliseconds since Epoch
+     */
+    public long getStartTime() {
+<span class="fc" id="L306">        return mStartDate;</span>
+    }
+
+    /**
+     * Sets the time of first execution of the scheduled action
+     * @param startDate Timestamp in milliseconds since Epoch
+     */
+    public void setStartTime(long startDate) {
+<span class="fc" id="L314">        this.mStartDate = startDate;</span>
+<span class="fc bfc" id="L315" title="All 2 branches covered.">        if (mRecurrence != null) {</span>
+<span class="fc" id="L316">            mRecurrence.setPeriodStart(new Timestamp(startDate));</span>
+        }
+<span class="fc" id="L318">    }</span>
+
+    /**
+     * Returns the time of last execution of the scheduled action
+     * @return Timestamp in milliseconds since Epoch
+     */
+    public long getEndTime() {
+<span class="fc" id="L325">        return mEndDate;</span>
+    }
+
+    /**
+     * Sets the end time of the scheduled action
+     * @param endDate Timestamp in milliseconds since Epoch
+     */
+    public void setEndTime(long endDate) {
+<span class="fc" id="L333">        this.mEndDate = endDate;</span>
+<span class="fc bfc" id="L334" title="All 2 branches covered.">        if (mRecurrence != null){</span>
+<span class="fc" id="L335">            mRecurrence.setPeriodEnd(new Timestamp(mEndDate));</span>
+        }
+<span class="fc" id="L337">    }</span>
+
+    /**
+     * Returns the tag of this scheduled action
+     * &lt;p&gt;The tag saves additional information about the scheduled action,
+     * e.g. such as export parameters for scheduled backups&lt;/p&gt;
+     * @return Tag of scheduled action
+     */
+    public String getTag() {
+<span class="nc" id="L346">        return mTag;</span>
+    }
+
+    /**
+     * Sets the tag of the schedules action.
+     * &lt;p&gt;The tag saves additional information about the scheduled action,
+     * e.g. such as export parameters for scheduled backups&lt;/p&gt;
+     * @param tag Tag of scheduled action
+     */
+    public void setTag(String tag) {
+<span class="nc" id="L356">        this.mTag = tag;</span>
+<span class="nc" id="L357">    }</span>
+
+    /**
+     * Returns {@code true} if the scheduled action is enabled, {@code false} otherwise
+     * @return {@code true} if the scheduled action is enabled, {@code false} otherwise
+     */
+    public boolean isEnabled(){
+<span class="nc" id="L364">        return mIsEnabled;</span>
+    }
+
+    /**
+     * Toggles the enabled state of the scheduled action
+     * Disabled scheduled actions will not be executed
+     * @param enabled Flag if the scheduled action is enabled or not
+     */
+    public void setEnabled(boolean enabled){
+<span class="nc" id="L373">        this.mIsEnabled = enabled;</span>
+<span class="nc" id="L374">    }</span>
+
+    /**
+     * Returns the total number of planned occurrences of this scheduled action.
+     * @return Total number of planned occurrences of this action
+     */
+    public int getTotalPlannedExecutionCount(){
+<span class="nc" id="L381">        return mTotalFrequency;</span>
+    }
+
+    /**
+     * Sets the number of occurences of this action
+     * @param plannedExecutions Number of occurences
+     */
+    public void setTotalPlannedExecutionCount(int plannedExecutions){
+<span class="nc" id="L389">        this.mTotalFrequency = plannedExecutions;</span>
+<span class="nc" id="L390">    }</span>
+
+    /**
+     * Returns how many times this scheduled action has already been executed
+     * @return Number of times this action has been executed
+     */
+    public int getExecutionCount(){
+<span class="nc" id="L397">        return mExecutionCount;</span>
+    }
+
+    /**
+     * Sets the number of times this scheduled action has been executed
+     * @param executionCount Number of executions
+     */
+    public void setExecutionCount(int executionCount){
+<span class="fc" id="L405">        mExecutionCount = executionCount;</span>
+<span class="fc" id="L406">    }</span>
+
+    /**
+     * Returns flag if transactions should be automatically created or not
+     * &lt;p&gt;This flag is currently unused in the app. It is only included here for compatibility with GnuCash desktop XML&lt;/p&gt;
+     * @return {@code true} if the transaction should be auto-created, {@code false} otherwise
+     */
+    public boolean shouldAutoCreate() {
+<span class="nc" id="L414">        return mAutoCreate;</span>
+    }
+
+    /**
+     * Set flag for automatically creating transaction based on this scheduled action
+     * &lt;p&gt;This flag is currently unused in the app. It is only included here for compatibility with GnuCash desktop XML&lt;/p&gt;
+     * @param autoCreate Flag for auto creating transactions
+     */
+    public void setAutoCreate(boolean autoCreate) {
+<span class="nc" id="L423">        this.mAutoCreate = autoCreate;</span>
+<span class="nc" id="L424">    }</span>
+
+    /**
+     * Check if user will be notified of creation of scheduled transactions
+     * &lt;p&gt;This flag is currently unused in the app. It is only included here for compatibility with GnuCash desktop XML&lt;/p&gt;
+     * @return {@code true} if user will be notified, {@code false} otherwise
+     */
+    public boolean shouldAutoNotify() {
+<span class="nc" id="L432">        return mAutoNotify;</span>
+    }
+
+    /**
+     * Sets whether to notify the user that scheduled transactions have been created
+     * &lt;p&gt;This flag is currently unused in the app. It is only included here for compatibility with GnuCash desktop XML&lt;/p&gt;
+     * @param autoNotify Boolean flag
+     */
+    public void setAutoNotify(boolean autoNotify) {
+<span class="nc" id="L441">        this.mAutoNotify = autoNotify;</span>
+<span class="nc" id="L442">    }</span>
+
+    /**
+     * Returns number of days in advance to create the transaction
+     * &lt;p&gt;This flag is currently unused in the app. It is only included here for compatibility with GnuCash desktop XML&lt;/p&gt;
+     * @return Number of days in advance to create transaction
+     */
+    public int getAdvanceCreateDays() {
+<span class="nc" id="L450">        return mAdvanceCreateDays;</span>
+    }
+
+    /**
+     * Set number of days in advance to create the transaction
+     * &lt;p&gt;This flag is currently unused in the app. It is only included here for compatibility with GnuCash desktop XML&lt;/p&gt;
+     * @param advanceCreateDays Number of days
+     */
+    public void setAdvanceCreateDays(int advanceCreateDays) {
+<span class="nc" id="L459">        this.mAdvanceCreateDays = advanceCreateDays;</span>
+<span class="nc" id="L460">    }</span>
+
+    /**
+     * Returns the number of days in advance to notify of scheduled transactions
+     * &lt;p&gt;This flag is currently unused in the app. It is only included here for compatibility with GnuCash desktop XML&lt;/p&gt;
+     * @return {@code true} if user will be notified, {@code false} otherwise
+     */
+    public int getAdvanceNotifyDays() {
+<span class="nc" id="L468">        return mAdvanceNotifyDays;</span>
+    }
+
+    /**
+     * Set number of days in advance to notify of scheduled transactions
+     * &lt;p&gt;This flag is currently unused in the app. It is only included here for compatibility with GnuCash desktop XML&lt;/p&gt;
+     * @param advanceNotifyDays Number of days
+     */
+    public void setAdvanceNotifyDays(int advanceNotifyDays) {
+<span class="nc" id="L477">        this.mAdvanceNotifyDays = advanceNotifyDays;</span>
+<span class="nc" id="L478">    }</span>
+
+    /**
+     * Return the template account GUID for this scheduled action
+     * &lt;p&gt;This method generates one if none was set&lt;/p&gt;
+     * @return String GUID of template account
+     */
+    public String getTemplateAccountUID() {
+<span class="nc bnc" id="L486" title="All 2 branches missed.">        if (mTemplateAccountUID == null)</span>
+<span class="nc" id="L487">            return mTemplateAccountUID = generateUID();</span>
+        else
+<span class="nc" id="L489">            return mTemplateAccountUID;</span>
+    }
+
+    /**
+     * Set the template account GUID
+     * @param templateAccountUID String GUID of template account
+     */
+    public void setTemplateAccountUID(String templateAccountUID) {
+<span class="nc" id="L497">        this.mTemplateAccountUID = templateAccountUID;</span>
+<span class="nc" id="L498">    }</span>
+
+    /**
+     * Returns the event schedule (start, end and recurrence)
+     * @return String description of repeat schedule
+     */
+    public String getRepeatString(){
+<span class="nc" id="L505">        StringBuilder ruleBuilder = new StringBuilder(mRecurrence.getRepeatString());</span>
+<span class="nc" id="L506">        Context context = GnuCashApplication.getAppContext();</span>
+<span class="nc bnc" id="L507" title="All 4 branches missed.">        if (mEndDate &lt;= 0 &amp;&amp; mTotalFrequency &gt; 0){</span>
+<span class="nc" id="L508">            ruleBuilder.append(&quot;, &quot;).append(context.getString(R.string.repeat_x_times, mTotalFrequency));</span>
+        }
+
+<span class="nc" id="L511">        return ruleBuilder.toString();</span>
+    }
+
+    /**
+     * Creates an RFC 2445 string which describes this recurring event
+     * &lt;p&gt;See http://recurrance.sourceforge.net/&lt;/p&gt;
+     * @return String describing event
+     */
+    public String getRuleString(){
+<span class="nc" id="L520">        String separator = &quot;;&quot;;</span>
+
+<span class="nc" id="L522">        StringBuilder ruleBuilder = new StringBuilder(mRecurrence.getRuleString());</span>
+
+<span class="nc bnc" id="L524" title="All 2 branches missed.">        if (mEndDate &gt; 0){</span>
+<span class="nc" id="L525">            SimpleDateFormat df = new SimpleDateFormat(&quot;yyyyMMdd'T'HHmmss'Z'&quot;, Locale.US);</span>
+<span class="nc" id="L526">            df.setTimeZone(TimeZone.getTimeZone(&quot;UTC&quot;));</span>
+<span class="nc" id="L527">            ruleBuilder.append(&quot;UNTIL=&quot;).append(df.format(new Date(mEndDate))).append(separator);</span>
+<span class="nc bnc" id="L528" title="All 2 branches missed.">        } else if (mTotalFrequency &gt; 0){</span>
+<span class="nc" id="L529">            ruleBuilder.append(&quot;COUNT=&quot;).append(mTotalFrequency).append(separator);</span>
+        }
+
+<span class="nc" id="L532">        return ruleBuilder.toString();</span>
+    }
+
+    /**
+     * Return GUID of recurrence pattern for this scheduled action
+     * @return {@link Recurrence} object
+     */
+    public Recurrence getRecurrence() {
+<span class="fc" id="L540">        return mRecurrence;</span>
+    }
+
+    /**
+     * Overloaded method for setting the recurrence of the scheduled action.
+     * &lt;p&gt;This method allows you to specify the periodicity and the ordinal of it. For example,
+     * a recurrence every fortnight would give parameters: {@link PeriodType#WEEK}, ordinal:2&lt;/p&gt;
+     * @param periodType Periodicity of the scheduled action
+     * @param ordinal Ordinal of the periodicity. If unsure, specify 1
+     * @see #setRecurrence(Recurrence)
+     */
+    public void setRecurrence(PeriodType periodType, int ordinal){
+<span class="nc" id="L552">        Recurrence recurrence = new Recurrence(periodType);</span>
+<span class="nc" id="L553">        recurrence.setMultiplier(ordinal);</span>
+<span class="nc" id="L554">        setRecurrence(recurrence);</span>
+<span class="nc" id="L555">    }</span>
+
+    /**
+     * Sets the recurrence pattern of this scheduled action
+     * &lt;p&gt;This also sets the start period of the recurrence object, if there is one&lt;/p&gt;
+     * @param recurrence {@link Recurrence} object
+     */
+    public void setRecurrence(@NonNull Recurrence recurrence) {
+<span class="fc" id="L563">        this.mRecurrence = recurrence;</span>
+        //if we were parsing XML and parsed the start and end date from the scheduled action first,
+        //then use those over the values which might be gotten from the recurrence
+<span class="fc bfc" id="L566" title="All 2 branches covered.">        if (mStartDate &gt; 0){</span>
+<span class="fc" id="L567">            mRecurrence.setPeriodStart(new Timestamp(mStartDate));</span>
+        } else {
+<span class="fc" id="L569">            mStartDate = mRecurrence.getPeriodStart().getTime();</span>
+        }
+
+<span class="fc bfc" id="L572" title="All 2 branches covered.">        if (mEndDate &gt; 0){</span>
+<span class="fc" id="L573">            mRecurrence.setPeriodEnd(new Timestamp(mEndDate));</span>
+<span class="fc bfc" id="L574" title="All 2 branches covered.">        } else if (mRecurrence.getPeriodEnd() != null){</span>
+<span class="fc" id="L575">            mEndDate = mRecurrence.getPeriodEnd().getTime();</span>
+        }
+<span class="fc" id="L577">    }</span>
+
+    /**
+     * Creates a ScheduledAction from a Transaction and a period
+     * @param transaction Transaction to be scheduled
+     * @param period Period in milliseconds since Epoch
+     * @return Scheduled Action
+     * @deprecated Used for parsing legacy backup files. Use {@link Recurrence} instead
+     */
+    @Deprecated
+    public static ScheduledAction parseScheduledAction(Transaction transaction, long period){
+<span class="nc" id="L588">        ScheduledAction scheduledAction = new ScheduledAction(ActionType.TRANSACTION);</span>
+<span class="nc" id="L589">        scheduledAction.mActionUID = transaction.getUID();</span>
+<span class="nc" id="L590">        Recurrence recurrence = Recurrence.fromLegacyPeriod(period);</span>
+<span class="nc" id="L591">        scheduledAction.setRecurrence(recurrence);</span>
+<span class="nc" id="L592">        return scheduledAction;</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L597">        return mActionType.name() + &quot; - &quot; + getRepeatString();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

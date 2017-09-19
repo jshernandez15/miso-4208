@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TransactionDetailActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.ui.transaction</a> &gt; <span class="el_source">TransactionDetailActivity.java</span></div><h1>TransactionDetailActivity.java</h1><pre class="source lang-java linenums">package org.gnucash.android.ui.transaction;
+
+import android.app.Activity;
+import android.content.Intent;
+import android.graphics.drawable.ColorDrawable;
+import android.os.Build;
+import android.os.Bundle;
+import android.support.v7.app.ActionBar;
+import android.support.v7.widget.Toolbar;
+import android.view.LayoutInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.TableLayout;
+import android.widget.TextView;
+
+import org.gnucash.android.R;
+import org.gnucash.android.app.GnuCashApplication;
+import org.gnucash.android.db.adapter.AccountsDbAdapter;
+import org.gnucash.android.db.adapter.ScheduledActionDbAdapter;
+import org.gnucash.android.db.adapter.TransactionsDbAdapter;
+import org.gnucash.android.model.Money;
+import org.gnucash.android.model.ScheduledAction;
+import org.gnucash.android.model.Split;
+import org.gnucash.android.model.Transaction;
+import org.gnucash.android.ui.common.FormActivity;
+import org.gnucash.android.ui.common.UxArgument;
+import org.gnucash.android.ui.passcode.PasscodeLockActivity;
+
+import java.text.DateFormat;
+import java.util.Date;
+import java.util.MissingFormatArgumentException;
+
+import butterknife.BindView;
+import butterknife.ButterKnife;
+import butterknife.OnClick;
+
+/**
+ * Activity for displaying transaction information
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ */
+<span class="nc bnc" id="L41" title="All 2 branches missed.">public class TransactionDetailActivity extends PasscodeLockActivity {</span>
+
+    @BindView(R.id.trn_description) TextView mTransactionDescription;
+    @BindView(R.id.trn_time_and_date) TextView mTimeAndDate;
+    @BindView(R.id.trn_recurrence) TextView mRecurrence;
+    @BindView(R.id.trn_notes) TextView mNotes;
+    @BindView(R.id.toolbar) Toolbar mToolBar;
+    @BindView(R.id.transaction_account) TextView mTransactionAccount;
+    @BindView(R.id.balance_debit) TextView mDebitBalance;
+    @BindView(R.id.balance_credit) TextView mCreditBalance;
+
+    @BindView(R.id.fragment_transaction_details)
+    TableLayout mDetailTableLayout;
+
+    private String mTransactionUID;
+    private String mAccountUID;
+    private int mDetailTableRows;
+
+    public static final int REQUEST_EDIT_TRANSACTION = 0x10;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="nc" id="L63">        super.onCreate(savedInstanceState);</span>
+
+<span class="nc" id="L65">        setContentView(R.layout.activity_transaction_detail);</span>
+
+<span class="nc" id="L67">        mTransactionUID = getIntent().getStringExtra(UxArgument.SELECTED_TRANSACTION_UID);</span>
+<span class="nc" id="L68">        mAccountUID     = getIntent().getStringExtra(UxArgument.SELECTED_ACCOUNT_UID);</span>
+
+<span class="nc bnc" id="L70" title="All 4 branches missed.">        if (mTransactionUID == null || mAccountUID == null){</span>
+<span class="nc" id="L71">            throw new MissingFormatArgumentException(&quot;You must specify both the transaction and account GUID&quot;);</span>
+        }
+
+<span class="nc" id="L74">        ButterKnife.bind(this);</span>
+<span class="nc" id="L75">        setSupportActionBar(mToolBar);</span>
+
+<span class="nc" id="L77">        ActionBar actionBar = getSupportActionBar();</span>
+<span class="nc bnc" id="L78" title="All 4 branches missed.">        assert actionBar != null;</span>
+<span class="nc" id="L79">        actionBar.setElevation(0);</span>
+<span class="nc" id="L80">        actionBar.setHomeButtonEnabled(true);</span>
+<span class="nc" id="L81">        actionBar.setDisplayHomeAsUpEnabled(true);</span>
+<span class="nc" id="L82">        actionBar.setHomeAsUpIndicator(R.drawable.ic_close_white_24dp);</span>
+<span class="nc" id="L83">        actionBar.setDisplayShowTitleEnabled(false);</span>
+
+<span class="nc" id="L85">        bindViews();</span>
+
+<span class="nc" id="L87">        int themeColor = AccountsDbAdapter.getActiveAccountColorResource(mAccountUID);</span>
+<span class="nc" id="L88">        actionBar.setBackgroundDrawable(new ColorDrawable(themeColor));</span>
+<span class="nc" id="L89">        mToolBar.setBackgroundColor(themeColor);</span>
+<span class="nc bnc" id="L90" title="All 2 branches missed.">        if (Build.VERSION.SDK_INT &gt; 20)</span>
+<span class="nc" id="L91">            getWindow().setStatusBarColor(GnuCashApplication.darken(themeColor));</span>
+
+<span class="nc" id="L93">    }</span>
+
+    class SplitAmountViewHolder {
+        @BindView(R.id.split_account_name) TextView accountName;
+        @BindView(R.id.split_debit) TextView splitDebit;
+        @BindView(R.id.split_credit) TextView splitCredit;
+
+        View itemView;
+
+<span class="nc" id="L102">        public SplitAmountViewHolder(View view, Split split){</span>
+<span class="nc" id="L103">            itemView = view;</span>
+<span class="nc" id="L104">            ButterKnife.bind(this, view);</span>
+
+<span class="nc" id="L106">            AccountsDbAdapter accountsDbAdapter = AccountsDbAdapter.getInstance();</span>
+<span class="nc" id="L107">            accountName.setText(accountsDbAdapter.getAccountFullName(split.getAccountUID()));</span>
+<span class="nc" id="L108">            Money quantity = split.getFormattedQuantity();</span>
+<span class="nc bnc" id="L109" title="All 2 branches missed.">            TextView balanceView = quantity.isNegative() ? splitDebit : splitCredit;</span>
+<span class="nc" id="L110">            TransactionsActivity.displayBalance(balanceView, quantity);</span>
+<span class="nc" id="L111">        }</span>
+    }
+
+    /**
+     * Reads the transaction information from the database and binds it to the views
+     */
+    private void bindViews(){
+<span class="nc" id="L118">        TransactionsDbAdapter transactionsDbAdapter = TransactionsDbAdapter.getInstance();</span>
+<span class="nc" id="L119">        Transaction transaction = transactionsDbAdapter.getRecord(mTransactionUID);</span>
+
+<span class="nc" id="L121">        mTransactionDescription.setText(transaction.getDescription());</span>
+<span class="nc" id="L122">        mTransactionAccount.setText(getString(R.string.label_inside_account_with_name, AccountsDbAdapter.getInstance().getAccountFullName(mAccountUID)));</span>
+
+<span class="nc" id="L124">        AccountsDbAdapter accountsDbAdapter = AccountsDbAdapter.getInstance();</span>
+
+<span class="nc" id="L126">        Money accountBalance = accountsDbAdapter.getAccountBalance(mAccountUID, -1, transaction.getTimeMillis());</span>
+<span class="nc bnc" id="L127" title="All 2 branches missed.">        TextView balanceTextView = accountBalance.isNegative() ? mDebitBalance : mCreditBalance;</span>
+<span class="nc" id="L128">        TransactionsActivity.displayBalance(balanceTextView, accountBalance);</span>
+
+<span class="nc" id="L130">        mDetailTableRows = mDetailTableLayout.getChildCount();</span>
+<span class="nc" id="L131">        boolean useDoubleEntry = GnuCashApplication.isDoubleEntryEnabled();</span>
+<span class="nc" id="L132">        LayoutInflater inflater = LayoutInflater.from(this);</span>
+<span class="nc" id="L133">        int index = 0;</span>
+<span class="nc bnc" id="L134" title="All 2 branches missed.">        for (Split split : transaction.getSplits()) {</span>
+<span class="nc bnc" id="L135" title="All 4 branches missed.">            if (!useDoubleEntry &amp;&amp; split.getAccountUID().equals(</span>
+<span class="nc" id="L136">                    accountsDbAdapter.getImbalanceAccountUID(split.getValue().getCommodity()))) {</span>
+                //do now show imbalance accounts for single entry use case
+<span class="nc" id="L138">                continue;</span>
+            }
+<span class="nc" id="L140">            View view = inflater.inflate(R.layout.item_split_amount_info, mDetailTableLayout, false);</span>
+<span class="nc" id="L141">            SplitAmountViewHolder viewHolder = new SplitAmountViewHolder(view, split);</span>
+<span class="nc" id="L142">            mDetailTableLayout.addView(viewHolder.itemView, index++);</span>
+<span class="nc" id="L143">        }</span>
+
+
+<span class="nc" id="L146">        Date trnDate = new Date(transaction.getTimeMillis());</span>
+<span class="nc" id="L147">        String timeAndDate = DateFormat.getDateInstance(DateFormat.FULL).format(trnDate);</span>
+<span class="nc" id="L148">        mTimeAndDate.setText(timeAndDate);</span>
+
+<span class="nc bnc" id="L150" title="All 2 branches missed.">        if (transaction.getScheduledActionUID() != null){</span>
+<span class="nc" id="L151">            ScheduledAction scheduledAction = ScheduledActionDbAdapter.getInstance().getRecord(transaction.getScheduledActionUID());</span>
+<span class="nc" id="L152">            mRecurrence.setText(scheduledAction.getRepeatString());</span>
+<span class="nc" id="L153">            findViewById(R.id.row_trn_recurrence).setVisibility(View.VISIBLE);</span>
+
+<span class="nc" id="L155">        } else {</span>
+<span class="nc" id="L156">            findViewById(R.id.row_trn_recurrence).setVisibility(View.GONE);</span>
+        }
+
+<span class="nc bnc" id="L159" title="All 4 branches missed.">        if (transaction.getNote() != null &amp;&amp; !transaction.getNote().isEmpty()){</span>
+<span class="nc" id="L160">            mNotes.setText(transaction.getNote());</span>
+<span class="nc" id="L161">            findViewById(R.id.row_trn_notes).setVisibility(View.VISIBLE);</span>
+        } else {
+<span class="nc" id="L163">            findViewById(R.id.row_trn_notes).setVisibility(View.GONE);</span>
+        }
+
+<span class="nc" id="L166">    }</span>
+
+    /**
+     * Refreshes the transaction information
+     */
+    private void refresh(){
+<span class="nc" id="L172">        removeSplitItemViews();</span>
+<span class="nc" id="L173">        bindViews();</span>
+<span class="nc" id="L174">    }</span>
+
+    /**
+     * Remove the split item views from the transaction detail prior to refreshing them
+     */
+    private void removeSplitItemViews(){
+        // Remove all rows that are not special.
+<span class="nc" id="L181">        mDetailTableLayout.removeViews(0, mDetailTableLayout.getChildCount() - mDetailTableRows);</span>
+<span class="nc" id="L182">        mDebitBalance.setText(&quot;&quot;);</span>
+<span class="nc" id="L183">        mCreditBalance.setText(&quot;&quot;);</span>
+<span class="nc" id="L184">    }</span>
+
+
+    @OnClick(R.id.fab_edit_transaction)
+    public void editTransaction(){
+<span class="nc" id="L189">        Intent createTransactionIntent = new Intent(this.getApplicationContext(), FormActivity.class);</span>
+<span class="nc" id="L190">        createTransactionIntent.setAction(Intent.ACTION_INSERT_OR_EDIT);</span>
+<span class="nc" id="L191">        createTransactionIntent.putExtra(UxArgument.SELECTED_ACCOUNT_UID, mAccountUID);</span>
+<span class="nc" id="L192">        createTransactionIntent.putExtra(UxArgument.SELECTED_TRANSACTION_UID, mTransactionUID);</span>
+<span class="nc" id="L193">        createTransactionIntent.putExtra(UxArgument.FORM_TYPE, FormActivity.FormType.TRANSACTION.name());</span>
+<span class="nc" id="L194">        startActivityForResult(createTransactionIntent, REQUEST_EDIT_TRANSACTION);</span>
+<span class="nc" id="L195">    }</span>
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+<span class="nc bnc" id="L199" title="All 2 branches missed.">        switch (item.getItemId()) {</span>
+            case android.R.id.home:
+<span class="nc" id="L201">                finish();</span>
+<span class="nc" id="L202">                return true;</span>
+            default:
+<span class="nc" id="L204">                return super.onOptionsItemSelected(item);</span>
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+<span class="nc bnc" id="L210" title="All 2 branches missed.">        if (resultCode == Activity.RESULT_OK){</span>
+<span class="nc" id="L211">            refresh();</span>
+        }
+<span class="nc" id="L213">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

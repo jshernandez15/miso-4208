@@ -1,0 +1,428 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ReportsActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.ui.report</a> &gt; <span class="el_source">ReportsActivity.java</span></div><h1>ReportsActivity.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2015 Oleksandr Tyshkovets &lt;olexandr.tyshkovets@gmail.com&gt;
+ * Copyright (c) 2015 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.ui.report;
+
+import android.app.DatePickerDialog;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
+import android.os.Build;
+import android.os.Bundle;
+import android.support.v4.app.DialogFragment;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
+import android.support.v7.app.ActionBar;
+import android.view.KeyEvent;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.DatePicker;
+import android.widget.Spinner;
+
+import org.gnucash.android.R;
+import org.gnucash.android.app.GnuCashApplication;
+import org.gnucash.android.db.adapter.TransactionsDbAdapter;
+import org.gnucash.android.model.AccountType;
+import org.gnucash.android.ui.common.BaseDrawerActivity;
+import org.gnucash.android.ui.common.Refreshable;
+import org.gnucash.android.ui.util.dialog.DateRangePickerDialogFragment;
+import org.joda.time.LocalDate;
+
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+
+import butterknife.BindView;
+
+/**
+ * Activity for displaying report fragments (which must implement {@link BaseReportFragment})
+ * &lt;p&gt;In order to add new reports, extend the {@link BaseReportFragment} class to provide the view
+ * for the report. Then add the report mapping in {@link ReportType} constructor depending on what
+ * kind of report it is. The report will be dynamically included at runtime.&lt;/p&gt;
+ *
+ * @author Oleksandr Tyshkovets &lt;olexandr.tyshkovets@gmail.com&gt;
+ * @author Ngewi Fet &lt;ngewif@gmail.com&gt;
+ */
+<span class="nc bnc" id="L63" title="All 2 branches missed.">public class ReportsActivity extends BaseDrawerActivity implements AdapterView.OnItemSelectedListener,</span>
+        DatePickerDialog.OnDateSetListener, DateRangePickerDialogFragment.OnDateRangeSetListener,
+        Refreshable{
+
+<span class="nc" id="L67">    public static final int[] COLORS = {</span>
+<span class="nc" id="L68">            Color.parseColor(&quot;#17ee4e&quot;), Color.parseColor(&quot;#cc1f09&quot;), Color.parseColor(&quot;#3940f7&quot;),</span>
+<span class="nc" id="L69">            Color.parseColor(&quot;#f9cd04&quot;), Color.parseColor(&quot;#5f33a8&quot;), Color.parseColor(&quot;#e005b6&quot;),</span>
+<span class="nc" id="L70">            Color.parseColor(&quot;#17d6ed&quot;), Color.parseColor(&quot;#e4a9a2&quot;), Color.parseColor(&quot;#8fe6cd&quot;),</span>
+<span class="nc" id="L71">            Color.parseColor(&quot;#8b48fb&quot;), Color.parseColor(&quot;#343a36&quot;), Color.parseColor(&quot;#6decb1&quot;),</span>
+<span class="nc" id="L72">            Color.parseColor(&quot;#f0f8ff&quot;), Color.parseColor(&quot;#5c3378&quot;), Color.parseColor(&quot;#a6dcfd&quot;),</span>
+<span class="nc" id="L73">            Color.parseColor(&quot;#ba037c&quot;), Color.parseColor(&quot;#708809&quot;), Color.parseColor(&quot;#32072c&quot;),</span>
+<span class="nc" id="L74">            Color.parseColor(&quot;#fddef8&quot;), Color.parseColor(&quot;#fa0e6e&quot;), Color.parseColor(&quot;#d9e7b5&quot;)</span>
+    };
+    private static final String STATE_REPORT_TYPE = &quot;STATE_REPORT_TYPE&quot;;
+
+    @BindView(R.id.time_range_spinner) Spinner mTimeRangeSpinner;
+    @BindView(R.id.report_account_type_spinner) Spinner mAccountTypeSpinner;
+    @BindView(R.id.toolbar_spinner) Spinner mReportTypeSpinner;
+
+    private TransactionsDbAdapter mTransactionsDbAdapter;
+<span class="nc" id="L83">    private AccountType mAccountType = AccountType.EXPENSE;</span>
+<span class="nc" id="L84">    private ReportType mReportType = ReportType.NONE;</span>
+    private ReportsOverviewFragment mReportsOverviewFragment;
+
+<span class="nc" id="L87">    public enum GroupInterval {WEEK, MONTH, QUARTER, YEAR, ALL}</span>
+
+    // default time range is the last 3 months
+<span class="nc" id="L90">    private long mReportPeriodStart = new LocalDate().minusMonths(2).dayOfMonth().withMinimumValue().toDate().getTime();</span>
+<span class="nc" id="L91">    private long mReportPeriodEnd = new LocalDate().plusDays(1).toDate().getTime();</span>
+
+<span class="nc" id="L93">    private GroupInterval mReportGroupInterval = GroupInterval.MONTH;</span>
+<span class="nc" id="L94">    private boolean mSkipNextReportTypeSelectedRun = false;</span>
+
+<span class="nc" id="L96">    AdapterView.OnItemSelectedListener mReportTypeSelectedListener = new AdapterView.OnItemSelectedListener() {</span>
+
+        @Override
+        public void onItemSelected(AdapterView&lt;?&gt; parent, View view, int position, long id) {
+<span class="nc bnc" id="L100" title="All 2 branches missed.">            if (mSkipNextReportTypeSelectedRun){</span>
+<span class="nc" id="L101">                mSkipNextReportTypeSelectedRun = false;</span>
+            } else {
+<span class="nc" id="L103">                String reportName = parent.getItemAtPosition(position).toString();</span>
+<span class="nc" id="L104">                loadFragment(mReportType.getFragment(reportName));</span>
+            }
+<span class="nc" id="L106">        }</span>
+
+        @Override
+        public void onNothingSelected(AdapterView&lt;?&gt; parent) {
+            //nothing to see here, move along
+<span class="nc" id="L111">        }</span>
+    };
+
+    @Override
+    public int getContentView() {
+<span class="nc" id="L116">        return R.layout.activity_reports;</span>
+    }
+
+    @Override
+    public int getTitleRes() {
+<span class="nc" id="L121">        return R.string.title_reports;</span>
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="nc bnc" id="L126" title="All 2 branches missed.">        if (savedInstanceState != null) {</span>
+<span class="nc" id="L127">            mReportType = (ReportType) savedInstanceState.getSerializable(STATE_REPORT_TYPE);</span>
+        }
+
+<span class="nc" id="L130">        super.onCreate(savedInstanceState);</span>
+<span class="nc" id="L131">        mTransactionsDbAdapter = TransactionsDbAdapter.getInstance();</span>
+
+<span class="nc" id="L133">        ArrayAdapter&lt;CharSequence&gt; adapter = ArrayAdapter.createFromResource(this, R.array.report_time_range,</span>
+                android.R.layout.simple_spinner_item);
+<span class="nc" id="L135">        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);</span>
+<span class="nc" id="L136">        mTimeRangeSpinner.setAdapter(adapter);</span>
+<span class="nc" id="L137">        mTimeRangeSpinner.setOnItemSelectedListener(this);</span>
+<span class="nc" id="L138">        mTimeRangeSpinner.setSelection(1);</span>
+
+<span class="nc" id="L140">        ArrayAdapter&lt;CharSequence&gt; dataAdapter = ArrayAdapter.createFromResource(this,</span>
+                R.array.report_account_types, android.R.layout.simple_spinner_item);
+<span class="nc" id="L142">        dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);</span>
+<span class="nc" id="L143">        mAccountTypeSpinner.setAdapter(dataAdapter);</span>
+<span class="nc" id="L144">        mAccountTypeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {</span>
+            @Override
+            public void onItemSelected(AdapterView&lt;?&gt; adapterView, View view, int position, long id) {
+<span class="nc bnc" id="L147" title="All 2 branches missed.">                switch(position) {</span>
+                    default:
+                    case 0:
+<span class="nc" id="L150">                        mAccountType = AccountType.EXPENSE;</span>
+<span class="nc" id="L151">                        break;</span>
+                    case 1:
+<span class="nc" id="L153">                        mAccountType = AccountType.INCOME;</span>
+                }
+<span class="nc" id="L155">                updateAccountTypeOnFragments();</span>
+<span class="nc" id="L156">            }</span>
+
+            @Override
+            public void onNothingSelected(AdapterView&lt;?&gt; adapterView) {
+                //nothing to see here, move along
+<span class="nc" id="L161">            }</span>
+        });
+
+<span class="nc" id="L164">        mReportsOverviewFragment = new ReportsOverviewFragment();</span>
+
+<span class="nc bnc" id="L166" title="All 2 branches missed.">        if (savedInstanceState == null) {</span>
+<span class="nc" id="L167">            loadFragment(mReportsOverviewFragment);</span>
+        }
+<span class="nc" id="L169">    }</span>
+
+    @Override
+    public void onAttachFragment(Fragment fragment) {
+<span class="nc" id="L173">        super.onAttachFragment(fragment);</span>
+
+<span class="nc bnc" id="L175" title="All 2 branches missed.">        if (fragment instanceof BaseReportFragment) {</span>
+<span class="nc" id="L176">            BaseReportFragment reportFragment = (BaseReportFragment)fragment;</span>
+<span class="nc" id="L177">            updateReportTypeSpinner(reportFragment.getReportType(), getString(reportFragment.getTitle()));</span>
+        }
+<span class="nc" id="L179">    }</span>
+
+    /**
+     * Load the provided fragment into the view replacing the previous one
+     * @param fragment BaseReportFragment instance
+     */
+    private void loadFragment(BaseReportFragment fragment) {
+<span class="nc" id="L186">        FragmentManager fragmentManager = getSupportFragmentManager();</span>
+<span class="nc" id="L187">        FragmentTransaction fragmentTransaction = fragmentManager</span>
+<span class="nc" id="L188">                .beginTransaction();</span>
+
+<span class="nc" id="L190">        fragmentTransaction.replace(R.id.fragment_container, fragment);</span>
+<span class="nc" id="L191">        fragmentTransaction.commit();</span>
+<span class="nc" id="L192">    }</span>
+
+    /**
+     * Update the report type spinner
+     */
+    public void updateReportTypeSpinner(ReportType reportType, String reportName) {
+<span class="nc bnc" id="L198" title="All 2 branches missed.">        if (reportType == mReportType)//if it is the same report type, don't change anything</span>
+<span class="nc" id="L199">            return;</span>
+
+<span class="nc" id="L201">        mReportType = reportType;</span>
+<span class="nc" id="L202">        ActionBar actionBar = getSupportActionBar();</span>
+<span class="nc bnc" id="L203" title="All 4 branches missed.">        assert actionBar != null;</span>
+<span class="nc" id="L204">        ArrayAdapter&lt;String&gt; arrayAdapter = new ArrayAdapter&lt;&gt;(actionBar.getThemedContext(),</span>
+                android.R.layout.simple_list_item_1,
+<span class="nc" id="L206">                mReportType.getReportNames());</span>
+
+<span class="nc" id="L208">        mSkipNextReportTypeSelectedRun = true; //selection event will be fired again</span>
+<span class="nc" id="L209">        mReportTypeSpinner.setAdapter(arrayAdapter);</span>
+<span class="nc" id="L210">        mReportTypeSpinner.setSelection(arrayAdapter.getPosition(reportName));</span>
+<span class="nc" id="L211">        mReportTypeSpinner.setOnItemSelectedListener(mReportTypeSelectedListener);</span>
+
+
+<span class="nc" id="L214">        toggleToolbarTitleVisibility();</span>
+<span class="nc" id="L215">    }</span>
+
+    public void toggleToolbarTitleVisibility() {
+<span class="nc" id="L218">        ActionBar actionBar = getSupportActionBar();</span>
+<span class="nc bnc" id="L219" title="All 4 branches missed.">        assert actionBar != null;</span>
+
+<span class="nc bnc" id="L221" title="All 2 branches missed.">        if (mReportType == ReportType.NONE){</span>
+<span class="nc" id="L222">            mReportTypeSpinner.setVisibility(View.GONE);</span>
+        } else {
+<span class="nc" id="L224">            mReportTypeSpinner.setVisibility(View.VISIBLE);</span>
+        }
+<span class="nc bnc" id="L226" title="All 2 branches missed.">        actionBar.setDisplayShowTitleEnabled(mReportType == ReportType.NONE);</span>
+<span class="nc" id="L227">    }</span>
+
+    /**
+     * Sets the color Action Bar and Status bar (where applicable)
+     */
+    public void setAppBarColor(int color) {
+<span class="nc" id="L233">        int resolvedColor = getResources().getColor(color);</span>
+<span class="nc bnc" id="L234" title="All 2 branches missed.">        if (getSupportActionBar() != null)</span>
+<span class="nc" id="L235">            getSupportActionBar().setBackgroundDrawable(new ColorDrawable(resolvedColor));</span>
+
+<span class="nc bnc" id="L237" title="All 2 branches missed.">        if (Build.VERSION.SDK_INT &gt; 20)</span>
+<span class="nc" id="L238">            getWindow().setStatusBarColor(GnuCashApplication.darken(resolvedColor));</span>
+<span class="nc" id="L239">    }</span>
+
+    /**
+     * Updates the reporting time range for all listening fragments
+     */
+    private void updateDateRangeOnFragment(){
+<span class="nc" id="L245">        List&lt;Fragment&gt; fragments = getSupportFragmentManager().getFragments();</span>
+<span class="nc bnc" id="L246" title="All 2 branches missed.">        for (Fragment fragment : fragments) {</span>
+<span class="nc bnc" id="L247" title="All 2 branches missed.">            if (fragment instanceof ReportOptionsListener){</span>
+<span class="nc" id="L248">                ((ReportOptionsListener) fragment).onTimeRangeUpdated(mReportPeriodStart, mReportPeriodEnd);</span>
+            }
+<span class="nc" id="L250">        }</span>
+<span class="nc" id="L251">    }</span>
+
+    /**
+     * Updates the account type for all attached fragments which are listening
+     */
+    private void updateAccountTypeOnFragments(){
+<span class="nc" id="L257">        List&lt;Fragment&gt; fragments = getSupportFragmentManager().getFragments();</span>
+<span class="nc bnc" id="L258" title="All 2 branches missed.">        for (Fragment fragment : fragments) {</span>
+<span class="nc bnc" id="L259" title="All 2 branches missed.">            if (fragment instanceof ReportOptionsListener){</span>
+<span class="nc" id="L260">                ((ReportOptionsListener) fragment).onAccountTypeUpdated(mAccountType);</span>
+            }
+<span class="nc" id="L262">        }</span>
+<span class="nc" id="L263">    }</span>
+
+    /**
+     * Updates the report grouping interval on all attached fragments which are listening
+     */
+    private void updateGroupingOnFragments(){
+<span class="nc" id="L269">        List&lt;Fragment&gt; fragments = getSupportFragmentManager().getFragments();</span>
+<span class="nc bnc" id="L270" title="All 2 branches missed.">        for (Fragment fragment : fragments) {</span>
+<span class="nc bnc" id="L271" title="All 2 branches missed.">            if (fragment instanceof ReportOptionsListener){</span>
+<span class="nc" id="L272">                ((ReportOptionsListener) fragment).onGroupingUpdated(mReportGroupInterval);</span>
+            }
+<span class="nc" id="L274">        }</span>
+<span class="nc" id="L275">    }</span>
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+<span class="nc" id="L279">        getMenuInflater().inflate(R.menu.report_actions, menu);</span>
+<span class="nc" id="L280">        return true;</span>
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+<span class="nc bnc" id="L285" title="All 6 branches missed.">        switch (item.getItemId()){</span>
+            case R.id.menu_group_reports_by:
+<span class="nc" id="L287">                return true;</span>
+
+            case R.id.group_by_month:
+<span class="nc" id="L290">                item.setChecked(true);</span>
+<span class="nc" id="L291">                mReportGroupInterval = GroupInterval.MONTH;</span>
+<span class="nc" id="L292">                updateGroupingOnFragments();</span>
+<span class="nc" id="L293">                return true;</span>
+
+            case R.id.group_by_quarter:
+<span class="nc" id="L296">                item.setChecked(true);</span>
+<span class="nc" id="L297">                mReportGroupInterval = GroupInterval.QUARTER;</span>
+<span class="nc" id="L298">                updateGroupingOnFragments();</span>
+<span class="nc" id="L299">                return true;</span>
+
+            case R.id.group_by_year:
+<span class="nc" id="L302">                item.setChecked(true);</span>
+<span class="nc" id="L303">                mReportGroupInterval = GroupInterval.YEAR;</span>
+<span class="nc" id="L304">                updateGroupingOnFragments();</span>
+<span class="nc" id="L305">                return true;</span>
+
+            case android.R.id.home:
+<span class="nc" id="L308">                super.onOptionsItemSelected(item);</span>
+
+            default:
+<span class="nc" id="L311">                return false;</span>
+        }
+
+    }
+
+    @Override
+    public void onItemSelected(AdapterView&lt;?&gt; parent, View view, int position, long id) {
+<span class="nc" id="L318">        mReportPeriodEnd = new LocalDate().plusDays(1).toDate().getTime();</span>
+<span class="nc bnc" id="L319" title="All 7 branches missed.">        switch (position){</span>
+            case 0: //current month
+<span class="nc" id="L321">                mReportPeriodStart = new LocalDate().dayOfMonth().withMinimumValue().toDate().getTime();</span>
+<span class="nc" id="L322">                break;</span>
+            case 1: // last 3 months. x-2, x-1, x
+<span class="nc" id="L324">                mReportPeriodStart = new LocalDate().minusMonths(2).dayOfMonth().withMinimumValue().toDate().getTime();</span>
+<span class="nc" id="L325">                break;</span>
+            case 2:
+<span class="nc" id="L327">                mReportPeriodStart = new LocalDate().minusMonths(5).dayOfMonth().withMinimumValue().toDate().getTime();</span>
+<span class="nc" id="L328">                break;</span>
+            case 3:
+<span class="nc" id="L330">                mReportPeriodStart = new LocalDate().minusMonths(11).dayOfMonth().withMinimumValue().toDate().getTime();</span>
+<span class="nc" id="L331">                break;</span>
+            case 4: //ALL TIME
+<span class="nc" id="L333">                mReportPeriodStart = -1;</span>
+<span class="nc" id="L334">                mReportPeriodEnd = -1;</span>
+<span class="nc" id="L335">                break;</span>
+            case 5:
+<span class="nc" id="L337">                String mCurrencyCode = GnuCashApplication.getDefaultCurrencyCode();</span>
+<span class="nc" id="L338">                long earliestTransactionTime = mTransactionsDbAdapter.getTimestampOfEarliestTransaction(mAccountType, mCurrencyCode);</span>
+<span class="nc" id="L339">                DialogFragment rangeFragment = DateRangePickerDialogFragment.newInstance(</span>
+                        earliestTransactionTime,
+<span class="nc" id="L341">                        new LocalDate().plusDays(1).toDate().getTime(),</span>
+                        this);
+<span class="nc" id="L343">                rangeFragment.show(getSupportFragmentManager(), &quot;range_dialog&quot;);</span>
+                break;
+        }
+<span class="nc bnc" id="L346" title="All 2 branches missed.">        if (position != 5){ //the date picker will trigger the update itself</span>
+<span class="nc" id="L347">            updateDateRangeOnFragment();</span>
+        }
+<span class="nc" id="L349">    }</span>
+
+    @Override
+    public void onNothingSelected(AdapterView&lt;?&gt; parent) {
+        //nothing to see here, move along
+<span class="nc" id="L354">    }</span>
+
+    @Override
+    public void onDateSet(DatePicker view, int year, int monthOfYear, int dayOfMonth) {
+<span class="nc" id="L358">        Calendar calendar = Calendar.getInstance();</span>
+<span class="nc" id="L359">        calendar.set(year, monthOfYear, dayOfMonth);</span>
+<span class="nc" id="L360">        mReportPeriodStart = calendar.getTimeInMillis();</span>
+<span class="nc" id="L361">        updateDateRangeOnFragment();</span>
+<span class="nc" id="L362">    }</span>
+
+    @Override
+    public void onDateRangeSet(Date startDate, Date endDate) {
+<span class="nc" id="L366">        mReportPeriodStart = startDate.getTime();</span>
+<span class="nc" id="L367">        mReportPeriodEnd = endDate.getTime();</span>
+<span class="nc" id="L368">        updateDateRangeOnFragment();</span>
+
+<span class="nc" id="L370">    }</span>
+
+    public AccountType getAccountType(){
+<span class="nc" id="L373">        return mAccountType;</span>
+    }
+
+    /**
+     * Return the end time of the reporting period
+     * @return Time in millis
+     */
+    public long getReportPeriodEnd() {
+<span class="nc" id="L381">        return mReportPeriodEnd;</span>
+    }
+
+    /**
+     * Return the start time of the reporting period
+     * @return Time in millis
+     */
+    public long getReportPeriodStart() {
+<span class="nc" id="L389">        return mReportPeriodStart;</span>
+    }
+
+    @Override
+    public boolean onKeyUp(int keyCode, KeyEvent event) {
+<span class="nc bnc" id="L394" title="All 2 branches missed.">        if (keyCode == KeyEvent.KEYCODE_BACK){</span>
+<span class="nc bnc" id="L395" title="All 2 branches missed.">            if (mReportType != ReportType.NONE){</span>
+<span class="nc" id="L396">                loadFragment(mReportsOverviewFragment);</span>
+<span class="nc" id="L397">                return true;</span>
+            }
+        }
+<span class="nc" id="L400">        return super.onKeyUp(keyCode, event);</span>
+    }
+
+    @Override
+    public void refresh() {
+<span class="nc" id="L405">        List&lt;Fragment&gt; fragments = getSupportFragmentManager().getFragments();</span>
+<span class="nc bnc" id="L406" title="All 2 branches missed.">        for (Fragment fragment : fragments) {</span>
+<span class="nc bnc" id="L407" title="All 2 branches missed.">            if (fragment instanceof Refreshable){</span>
+<span class="nc" id="L408">                ((Refreshable) fragment).refresh();</span>
+            }
+<span class="nc" id="L410">        }</span>
+<span class="nc" id="L411">    }</span>
+
+    @Override
+    /**
+     * Just another call to refresh
+     */
+    public void refresh(String uid) {
+<span class="nc" id="L418">        refresh();</span>
+<span class="nc" id="L419">    }</span>
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+<span class="nc" id="L423">        super.onSaveInstanceState(outState);</span>
+
+<span class="nc" id="L425">        outState.putSerializable(STATE_REPORT_TYPE, mReportType);</span>
+<span class="nc" id="L426">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>

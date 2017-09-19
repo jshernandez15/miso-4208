@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AccountBalanceTask.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">org.gnucash.android.ui.util</a> &gt; <span class="el_source">AccountBalanceTask.java</span></div><h1>AccountBalanceTask.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2014 Ngewi Fet &lt;ngewif@gmail.com&gt;
+ * Copyright (c) 2014 Yongxin Wang &lt;fefe.wyx@gmail.com&gt;
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.gnucash.android.ui.util;
+
+import android.os.AsyncTask;
+import android.util.Log;
+import android.widget.TextView;
+
+import com.crashlytics.android.Crashlytics;
+
+import org.gnucash.android.db.adapter.AccountsDbAdapter;
+import org.gnucash.android.model.Money;
+import org.gnucash.android.ui.transaction.TransactionsActivity;
+
+import java.lang.ref.WeakReference;
+
+/**
+ * An asynchronous task for computing the account balance of an account.
+ * This is done asynchronously because in cases of deeply nested accounts,
+ * it can take some time and would block the UI thread otherwise.
+ */
+public class AccountBalanceTask extends AsyncTask&lt;String, Void, Money&gt; {
+<span class="nc" id="L38">    public static final String LOG_TAG = AccountBalanceTask.class.getName();</span>
+
+    private final WeakReference&lt;TextView&gt; accountBalanceTextViewReference;
+    private final AccountsDbAdapter accountsDbAdapter;
+
+<span class="nc" id="L43">    public AccountBalanceTask(TextView balanceTextView){</span>
+<span class="nc" id="L44">        accountBalanceTextViewReference = new WeakReference&lt;&gt;(balanceTextView);</span>
+<span class="nc" id="L45">        accountsDbAdapter = AccountsDbAdapter.getInstance();</span>
+<span class="nc" id="L46">    }</span>
+
+    @Override
+    protected Money doInBackground(String... params) {
+        //if the view for which we are doing this job is dead, kill the job as well
+<span class="nc bnc" id="L51" title="All 2 branches missed.">        if (accountBalanceTextViewReference.get() == null){</span>
+<span class="nc" id="L52">            cancel(true);</span>
+<span class="nc" id="L53">            return Money.getZeroInstance();</span>
+        }
+
+<span class="nc" id="L56">        Money balance = Money.getZeroInstance();</span>
+        try {
+<span class="nc" id="L58">            balance = accountsDbAdapter.getAccountBalance(params[0], -1, System.currentTimeMillis());</span>
+<span class="nc" id="L59">        } catch (Exception ex) {</span>
+<span class="nc" id="L60">            Log.e(LOG_TAG, &quot;Error computing account balance &quot;, ex);</span>
+<span class="nc" id="L61">            Crashlytics.logException(ex);</span>
+<span class="nc" id="L62">        }</span>
+<span class="nc" id="L63">        return balance;</span>
+    }
+
+    @Override
+    protected void onPostExecute(Money balance) {
+<span class="nc bnc" id="L68" title="All 4 branches missed.">        if (accountBalanceTextViewReference.get() != null &amp;&amp; balance != null){</span>
+<span class="nc" id="L69">            final TextView balanceTextView = accountBalanceTextViewReference.get();</span>
+<span class="nc bnc" id="L70" title="All 2 branches missed.">            if (balanceTextView != null){</span>
+<span class="nc" id="L71">                TransactionsActivity.displayBalance(balanceTextView, balance);</span>
+            }
+        }
+<span class="nc" id="L74">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.8.201612092310</span></div></body></html>
