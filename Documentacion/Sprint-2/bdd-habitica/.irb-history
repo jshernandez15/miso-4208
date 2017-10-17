@@ -1,0 +1,48 @@
+query("Button marked:'Accept'")
+run
+start_test_server_in_backgroundstart_test_server_in_background
+start_test_server_in_background
+reinstall_apps
+start_test_server_in_background
+query("button")
+
+query("button")
+perform_action('swipe', 'left')
+perform_action('swipe', 'left')
+perform_action('swipe', 'right')
+query("*",:id)
+query("button id:'skipButton'")
+query("id:'skipButton'")
+query("*")
+query("id:'skipButton'")
+query("* id:'skipButton'")
+skipBtn = query("* id:'skipButton'")
+touch(skipBtn)
+query("*",:id)
+query("* id:'show_login_button'")
+start_test_server_in_background
+query("*")
+query("*",:id)
+touch(skipBtn)
+touch(skipBtn)
+query("*",:id)
+query("* id:'show_login_button'")
+touch(query("* id:'show_login_button'"))
+query("*",id)
+query("*",:id)
+query("* id:'#{id}'")
+query("EditText ")
+query("AppCompatEditText ")
+start_test_server_in_background
+press_back_button
+touch(query("* id:'skipButton'"))
+touch(query("* id:'show_login_button'"))
+start_test_server_in_background
+query("*",:id)
+touch(query("* id:'login_btn'"))
+query("* id:'login_btn'")
+query("*",:id)
+query("*",:id)
+start_test_server_in_background
+start_test_server_in_background
+start_test_server_in_background
