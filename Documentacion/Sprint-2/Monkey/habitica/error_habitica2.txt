@@ -1,0 +1,81 @@
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+    // Injection Failed
+// CRASH: com.habitrpg.android.habitica (pid 27216)
+// Short Msg: java.lang.NullPointerException
+// Long Msg: java.lang.NullPointerException: Attempt to invoke interface method 'int org.solovyev.android.checkout.BillingRequests.purchase(java.lang.String, java.lang.String, java.lang.String, org.solovyev.android.checkout.PurchaseFlow)' on a null object reference
+// Build Label: samsung/j5lteub/j5lte:6.0.1/MMB29M/J500MUBU1BQE1:user/release-keys
+// Build Changelist: J500MUBU1BQE1
+// Build Time: 1495474562000
+// java.lang.NullPointerException: Attempt to invoke interface method 'int org.solovyev.android.checkout.BillingRequests.purchase(java.lang.String, java.lang.String, java.lang.String, org.solovyev.android.checkout.PurchaseFlow)' on a null object reference
+// 	at com.habitrpg.android.habitica.ui.fragments.GemsPurchaseFragment.purchaseGems(GemsPurchaseFragment.java:123)
+// 	at com.habitrpg.android.habitica.ui.fragments.GemsPurchaseFragment.lambda$onViewCreated$0(GemsPurchaseFragment.java:64)
+// 	at com.habitrpg.android.habitica.ui.fragments.GemsPurchaseFragment$$Lambda$1.onClick(Unknown Source)
+// 	at android.view.View.performClick(View.java:5716)
+// 	at android.widget.TextView.performClick(TextView.java:10926)
+// 	at android.view.View.onKeyUp(View.java:10758)
+// 	at android.widget.TextView.onKeyUp(TextView.java:7311)
+// 	at android.view.KeyEvent.dispatch(KeyEvent.java:3290)
+// 	at android.view.View.dispatchKeyEvent(View.java:9852)
+// 	at android.view.ViewGroup.dispatchKeyEvent(ViewGroup.java:1744)
+// 	at android.view.ViewGroup.dispatchKeyEvent(ViewGroup.java:1744)
+// 	at android.view.ViewGroup.dispatchKeyEvent(ViewGroup.java:1744)
+// 	at android.view.ViewGroup.dispatchKeyEvent(ViewGroup.java:1744)
+// 	at android.view.ViewGroup.dispatchKeyEvent(ViewGroup.java:1744)
+// 	at android.view.ViewGroup.dispatchKeyEvent(ViewGroup.java:1744)
+// 	at android.support.v4.widget.NestedScrollView.dispatchKeyEvent(NestedScrollView.java:514)
+// 	at android.view.ViewGroup.dispatchKeyEvent(ViewGroup.java:1744)
+// 	at android.support.v4.view.ViewPager.dispatchKeyEvent(ViewPager.java:2761)
+// 	at android.view.ViewGroup.dispatchKeyEvent(ViewGroup.java:1744)
+// 	at android.view.ViewGroup.dispatchKeyEvent(ViewGroup.java:1744)
+// 	at android.view.ViewGroup.dispatchKeyEvent(ViewGroup.java:1744)
+// 	at android.view.ViewGroup.dispatchKeyEvent(ViewGroup.java:1744)
+// 	at android.view.ViewGroup.dispatchKeyEvent(ViewGroup.java:1744)
+// 	at android.view.ViewGroup.dispatchKeyEvent(ViewGroup.java:1744)
+// 	at android.view.ViewGroup.dispatchKeyEvent(ViewGroup.java:1744)
+// 	at android.view.ViewGroup.dispatchKeyEvent(ViewGroup.java:1744)
+// 	at com.android.internal.policy.PhoneWindow$DecorView.superDispatchKeyEvent(PhoneWindow.java:2861)
+// 	at com.android.internal.policy.PhoneWindow.superDispatchKeyEvent(PhoneWindow.java:1851)
+// 	at android.app.Activity.dispatchKeyEvent(Activity.java:2992)
+// 	at android.support.v7.app.AppCompatActivity.dispatchKeyEvent(AppCompatActivity.java:541)
+// 	at android.support.v7.view.WindowCallbackWrapper.dispatchKeyEvent(WindowCallbackWrapper.java:59)
+// 	at android.support.v7.app.AppCompatDelegateImplBase$AppCompatWindowCallbackBase.dispatchKeyEvent(AppCompatDelegateImplBase.java:319)
+// 	at android.support.v7.view.WindowCallbackWrapper.dispatchKeyEvent(WindowCallbackWrapper.java:59)
+// 	at com.android.internal.policy.PhoneWindow$DecorView.dispatchKeyEvent(PhoneWindow.java:2735)
+// 	at android.view.ViewRootImpl$ViewPostImeInputStage.processKeyEvent(ViewRootImpl.java:5332)
+// 	at android.view.ViewRootImpl$ViewPostImeInputStage.onProcess(ViewRootImpl.java:5285)
+// 	at android.view.ViewRootImpl$InputStage.deliver(ViewRootImpl.java:4731)
+// 	at android.view.ViewRootImpl$InputStage.onDeliverToNext(ViewRootImpl.java:4784)
+// 	at android.view.ViewRootImpl$InputStage.forward(ViewRootImpl.java:4750)
+// 	at android.view.ViewRootImpl$AsyncInputStage.forward(ViewRootImpl.java:4891)
+// 	at android.view.ViewRootImpl$InputStage.apply(ViewRootImpl.java:4758)
+// 	at android.view.ViewRootImpl$AsyncInputStage.apply(ViewRootImpl.java:4948)
+// 	at android.view.ViewRootImpl$InputStage.deliver(ViewRootImpl.java:4731)
+// 	at android.view.ViewRootImpl$InputStage.onDeliverToNext(ViewRootImpl.java:4784)
+// 	at android.view.ViewRootImpl$InputStage.forward(ViewRootImpl.java:4750)
+// 	at android.view.ViewRootImpl$InputStage.apply(ViewRootImpl.java:4758)
+// 	at android.view.ViewRootImpl$InputStage.deliver(ViewRootImpl.java:4731)
+// 	at android.view.ViewRootImpl$InputStage.onDeliverToNext(ViewRootImpl.java:4784)
+// 	at android.view.ViewRootImpl$InputStage.forward(ViewRootImpl.java:4750)
+// 	at android.view.ViewRootImpl$AsyncInputStage.forward(ViewRootImpl.java:4924)
+// 	at android.view.ViewRootImpl$ImeInputStage.onFinishedInputEvent(ViewRootImpl.java:5169)
+// 	at android.view.inputmethod.InputMethodManager$PendingEvent.run(InputMethodManager.java:2907)
+// 	at android.view.inputmethod.InputMethodManager.invokeFinishedInputEventCallback(InputMethodManager.java:2479)
+// 	at android.view.inputmethod.InputMethodManager.finishedInputEvent(InputMethodManager.java:2470)
+// 	at android.view.inputmethod.InputMethodManager$ImeInputEventSender.onInputEventFinished(InputMethodManager.java:2884)
+// 	at android.view.InputEventSender.dispatchInputEventFinished(InputEventSender.java:141)
+// 	at android.os.MessageQueue.nativePollOnce(Native Method)
+// 	at android.os.MessageQueue.next(MessageQueue.java:323)
+// 	at android.os.Looper.loop(Looper.java:135)
+// 	at android.app.ActivityThread.main(ActivityThread.java:7325)
+// 	at java.lang.reflect.Method.invoke(Native Method)
+// 	at com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:1230)
+// 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:1120)
+// 
+** Monkey aborted due to error.
+Events injected: 5420
+## Network stats: elapsed time=55797ms (0ms mobile, 0ms wifi, 55797ms not connected)
+** System appears to have crashed at event 5420 of 1000000 using seed 12345
