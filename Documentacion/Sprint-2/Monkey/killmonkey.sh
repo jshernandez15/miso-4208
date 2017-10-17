@@ -1,0 +1,1 @@
+./adb.exe shell ps | awk '/com\.android\.commands\.monkey/ { system("./adb.exe shell kill " $2) }'

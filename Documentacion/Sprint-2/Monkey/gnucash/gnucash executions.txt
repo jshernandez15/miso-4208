@@ -1,0 +1,2 @@
+./adb.exe shell monkey -p org.gnucash.android -s 54321 --pct-anyevent 70 --pct-majornav 0 --pct-nav 7 --pct-trackball 3 --pct-touch 20 -v 5000000
+./adb.exe shell monkey -p org.gnucash.android -s 321 --pct-anyevent 70 --pct-majornav 0 --pct-nav 7 --pct-trackball 3 --pct-touch 20 -v 1000000
