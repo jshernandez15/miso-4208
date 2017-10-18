@@ -1,0 +1,47 @@
+
+
+----- pid 1497 at 2017-10-17 00:24:31 -----
+Cmd line: /system/bin/mediaserver
+ABI: 'x86'
+
+"mediaserver" sysTid=1497
+  #00 pc 00000d0e  [vdso:f7275000] (__kernel_vsyscall+14)
+  #01 pc 000733bc  /system/lib/libc.so (__ioctl+28)
+  #02 pc 00025cc1  /system/lib/libc.so (ioctl+65)
+  #03 pc 00052717  /system/lib/libbinder.so (_ZN7android14IPCThreadState14talkWithDriverEb+359)
+  #04 pc 000528aa  /system/lib/libbinder.so (_ZN7android14IPCThreadState20getAndExecuteCommandEv+42)
+  #05 pc 00053035  /system/lib/libbinder.so (_ZN7android14IPCThreadState14joinThreadPoolEb+69)
+  #06 pc 00000b3f  /system/bin/mediaserver (main+223)
+  #07 pc 00015e94  /system/lib/libc.so (__libc_init+100)
+  #08 pc 000009b1  /system/bin/mediaserver (_start+97)
+
+"Binder:1497_1" sysTid=1518
+  #00 pc 00000d10  [vdso:f7275000] (__kernel_vsyscall+16)
+  #01 pc 000733bc  /system/lib/libc.so (__ioctl+28)
+  #02 pc 00025cc1  /system/lib/libc.so (ioctl+65)
+  #03 pc 00052717  /system/lib/libbinder.so (_ZN7android14IPCThreadState14talkWithDriverEb+359)
+  #04 pc 000528aa  /system/lib/libbinder.so (_ZN7android14IPCThreadState20getAndExecuteCommandEv+42)
+  #05 pc 00053035  /system/lib/libbinder.so (_ZN7android14IPCThreadState14joinThreadPoolEb+69)
+  #06 pc 0007d3d9  /system/lib/libbinder.so (_ZN7android10PoolThread10threadLoopEv+41)
+  #07 pc 0000fd4a  /system/lib/libutils.so (_ZN7android6Thread11_threadLoopEPv+282)
+  #08 pc 0000f556  /system/lib/libutils.so (_ZN13thread_data_t10trampolineEPKS_+246)
+  #09 pc 000707a5  /system/lib/libc.so (_ZL15__pthread_startPv+53)
+  #10 pc 0002046b  /system/lib/libc.so (__start_thread+75)
+  #11 pc 0001ed06  /system/lib/libc.so (__bionic_clone+70)
+
+"Binder:1497_2" sysTid=1841
+  #00 pc 00000d10  [vdso:f7275000] (__kernel_vsyscall+16)
+  #01 pc 000733bc  /system/lib/libc.so (__ioctl+28)
+  #02 pc 00025cc1  /system/lib/libc.so (ioctl+65)
+  #03 pc 00052717  /system/lib/libbinder.so (_ZN7android14IPCThreadState14talkWithDriverEb+359)
+  #04 pc 000528aa  /system/lib/libbinder.so (_ZN7android14IPCThreadState20getAndExecuteCommandEv+42)
+  #05 pc 00053035  /system/lib/libbinder.so (_ZN7android14IPCThreadState14joinThreadPoolEb+69)
+  #06 pc 0007d3d9  /system/lib/libbinder.so (_ZN7android10PoolThread10threadLoopEv+41)
+  #07 pc 0000fd4a  /system/lib/libutils.so (_ZN7android6Thread11_threadLoopEPv+282)
+  #08 pc 0000f556  /system/lib/libutils.so (_ZN13thread_data_t10trampolineEPKS_+246)
+  #09 pc 000707a5  /system/lib/libc.so (_ZL15__pthread_startPv+53)
+  #10 pc 0002046b  /system/lib/libc.so (__start_thread+75)
+  #11 pc 0001ed06  /system/lib/libc.so (__bionic_clone+70)
+
+----- end 1497 -----
+
