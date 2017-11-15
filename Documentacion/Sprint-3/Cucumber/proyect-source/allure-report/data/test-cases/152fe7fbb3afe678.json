@@ -1,0 +1,86 @@
+{
+  "uid" : "152fe7fbb3afe678",
+  "name" : "que voy a la página principal",
+  "fullName" : "Acceso a la aplicación Acceso con parámetros incorrectos.que voy a la página principal",
+  "historyId" : "19b03f4da05cbf7e6001208d39a54f14",
+  "time" : {
+    "start" : 1510712565940,
+    "stop" : 1510712568604,
+    "duration" : 2664
+  },
+  "description" : "",
+  "descriptionHtml" : "",
+  "status" : "passed",
+  "statusDetails" : {
+    "flaky" : false
+  },
+  "beforeStages" : [ ],
+  "testStage" : {
+    "status" : "passed",
+    "steps" : [ {
+      "name" : "POST /wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/url",
+      "time" : {
+        "start" : 1510712565951,
+        "stop" : 1510712568591,
+        "duration" : 2640
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ {
+        "uid" : "9c85f8c562a6dc77",
+        "name" : "Request",
+        "source" : "9c85f8c562a6dc77.json",
+        "type" : "application/json",
+        "size" : 38
+      }, {
+        "uid" : "c36f5156a530119e",
+        "name" : "Response",
+        "source" : "c36f5156a530119e.json",
+        "type" : "application/json",
+        "size" : 198
+      } ],
+      "parameters" : [ ],
+      "attachmentsCount" : 2,
+      "shouldDisplayMessage" : false,
+      "hasContent" : true,
+      "stepsCount" : 0
+    } ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "attachmentsCount" : 2,
+    "shouldDisplayMessage" : false,
+    "hasContent" : true,
+    "stepsCount" : 1
+  },
+  "afterStages" : [ ],
+  "labels" : [ {
+    "name" : "suite",
+    "value" : "Acceso a la aplicación Acceso con parámetros incorrectos"
+  }, {
+    "name" : "testClass",
+    "value" : "Acceso a la aplicación Acceso con parámetros incorrectos"
+  }, {
+    "name" : "testMethod",
+    "value" : "que voy a la página principal"
+  }, {
+    "name" : "package",
+    "value" : "Acceso a la aplicación Acceso con parámetros incorrectos"
+  }, {
+    "name" : "resultFormat",
+    "value" : "allure1"
+  } ],
+  "parameters" : [ ],
+  "links" : [ ],
+  "hidden" : true,
+  "extra" : {
+    "tags" : [ ]
+  },
+  "source" : "152fe7fbb3afe678.json",
+  "statusDetailsSafe" : {
+    "flaky" : false
+  },
+  "statusMessage" : {
+    "present" : false
+  },
+  "parameterValues" : [ ]
+}

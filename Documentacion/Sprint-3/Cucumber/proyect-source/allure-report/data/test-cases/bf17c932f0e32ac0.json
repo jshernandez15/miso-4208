@@ -1,0 +1,155 @@
+{
+  "uid" : "bf17c932f0e32ac0",
+  "name" : "abro la página de acceso",
+  "fullName" : "Acceso a la aplicación Acceso sin parámetros.abro la página de acceso",
+  "historyId" : "88ac97efc57952a1b53c0497af3ff29",
+  "time" : {
+    "start" : 1510712465545,
+    "stop" : 1510712466259,
+    "duration" : 714
+  },
+  "description" : "",
+  "descriptionHtml" : "",
+  "status" : "passed",
+  "statusDetails" : {
+    "flaky" : false
+  },
+  "beforeStages" : [ ],
+  "testStage" : {
+    "status" : "passed",
+    "steps" : [ {
+      "name" : "POST /wd/hub/session/756bbc5ef3922980b7b180393483f6495a2076e0/elements",
+      "time" : {
+        "start" : 1510712465555,
+        "stop" : 1510712465668,
+        "duration" : 113
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ {
+        "uid" : "3d00e87cb8b9c7c0",
+        "name" : "Request",
+        "source" : "3d00e87cb8b9c7c0.json",
+        "type" : "application/json",
+        "size" : 61
+      }, {
+        "uid" : "d70c6db9f20f97ed",
+        "name" : "Response",
+        "source" : "d70c6db9f20f97ed.json",
+        "type" : "application/json",
+        "size" : 248
+      } ],
+      "parameters" : [ ],
+      "attachmentsCount" : 2,
+      "shouldDisplayMessage" : false,
+      "hasContent" : true,
+      "stepsCount" : 0
+    }, {
+      "name" : "GET /wd/hub/session/756bbc5ef3922980b7b180393483f6495a2076e0/element/5/displayed",
+      "time" : {
+        "start" : 1510712465669,
+        "stop" : 1510712465814,
+        "duration" : 145
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ {
+        "uid" : "f6fea531495a257e",
+        "name" : "Response",
+        "source" : "f6fea531495a257e.json",
+        "type" : "application/json",
+        "size" : 198
+      } ],
+      "parameters" : [ ],
+      "attachmentsCount" : 1,
+      "shouldDisplayMessage" : false,
+      "hasContent" : true,
+      "stepsCount" : 0
+    }, {
+      "name" : "POST /wd/hub/session/756bbc5ef3922980b7b180393483f6495a2076e0/element",
+      "time" : {
+        "start" : 1510712465826,
+        "stop" : 1510712465932,
+        "duration" : 106
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ {
+        "uid" : "1ca6a80739e0e714",
+        "name" : "Request",
+        "source" : "1ca6a80739e0e714.json",
+        "type" : "application/json",
+        "size" : 61
+      }, {
+        "uid" : "de9e3f72aa21eaae",
+        "name" : "Response",
+        "source" : "de9e3f72aa21eaae.json",
+        "type" : "application/json",
+        "size" : 224
+      } ],
+      "parameters" : [ ],
+      "attachmentsCount" : 2,
+      "shouldDisplayMessage" : false,
+      "hasContent" : true,
+      "stepsCount" : 0
+    }, {
+      "name" : "POST /wd/hub/session/756bbc5ef3922980b7b180393483f6495a2076e0/element/5/click",
+      "time" : {
+        "start" : 1510712465934,
+        "stop" : 1510712466248,
+        "duration" : 314
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ {
+        "uid" : "7882f81097be6f6b",
+        "name" : "Response",
+        "source" : "7882f81097be6f6b.json",
+        "type" : "application/json",
+        "size" : 197
+      } ],
+      "parameters" : [ ],
+      "attachmentsCount" : 1,
+      "shouldDisplayMessage" : false,
+      "hasContent" : true,
+      "stepsCount" : 0
+    } ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "attachmentsCount" : 6,
+    "shouldDisplayMessage" : false,
+    "hasContent" : true,
+    "stepsCount" : 4
+  },
+  "afterStages" : [ ],
+  "labels" : [ {
+    "name" : "suite",
+    "value" : "Acceso a la aplicación Acceso sin parámetros"
+  }, {
+    "name" : "testClass",
+    "value" : "Acceso a la aplicación Acceso sin parámetros"
+  }, {
+    "name" : "testMethod",
+    "value" : "abro la página de acceso"
+  }, {
+    "name" : "package",
+    "value" : "Acceso a la aplicación Acceso sin parámetros"
+  }, {
+    "name" : "resultFormat",
+    "value" : "allure1"
+  } ],
+  "parameters" : [ ],
+  "links" : [ ],
+  "hidden" : true,
+  "extra" : {
+    "tags" : [ ]
+  },
+  "source" : "bf17c932f0e32ac0.json",
+  "statusDetailsSafe" : {
+    "flaky" : false
+  },
+  "statusMessage" : {
+    "present" : false
+  },
+  "parameterValues" : [ ]
+}

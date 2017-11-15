@@ -1,0 +1,155 @@
+{
+  "uid" : "1d79bea7f9b2b6a8",
+  "name" : "abro la página de acceso",
+  "fullName" : "Acceso a la aplicación Acceso con parámetros incorrectos.abro la página de acceso",
+  "historyId" : "2b3b7798d752d645c58532b34b9e7224",
+  "time" : {
+    "start" : 1510712226997,
+    "stop" : 1510712227587,
+    "duration" : 590
+  },
+  "description" : "",
+  "descriptionHtml" : "",
+  "status" : "passed",
+  "statusDetails" : {
+    "flaky" : false
+  },
+  "beforeStages" : [ ],
+  "testStage" : {
+    "status" : "passed",
+    "steps" : [ {
+      "name" : "POST /wd/hub/session/13a9b8d25ee43192c969c3733681a2ba25cdfd01/elements",
+      "time" : {
+        "start" : 1510712227005,
+        "stop" : 1510712227203,
+        "duration" : 198
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ {
+        "uid" : "6a0271ae65eac964",
+        "name" : "Request",
+        "source" : "6a0271ae65eac964.json",
+        "type" : "application/json",
+        "size" : 61
+      }, {
+        "uid" : "95d74fea3d27c568",
+        "name" : "Response",
+        "source" : "95d74fea3d27c568.json",
+        "type" : "application/json",
+        "size" : 248
+      } ],
+      "parameters" : [ ],
+      "attachmentsCount" : 2,
+      "shouldDisplayMessage" : false,
+      "hasContent" : true,
+      "stepsCount" : 0
+    }, {
+      "name" : "GET /wd/hub/session/13a9b8d25ee43192c969c3733681a2ba25cdfd01/element/0/displayed",
+      "time" : {
+        "start" : 1510712227205,
+        "stop" : 1510712227316,
+        "duration" : 111
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ {
+        "uid" : "a60f2db46012689b",
+        "name" : "Response",
+        "source" : "a60f2db46012689b.json",
+        "type" : "application/json",
+        "size" : 198
+      } ],
+      "parameters" : [ ],
+      "attachmentsCount" : 1,
+      "shouldDisplayMessage" : false,
+      "hasContent" : true,
+      "stepsCount" : 0
+    }, {
+      "name" : "POST /wd/hub/session/13a9b8d25ee43192c969c3733681a2ba25cdfd01/element",
+      "time" : {
+        "start" : 1510712227321,
+        "stop" : 1510712227433,
+        "duration" : 112
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ {
+        "uid" : "e927c1a806e70f70",
+        "name" : "Request",
+        "source" : "e927c1a806e70f70.json",
+        "type" : "application/json",
+        "size" : 61
+      }, {
+        "uid" : "bc136cf8ac6d9e61",
+        "name" : "Response",
+        "source" : "bc136cf8ac6d9e61.json",
+        "type" : "application/json",
+        "size" : 223
+      } ],
+      "parameters" : [ ],
+      "attachmentsCount" : 2,
+      "shouldDisplayMessage" : false,
+      "hasContent" : true,
+      "stepsCount" : 0
+    }, {
+      "name" : "POST /wd/hub/session/13a9b8d25ee43192c969c3733681a2ba25cdfd01/element/0/click",
+      "time" : {
+        "start" : 1510712227435,
+        "stop" : 1510712227583,
+        "duration" : 148
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ {
+        "uid" : "b4284e93c19fb063",
+        "name" : "Response",
+        "source" : "b4284e93c19fb063.json",
+        "type" : "application/json",
+        "size" : 197
+      } ],
+      "parameters" : [ ],
+      "attachmentsCount" : 1,
+      "shouldDisplayMessage" : false,
+      "hasContent" : true,
+      "stepsCount" : 0
+    } ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "attachmentsCount" : 6,
+    "shouldDisplayMessage" : false,
+    "hasContent" : true,
+    "stepsCount" : 4
+  },
+  "afterStages" : [ ],
+  "labels" : [ {
+    "name" : "suite",
+    "value" : "Acceso a la aplicación Acceso con parámetros incorrectos"
+  }, {
+    "name" : "testClass",
+    "value" : "Acceso a la aplicación Acceso con parámetros incorrectos"
+  }, {
+    "name" : "testMethod",
+    "value" : "abro la página de acceso"
+  }, {
+    "name" : "package",
+    "value" : "Acceso a la aplicación Acceso con parámetros incorrectos"
+  }, {
+    "name" : "resultFormat",
+    "value" : "allure1"
+  } ],
+  "parameters" : [ ],
+  "links" : [ ],
+  "hidden" : true,
+  "extra" : {
+    "tags" : [ ]
+  },
+  "source" : "1d79bea7f9b2b6a8.json",
+  "statusDetailsSafe" : {
+    "flaky" : false
+  },
+  "statusMessage" : {
+    "present" : false
+  },
+  "parameterValues" : [ ]
+}

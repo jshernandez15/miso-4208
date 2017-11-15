@@ -1,0 +1,147 @@
+{
+  "uid" : "f1d18bfffe0da26e",
+  "name" : "intento acceder",
+  "fullName" : "Acceso a la aplicación Acceso sin parámetros.intento acceder",
+  "historyId" : "693f6af5496b89fb24625f2a75ea4f96",
+  "time" : {
+    "start" : 1510712592205,
+    "stop" : 1510712592205,
+    "duration" : 0
+  },
+  "description" : "",
+  "descriptionHtml" : "",
+  "status" : "skipped",
+  "statusDetails" : {
+    "message" : "Test ignored",
+    "trace" : "undefined",
+    "flaky" : true
+  },
+  "beforeStages" : [ ],
+  "afterStages" : [ ],
+  "labels" : [ {
+    "name" : "suite",
+    "value" : "Acceso a la aplicación Acceso sin parámetros"
+  }, {
+    "name" : "testClass",
+    "value" : "Acceso a la aplicación Acceso sin parámetros"
+  }, {
+    "name" : "testMethod",
+    "value" : "intento acceder"
+  }, {
+    "name" : "package",
+    "value" : "Acceso a la aplicación Acceso sin parámetros"
+  }, {
+    "name" : "resultFormat",
+    "value" : "allure1"
+  } ],
+  "parameters" : [ ],
+  "links" : [ ],
+  "hidden" : false,
+  "extra" : {
+    "severity" : "normal",
+    "retries" : [ {
+      "uid" : "8baf8641898032c5",
+      "status" : "unknown",
+      "time" : {
+        "start" : 1510712592204,
+        "stop" : 0,
+        "duration" : -1510712592204
+      }
+    }, {
+      "uid" : "9c72c65ecf0c8250",
+      "status" : "skipped",
+      "statusDetails" : "Test ignored",
+      "time" : {
+        "start" : 1510712586174,
+        "stop" : 1510712586174,
+        "duration" : 0
+      }
+    }, {
+      "uid" : "ae752de64a6bb2cf",
+      "status" : "unknown",
+      "time" : {
+        "start" : 1510712586173,
+        "stop" : 0,
+        "duration" : -1510712586173
+      }
+    }, {
+      "uid" : "78db223f34b6c154",
+      "status" : "passed",
+      "time" : {
+        "start" : 1510712574115,
+        "stop" : 1510712574373,
+        "duration" : 258
+      }
+    }, {
+      "uid" : "87884538601f8976",
+      "status" : "passed",
+      "time" : {
+        "start" : 1510712570687,
+        "stop" : 1510712571050,
+        "duration" : 363
+      }
+    }, {
+      "uid" : "b5e85c9d52b928e5",
+      "status" : "skipped",
+      "statusDetails" : "Test ignored",
+      "time" : {
+        "start" : 1510712480284,
+        "stop" : 1510712480284,
+        "duration" : 0
+      }
+    }, {
+      "uid" : "7ca5598f5f9bc906",
+      "status" : "unknown",
+      "time" : {
+        "start" : 1510712480281,
+        "stop" : 0,
+        "duration" : -1510712480281
+      }
+    }, {
+      "uid" : "b9d3fb5f471f51e1",
+      "status" : "passed",
+      "time" : {
+        "start" : 1510712467170,
+        "stop" : 1510712467432,
+        "duration" : 262
+      }
+    }, {
+      "uid" : "4dbf3b3caea3a74c",
+      "status" : "broken",
+      "statusDetails" : "A modal dialog was opened. The SafariDriver does not support interacting with modal dialogs. To avoid hanging your test, the alert has been dismissed. For more information, see http://code.google.com/p/selenium/issues/detail?id=3862: Email is required\n                Build info: version: '2.45.0', revision: '5017cb8e7c', time: '2017-05-30 10:13:13'\n                System info: host: 'mac-208-52-180-76.browserstack.com', ip: '208.52.180.76', os.name: 'Mac OS X', os.arch: 'x86_64', os.version: '10.11.6', java.version: '1.8.0_144'\n                Driver info: org.openqa.selenium.safari.SafariDriver\n                Capabilities [{browserName=safari, takesScreenshot=true, javascriptEnabled=true, version=9.1.3, cssSelectorsEnabled=true, platform=MAC, secureSsl=true}]\n                Session ID: null",
+      "time" : {
+        "start" : 1510712464480,
+        "stop" : 1510712465829,
+        "duration" : 1349
+      }
+    }, {
+      "uid" : "9bc2f3864e85ee03",
+      "status" : "passed",
+      "time" : {
+        "start" : 1510712463181,
+        "stop" : 1510712463443,
+        "duration" : 262
+      }
+    }, {
+      "uid" : "a607270a82cc0499",
+      "status" : "passed",
+      "time" : {
+        "start" : 1510712232004,
+        "stop" : 1510712232261,
+        "duration" : 257
+      }
+    } ],
+    "categories" : [ ],
+    "tags" : [ ]
+  },
+  "source" : "f1d18bfffe0da26e.json",
+  "statusDetailsSafe" : {
+    "message" : "Test ignored",
+    "trace" : "undefined",
+    "flaky" : true
+  },
+  "statusMessage" : {
+    "present" : true
+  },
+  "parameterValues" : [ ]
+}

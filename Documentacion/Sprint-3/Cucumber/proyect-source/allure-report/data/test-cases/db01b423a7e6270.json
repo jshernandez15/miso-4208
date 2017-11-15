@@ -1,0 +1,153 @@
+{
+  "uid" : "db01b423a7e6270",
+  "name" : "que voy a la página principal",
+  "fullName" : "Acceso a la aplicación Acceso éxitoso.que voy a la página principal",
+  "historyId" : "559371b35831d2d387c83a9761091da0",
+  "time" : {
+    "start" : 1510712592231,
+    "stop" : 1510712592638,
+    "duration" : 407
+  },
+  "description" : "",
+  "descriptionHtml" : "",
+  "status" : "passed",
+  "statusDetails" : {
+    "flaky" : false
+  },
+  "beforeStages" : [ ],
+  "testStage" : {
+    "status" : "passed",
+    "steps" : [ {
+      "name" : "POST /wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/url",
+      "time" : {
+        "start" : 1510712592231,
+        "stop" : 1510712592626,
+        "duration" : 395
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ {
+        "uid" : "1cd037b1d1efa342",
+        "name" : "Request",
+        "source" : "1cd037b1d1efa342.json",
+        "type" : "application/json",
+        "size" : 38
+      }, {
+        "uid" : "58f8c27de1418acf",
+        "name" : "Response",
+        "source" : "58f8c27de1418acf.json",
+        "type" : "application/json",
+        "size" : 199
+      } ],
+      "parameters" : [ ],
+      "attachmentsCount" : 2,
+      "shouldDisplayMessage" : false,
+      "hasContent" : true,
+      "stepsCount" : 0
+    } ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "attachmentsCount" : 2,
+    "shouldDisplayMessage" : false,
+    "hasContent" : true,
+    "stepsCount" : 1
+  },
+  "afterStages" : [ ],
+  "labels" : [ {
+    "name" : "suite",
+    "value" : "Acceso a la aplicación Acceso éxitoso"
+  }, {
+    "name" : "testClass",
+    "value" : "Acceso a la aplicación Acceso éxitoso"
+  }, {
+    "name" : "testMethod",
+    "value" : "que voy a la página principal"
+  }, {
+    "name" : "package",
+    "value" : "Acceso a la aplicación Acceso éxitoso"
+  }, {
+    "name" : "resultFormat",
+    "value" : "allure1"
+  } ],
+  "parameters" : [ ],
+  "links" : [ ],
+  "hidden" : false,
+  "extra" : {
+    "severity" : "normal",
+    "retries" : [ {
+      "uid" : "dd997fcd4b3df70",
+      "status" : "passed",
+      "time" : {
+        "start" : 1510712586195,
+        "stop" : 1510712586811,
+        "duration" : 616
+      }
+    }, {
+      "uid" : "82867c9423ce373d",
+      "status" : "passed",
+      "time" : {
+        "start" : 1510712574719,
+        "stop" : 1510712577605,
+        "duration" : 2886
+      }
+    }, {
+      "uid" : "7b5b0c8a4d2da60d",
+      "status" : "passed",
+      "time" : {
+        "start" : 1510712571432,
+        "stop" : 1510712574674,
+        "duration" : 3242
+      }
+    }, {
+      "uid" : "2d0ecd9e1ab1414b",
+      "status" : "passed",
+      "time" : {
+        "start" : 1510712480315,
+        "stop" : 1510712481180,
+        "duration" : 865
+      }
+    }, {
+      "uid" : "f22d2e84ce4b6e63",
+      "status" : "passed",
+      "time" : {
+        "start" : 1510712467801,
+        "stop" : 1510712469524,
+        "duration" : 1723
+      }
+    }, {
+      "uid" : "a8666c85920332c",
+      "status" : "passed",
+      "time" : {
+        "start" : 1510712465850,
+        "stop" : 1510712466372,
+        "duration" : 522
+      }
+    }, {
+      "uid" : "59bcaf15ec90fe30",
+      "status" : "passed",
+      "time" : {
+        "start" : 1510712463804,
+        "stop" : 1510712464674,
+        "duration" : 870
+      }
+    }, {
+      "uid" : "23a68eb9dc2d52d",
+      "status" : "passed",
+      "time" : {
+        "start" : 1510712232605,
+        "stop" : 1510712233628,
+        "duration" : 1023
+      }
+    } ],
+    "categories" : [ ],
+    "tags" : [ ]
+  },
+  "source" : "db01b423a7e6270.json",
+  "statusDetailsSafe" : {
+    "flaky" : false
+  },
+  "statusMessage" : {
+    "present" : false
+  },
+  "parameterValues" : [ ]
+}

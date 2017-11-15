@@ -1,0 +1,86 @@
+{
+  "uid" : "dd997fcd4b3df70",
+  "name" : "que voy a la página principal",
+  "fullName" : "Acceso a la aplicación Acceso éxitoso.que voy a la página principal",
+  "historyId" : "559371b35831d2d387c83a9761091da0",
+  "time" : {
+    "start" : 1510712586195,
+    "stop" : 1510712586811,
+    "duration" : 616
+  },
+  "description" : "",
+  "descriptionHtml" : "",
+  "status" : "passed",
+  "statusDetails" : {
+    "flaky" : false
+  },
+  "beforeStages" : [ ],
+  "testStage" : {
+    "status" : "passed",
+    "steps" : [ {
+      "name" : "POST /wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/url",
+      "time" : {
+        "start" : 1510712586195,
+        "stop" : 1510712586769,
+        "duration" : 574
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ {
+        "uid" : "22c07eadea94939f",
+        "name" : "Request",
+        "source" : "22c07eadea94939f.json",
+        "type" : "application/json",
+        "size" : 38
+      }, {
+        "uid" : "815f8995b2d16c10",
+        "name" : "Response",
+        "source" : "815f8995b2d16c10.json",
+        "type" : "application/json",
+        "size" : 197
+      } ],
+      "parameters" : [ ],
+      "attachmentsCount" : 2,
+      "shouldDisplayMessage" : false,
+      "hasContent" : true,
+      "stepsCount" : 0
+    } ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "attachmentsCount" : 2,
+    "shouldDisplayMessage" : false,
+    "hasContent" : true,
+    "stepsCount" : 1
+  },
+  "afterStages" : [ ],
+  "labels" : [ {
+    "name" : "suite",
+    "value" : "Acceso a la aplicación Acceso éxitoso"
+  }, {
+    "name" : "testClass",
+    "value" : "Acceso a la aplicación Acceso éxitoso"
+  }, {
+    "name" : "testMethod",
+    "value" : "que voy a la página principal"
+  }, {
+    "name" : "package",
+    "value" : "Acceso a la aplicación Acceso éxitoso"
+  }, {
+    "name" : "resultFormat",
+    "value" : "allure1"
+  } ],
+  "parameters" : [ ],
+  "links" : [ ],
+  "hidden" : true,
+  "extra" : {
+    "tags" : [ ]
+  },
+  "source" : "dd997fcd4b3df70.json",
+  "statusDetailsSafe" : {
+    "flaky" : false
+  },
+  "statusMessage" : {
+    "present" : false
+  },
+  "parameterValues" : [ ]
+}

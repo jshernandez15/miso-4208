@@ -1,0 +1,146 @@
+{
+  "uid" : "c656ac6f55e6b39",
+  "name" : "espero acceder a mi página personal",
+  "fullName" : "Acceso a la aplicación Acceso éxitoso.espero acceder a mi página personal",
+  "historyId" : "925c5e76e1eccdbe987efac7a3c266b3",
+  "time" : {
+    "start" : 1510712602913,
+    "stop" : 1510712602913,
+    "duration" : 0
+  },
+  "description" : "",
+  "descriptionHtml" : "",
+  "status" : "skipped",
+  "statusDetails" : {
+    "message" : "Test ignored",
+    "trace" : "undefined",
+    "flaky" : true
+  },
+  "beforeStages" : [ ],
+  "afterStages" : [ ],
+  "labels" : [ {
+    "name" : "suite",
+    "value" : "Acceso a la aplicación Acceso éxitoso"
+  }, {
+    "name" : "testClass",
+    "value" : "Acceso a la aplicación Acceso éxitoso"
+  }, {
+    "name" : "testMethod",
+    "value" : "espero acceder a mi página personal"
+  }, {
+    "name" : "package",
+    "value" : "Acceso a la aplicación Acceso éxitoso"
+  }, {
+    "name" : "resultFormat",
+    "value" : "allure1"
+  } ],
+  "parameters" : [ ],
+  "links" : [ ],
+  "hidden" : false,
+  "extra" : {
+    "severity" : "normal",
+    "retries" : [ {
+      "uid" : "fadddba4171035d5",
+      "status" : "unknown",
+      "time" : {
+        "start" : 1510712602912,
+        "stop" : 0,
+        "duration" : -1510712602912
+      }
+    }, {
+      "uid" : "ad3402be6966c100",
+      "status" : "skipped",
+      "statusDetails" : "Test ignored",
+      "time" : {
+        "start" : 1510712597725,
+        "stop" : 1510712597725,
+        "duration" : 0
+      }
+    }, {
+      "uid" : "95f380b98a06b9b9",
+      "status" : "unknown",
+      "time" : {
+        "start" : 1510712597723,
+        "stop" : 0,
+        "duration" : -1510712597723
+      }
+    }, {
+      "uid" : "10690a30edba7b9f",
+      "status" : "passed",
+      "time" : {
+        "start" : 1510712579823,
+        "stop" : 1510712584525,
+        "duration" : 4702
+      }
+    }, {
+      "uid" : "433875fa10fe04c4",
+      "status" : "passed",
+      "time" : {
+        "start" : 1510712576753,
+        "stop" : 1510712580561,
+        "duration" : 3808
+      }
+    }, {
+      "uid" : "f5f57ecad9cd5e3c",
+      "status" : "skipped",
+      "statusDetails" : "Test ignored",
+      "time" : {
+        "start" : 1510712492589,
+        "stop" : 1510712492589,
+        "duration" : 0
+      }
+    }, {
+      "uid" : "cabc5e960c5231df",
+      "status" : "unknown",
+      "time" : {
+        "start" : 1510712492583,
+        "stop" : 0,
+        "duration" : -1510712492583
+      }
+    }, {
+      "uid" : "80692934f519a427",
+      "status" : "passed",
+      "time" : {
+        "start" : 1510712471645,
+        "stop" : 1510712475952,
+        "duration" : 4307
+      }
+    }, {
+      "uid" : "621d90bf11a05d3e",
+      "status" : "passed",
+      "time" : {
+        "start" : 1510712467829,
+        "stop" : 1510712471128,
+        "duration" : 3299
+      }
+    }, {
+      "uid" : "5ad90468c1faf8d2",
+      "status" : "passed",
+      "time" : {
+        "start" : 1510712466659,
+        "stop" : 1510712470463,
+        "duration" : 3804
+      }
+    }, {
+      "uid" : "da42eb0c9e41d1b8",
+      "status" : "passed",
+      "time" : {
+        "start" : 1510712235581,
+        "stop" : 1510712239636,
+        "duration" : 4055
+      }
+    } ],
+    "categories" : [ ],
+    "tags" : [ ]
+  },
+  "source" : "c656ac6f55e6b39.json",
+  "statusDetailsSafe" : {
+    "message" : "Test ignored",
+    "trace" : "undefined",
+    "flaky" : true
+  },
+  "statusMessage" : {
+    "present" : true
+  },
+  "parameterValues" : [ ]
+}

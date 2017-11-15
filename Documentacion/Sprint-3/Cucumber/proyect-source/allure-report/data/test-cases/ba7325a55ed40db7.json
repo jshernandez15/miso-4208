@@ -1,0 +1,284 @@
+{
+  "uid" : "ba7325a55ed40db7",
+  "name" : "diligencio mi miso@gmail.com y 1234",
+  "fullName" : "Acceso a la aplicación Acceso con parámetros incorrectos.diligencio mi miso@gmail.com y 1234",
+  "historyId" : "72fc1fef61a17e5df9129c721671c335",
+  "time" : {
+    "start" : 1510712461870,
+    "stop" : 1510712463308,
+    "duration" : 1438
+  },
+  "description" : "",
+  "descriptionHtml" : "",
+  "status" : "passed",
+  "statusDetails" : {
+    "flaky" : false
+  },
+  "beforeStages" : [ ],
+  "testStage" : {
+    "status" : "passed",
+    "steps" : [ {
+      "name" : "POST /wd/hub/session/756bbc5ef3922980b7b180393483f6495a2076e0/elements",
+      "time" : {
+        "start" : 1510712461877,
+        "stop" : 1510712461982,
+        "duration" : 105
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ {
+        "uid" : "213d1973929fb9ad",
+        "name" : "Request",
+        "source" : "213d1973929fb9ad.json",
+        "type" : "application/json",
+        "size" : 56
+      }, {
+        "uid" : "931cef5bf29452fd",
+        "name" : "Response",
+        "source" : "931cef5bf29452fd.json",
+        "type" : "application/json",
+        "size" : 196
+      } ],
+      "parameters" : [ ],
+      "attachmentsCount" : 2,
+      "shouldDisplayMessage" : false,
+      "hasContent" : true,
+      "stepsCount" : 0
+    }, {
+      "name" : "POST /wd/hub/session/756bbc5ef3922980b7b180393483f6495a2076e0/elements",
+      "time" : {
+        "start" : 1510712462382,
+        "stop" : 1510712462492,
+        "duration" : 110
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ {
+        "uid" : "55c0cb656c9ceab3",
+        "name" : "Request",
+        "source" : "55c0cb656c9ceab3.json",
+        "type" : "application/json",
+        "size" : 56
+      }, {
+        "uid" : "c22eb110603f32de",
+        "name" : "Response",
+        "source" : "c22eb110603f32de.json",
+        "type" : "application/json",
+        "size" : 248
+      } ],
+      "parameters" : [ ],
+      "attachmentsCount" : 2,
+      "shouldDisplayMessage" : false,
+      "hasContent" : true,
+      "stepsCount" : 0
+    }, {
+      "name" : "GET /wd/hub/session/756bbc5ef3922980b7b180393483f6495a2076e0/element/1/displayed",
+      "time" : {
+        "start" : 1510712462493,
+        "stop" : 1510712462613,
+        "duration" : 120
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ {
+        "uid" : "e494909beff89cb1",
+        "name" : "Response",
+        "source" : "e494909beff89cb1.json",
+        "type" : "application/json",
+        "size" : 198
+      } ],
+      "parameters" : [ ],
+      "attachmentsCount" : 1,
+      "shouldDisplayMessage" : false,
+      "hasContent" : true,
+      "stepsCount" : 0
+    }, {
+      "name" : "POST /wd/hub/session/756bbc5ef3922980b7b180393483f6495a2076e0/element",
+      "time" : {
+        "start" : 1510712462618,
+        "stop" : 1510712462723,
+        "duration" : 105
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ {
+        "uid" : "aa6e71ef4888d5c",
+        "name" : "Request",
+        "source" : "aa6e71ef4888d5c.json",
+        "type" : "application/json",
+        "size" : 51
+      }, {
+        "uid" : "1997dc177fdf0379",
+        "name" : "Response",
+        "source" : "1997dc177fdf0379.json",
+        "type" : "application/json",
+        "size" : 224
+      } ],
+      "parameters" : [ ],
+      "attachmentsCount" : 2,
+      "shouldDisplayMessage" : false,
+      "hasContent" : true,
+      "stepsCount" : 0
+    }, {
+      "name" : "POST /wd/hub/session/756bbc5ef3922980b7b180393483f6495a2076e0/element/2/clear",
+      "time" : {
+        "start" : 1510712462738,
+        "stop" : 1510712462846,
+        "duration" : 108
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ {
+        "uid" : "dbedc0f508abaab4",
+        "name" : "Response",
+        "source" : "dbedc0f508abaab4.json",
+        "type" : "application/json",
+        "size" : 197
+      } ],
+      "parameters" : [ ],
+      "attachmentsCount" : 1,
+      "shouldDisplayMessage" : false,
+      "hasContent" : true,
+      "stepsCount" : 0
+    }, {
+      "name" : "POST /wd/hub/session/756bbc5ef3922980b7b180393483f6495a2076e0/element/2/value",
+      "time" : {
+        "start" : 1510712462850,
+        "stop" : 1510712462973,
+        "duration" : 123
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ {
+        "uid" : "143d812476bbaa1d",
+        "name" : "Request",
+        "source" : "143d812476bbaa1d.json",
+        "type" : "application/json",
+        "size" : 235
+      }, {
+        "uid" : "42a2cfc3716d6da7",
+        "name" : "Response",
+        "source" : "42a2cfc3716d6da7.json",
+        "type" : "application/json",
+        "size" : 198
+      } ],
+      "parameters" : [ ],
+      "attachmentsCount" : 2,
+      "shouldDisplayMessage" : false,
+      "hasContent" : true,
+      "stepsCount" : 0
+    }, {
+      "name" : "POST /wd/hub/session/756bbc5ef3922980b7b180393483f6495a2076e0/element",
+      "time" : {
+        "start" : 1510712462986,
+        "stop" : 1510712463090,
+        "duration" : 104
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ {
+        "uid" : "e0300215bb647fb7",
+        "name" : "Request",
+        "source" : "e0300215bb647fb7.json",
+        "type" : "application/json",
+        "size" : 51
+      }, {
+        "uid" : "77f550f6b30fa7e7",
+        "name" : "Response",
+        "source" : "77f550f6b30fa7e7.json",
+        "type" : "application/json",
+        "size" : 223
+      } ],
+      "parameters" : [ ],
+      "attachmentsCount" : 2,
+      "shouldDisplayMessage" : false,
+      "hasContent" : true,
+      "stepsCount" : 0
+    }, {
+      "name" : "POST /wd/hub/session/756bbc5ef3922980b7b180393483f6495a2076e0/element/3/clear",
+      "time" : {
+        "start" : 1510712463102,
+        "stop" : 1510712463201,
+        "duration" : 99
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ {
+        "uid" : "c952ab6a597169c9",
+        "name" : "Response",
+        "source" : "c952ab6a597169c9.json",
+        "type" : "application/json",
+        "size" : 197
+      } ],
+      "parameters" : [ ],
+      "attachmentsCount" : 1,
+      "shouldDisplayMessage" : false,
+      "hasContent" : true,
+      "stepsCount" : 0
+    }, {
+      "name" : "POST /wd/hub/session/756bbc5ef3922980b7b180393483f6495a2076e0/element/3/value",
+      "time" : {
+        "start" : 1510712463201,
+        "stop" : 1510712463302,
+        "duration" : 101
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ {
+        "uid" : "ecf71a87212694a4",
+        "name" : "Request",
+        "source" : "ecf71a87212694a4.json",
+        "type" : "application/json",
+        "size" : 95
+      }, {
+        "uid" : "462dd534554943bf",
+        "name" : "Response",
+        "source" : "462dd534554943bf.json",
+        "type" : "application/json",
+        "size" : 196
+      } ],
+      "parameters" : [ ],
+      "attachmentsCount" : 2,
+      "shouldDisplayMessage" : false,
+      "hasContent" : true,
+      "stepsCount" : 0
+    } ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "attachmentsCount" : 15,
+    "shouldDisplayMessage" : false,
+    "hasContent" : true,
+    "stepsCount" : 9
+  },
+  "afterStages" : [ ],
+  "labels" : [ {
+    "name" : "suite",
+    "value" : "Acceso a la aplicación Acceso con parámetros incorrectos"
+  }, {
+    "name" : "testClass",
+    "value" : "Acceso a la aplicación Acceso con parámetros incorrectos"
+  }, {
+    "name" : "testMethod",
+    "value" : "diligencio mi miso@gmail.com y 1234"
+  }, {
+    "name" : "package",
+    "value" : "Acceso a la aplicación Acceso con parámetros incorrectos"
+  }, {
+    "name" : "resultFormat",
+    "value" : "allure1"
+  } ],
+  "parameters" : [ ],
+  "links" : [ ],
+  "hidden" : true,
+  "extra" : {
+    "tags" : [ ]
+  },
+  "source" : "ba7325a55ed40db7.json",
+  "statusDetailsSafe" : {
+    "flaky" : false
+  },
+  "statusMessage" : {
+    "present" : false
+  },
+  "parameterValues" : [ ]
+}

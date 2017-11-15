@@ -1,0 +1,108 @@
+{
+  "summary" : {
+    "reportName" : "Allure Report",
+    "testRuns" : [ ],
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 4,
+      "skipped" : 11,
+      "passed" : 3,
+      "unknown" : 1,
+      "total" : 19
+    },
+    "time" : {
+      "start" : 1510712568107,
+      "stop" : 1510712602913,
+      "duration" : 34806,
+      "minDuration" : -1510712592196,
+      "maxDuration" : 20322,
+      "sumDuration" : -1510712538827
+    }
+  },
+  "environment" : [ {
+    "values" : [ "{\"browser\":\"internet explorer\"}" ],
+    "name" : "capabilities"
+  }, {
+    "values" : [ "[\"D:\\\\4208\\\\miso-4208\\\\Documentacion\\\\Sprint-3\\\\Cucumber\\\\proyect-source\\\\features\\\\login.feature\"]" ],
+    "name" : "spec files"
+  } ],
+  "suites" : {
+    "total" : 4,
+    "items" : [ {
+      "uid" : "c1fdcfeb44eebad138294aba7c9cdb3c",
+      "name" : "Acceso a la aplicación Acceso sin parámetros",
+      "statistic" : {
+        "failed" : 0,
+        "broken" : 1,
+        "skipped" : 3,
+        "passed" : 1,
+        "unknown" : 1,
+        "total" : 6
+      }
+    }, {
+      "uid" : "c34bb5f0829221cb235e7d253d8886a1",
+      "name" : "Acceso a la aplicación Acceso con parámetros incorrectos",
+      "statistic" : {
+        "failed" : 0,
+        "broken" : 1,
+        "skipped" : 3,
+        "passed" : 1,
+        "unknown" : 0,
+        "total" : 5
+      }
+    }, {
+      "uid" : "19a7002e7fd0a2e70d0fb15c5543a7a3",
+      "name" : "Acceso a la aplicación Acceso éxitoso",
+      "statistic" : {
+        "failed" : 0,
+        "broken" : 1,
+        "skipped" : 3,
+        "passed" : 1,
+        "unknown" : 0,
+        "total" : 5
+      }
+    }, {
+      "uid" : "51ae11c74afc0cc3e7d74f0361300b28",
+      "name" : "Creación de hábitos Crear hábitos",
+      "statistic" : {
+        "failed" : 0,
+        "broken" : 1,
+        "skipped" : 2,
+        "passed" : 0,
+        "unknown" : 0,
+        "total" : 3
+      }
+    } ]
+  },
+  "history-trend" : [ {
+    "statistic" : {
+      "failed" : 0,
+      "broken" : 4,
+      "skipped" : 11,
+      "passed" : 3,
+      "unknown" : 1,
+      "total" : 19
+    }
+  } ],
+  "behaviors" : {
+    "total" : 19,
+    "items" : [ ]
+  },
+  "executors" : [ ],
+  "categories" : {
+    "total" : 1,
+    "items" : [ {
+      "uid" : "bdbf199525818fae7a8651db9eafe741",
+      "name" : "Test defects",
+      "statistic" : {
+        "failed" : 0,
+        "broken" : 4,
+        "skipped" : 0,
+        "passed" : 0,
+        "unknown" : 0,
+        "total" : 4
+      }
+    } ]
+  },
+  "launches" : [ ]
+}

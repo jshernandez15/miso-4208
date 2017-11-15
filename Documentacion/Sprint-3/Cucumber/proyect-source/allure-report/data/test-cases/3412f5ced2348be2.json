@@ -1,0 +1,188 @@
+{
+  "uid" : "3412f5ced2348be2",
+  "name" : "registro un hábito",
+  "fullName" : "Creación de hábitos Crear hábitos.registro un hábito",
+  "historyId" : "8471fd22952ade2509a1df4b1af60de3",
+  "time" : {
+    "start" : 1510712466847,
+    "stop" : 1510712467506,
+    "duration" : 659
+  },
+  "description" : "",
+  "descriptionHtml" : "",
+  "status" : "passed",
+  "statusDetails" : {
+    "flaky" : false
+  },
+  "beforeStages" : [ ],
+  "testStage" : {
+    "status" : "passed",
+    "steps" : [ {
+      "name" : "POST /wd/hub/session/41da8992a691ad21794aa698bbd473788b42a9db/element",
+      "time" : {
+        "start" : 1510712466851,
+        "stop" : 1510712466963,
+        "duration" : 112
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ {
+        "uid" : "417d603c52e851ef",
+        "name" : "Request",
+        "source" : "417d603c52e851ef.json",
+        "type" : "application/json",
+        "size" : 58
+      }, {
+        "uid" : "f6627e7b99e00933",
+        "name" : "Response",
+        "source" : "f6627e7b99e00933.json",
+        "type" : "application/json",
+        "size" : 224
+      } ],
+      "parameters" : [ ],
+      "attachmentsCount" : 2,
+      "shouldDisplayMessage" : false,
+      "hasContent" : true,
+      "stepsCount" : 0
+    }, {
+      "name" : "POST /wd/hub/session/41da8992a691ad21794aa698bbd473788b42a9db/element/9/clear",
+      "time" : {
+        "start" : 1510712466974,
+        "stop" : 1510712467094,
+        "duration" : 120
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ {
+        "uid" : "5386dc3fb15bbfd4",
+        "name" : "Response",
+        "source" : "5386dc3fb15bbfd4.json",
+        "type" : "application/json",
+        "size" : 198
+      } ],
+      "parameters" : [ ],
+      "attachmentsCount" : 1,
+      "shouldDisplayMessage" : false,
+      "hasContent" : true,
+      "stepsCount" : 0
+    }, {
+      "name" : "POST /wd/hub/session/41da8992a691ad21794aa698bbd473788b42a9db/element/9/value",
+      "time" : {
+        "start" : 1510712467104,
+        "stop" : 1510712467269,
+        "duration" : 165
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ {
+        "uid" : "8f2e15af7f824e35",
+        "name" : "Request",
+        "source" : "8f2e15af7f824e35.json",
+        "type" : "application/json",
+        "size" : 221
+      }, {
+        "uid" : "20b248acf3245650",
+        "name" : "Response",
+        "source" : "20b248acf3245650.json",
+        "type" : "application/json",
+        "size" : 198
+      } ],
+      "parameters" : [ ],
+      "attachmentsCount" : 2,
+      "shouldDisplayMessage" : false,
+      "hasContent" : true,
+      "stepsCount" : 0
+    }, {
+      "name" : "POST /wd/hub/session/41da8992a691ad21794aa698bbd473788b42a9db/keys",
+      "time" : {
+        "start" : 1510712467286,
+        "stop" : 1510712467390,
+        "duration" : 104
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ {
+        "uid" : "885a7aa383b4e47b",
+        "name" : "Request",
+        "source" : "885a7aa383b4e47b.json",
+        "type" : "application/json",
+        "size" : 38
+      }, {
+        "uid" : "f80f91567b3ec449",
+        "name" : "Response",
+        "source" : "f80f91567b3ec449.json",
+        "type" : "application/json",
+        "size" : 850
+      } ],
+      "parameters" : [ ],
+      "attachmentsCount" : 2,
+      "shouldDisplayMessage" : false,
+      "hasContent" : true,
+      "stepsCount" : 0
+    }, {
+      "name" : "POST /wd/hub/session/41da8992a691ad21794aa698bbd473788b42a9db/actions",
+      "time" : {
+        "start" : 1510712467396,
+        "stop" : 1510712467499,
+        "duration" : 103
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ {
+        "uid" : "90c8c91887a7e23",
+        "name" : "Request",
+        "source" : "90c8c91887a7e23.json",
+        "type" : "application/json",
+        "size" : 357
+      }, {
+        "uid" : "10dd8327e651d7d0",
+        "name" : "Response",
+        "source" : "10dd8327e651d7d0.json",
+        "type" : "application/json",
+        "size" : 198
+      } ],
+      "parameters" : [ ],
+      "attachmentsCount" : 2,
+      "shouldDisplayMessage" : false,
+      "hasContent" : true,
+      "stepsCount" : 0
+    } ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "attachmentsCount" : 9,
+    "shouldDisplayMessage" : false,
+    "hasContent" : true,
+    "stepsCount" : 5
+  },
+  "afterStages" : [ ],
+  "labels" : [ {
+    "name" : "suite",
+    "value" : "Creación de hábitos Crear hábitos"
+  }, {
+    "name" : "testClass",
+    "value" : "Creación de hábitos Crear hábitos"
+  }, {
+    "name" : "testMethod",
+    "value" : "registro un hábito"
+  }, {
+    "name" : "package",
+    "value" : "Creación de hábitos Crear hábitos"
+  }, {
+    "name" : "resultFormat",
+    "value" : "allure1"
+  } ],
+  "parameters" : [ ],
+  "links" : [ ],
+  "hidden" : true,
+  "extra" : {
+    "tags" : [ ]
+  },
+  "source" : "3412f5ced2348be2.json",
+  "statusDetailsSafe" : {
+    "flaky" : false
+  },
+  "statusMessage" : {
+    "present" : false
+  },
+  "parameterValues" : [ ]
+}

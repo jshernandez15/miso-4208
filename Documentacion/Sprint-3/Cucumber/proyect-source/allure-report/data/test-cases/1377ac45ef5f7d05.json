@@ -1,0 +1,49 @@
+{
+  "uid" : "1377ac45ef5f7d05",
+  "name" : "lo veo en el panel inferior",
+  "fullName" : "Creación de hábitos Crear hábitos.lo veo en el panel inferior",
+  "historyId" : "736215aa0bb4f13fc8fa856e61b1374f",
+  "time" : {
+    "start" : 1510712477952,
+    "stop" : 0,
+    "duration" : -1510712477952
+  },
+  "description" : "",
+  "descriptionHtml" : "",
+  "status" : "unknown",
+  "statusDetails" : {
+    "flaky" : false
+  },
+  "beforeStages" : [ ],
+  "afterStages" : [ ],
+  "labels" : [ {
+    "name" : "suite",
+    "value" : "Creación de hábitos Crear hábitos"
+  }, {
+    "name" : "testClass",
+    "value" : "Creación de hábitos Crear hábitos"
+  }, {
+    "name" : "testMethod",
+    "value" : "lo veo en el panel inferior"
+  }, {
+    "name" : "package",
+    "value" : "Creación de hábitos Crear hábitos"
+  }, {
+    "name" : "resultFormat",
+    "value" : "allure1"
+  } ],
+  "parameters" : [ ],
+  "links" : [ ],
+  "hidden" : true,
+  "extra" : {
+    "tags" : [ ]
+  },
+  "source" : "1377ac45ef5f7d05.json",
+  "statusDetailsSafe" : {
+    "flaky" : false
+  },
+  "statusMessage" : {
+    "present" : false
+  },
+  "parameterValues" : [ ]
+}

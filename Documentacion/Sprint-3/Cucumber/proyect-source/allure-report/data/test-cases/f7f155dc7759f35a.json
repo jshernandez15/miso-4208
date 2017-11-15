@@ -1,0 +1,184 @@
+{
+  "uid" : "f7f155dc7759f35a",
+  "name" : "lo veo en el panel inferior",
+  "fullName" : "Creación de hábitos Crear hábitos.lo veo en el panel inferior",
+  "historyId" : "736215aa0bb4f13fc8fa856e61b1374f",
+  "time" : {
+    "start" : 1510712588437,
+    "stop" : 1510712588437,
+    "duration" : 0
+  },
+  "description" : "",
+  "descriptionHtml" : "",
+  "status" : "skipped",
+  "statusDetails" : {
+    "message" : "Test ignored",
+    "trace" : "undefined",
+    "flaky" : true
+  },
+  "beforeStages" : [ ],
+  "afterStages" : [ ],
+  "labels" : [ {
+    "name" : "suite",
+    "value" : "Creación de hábitos Crear hábitos"
+  }, {
+    "name" : "testClass",
+    "value" : "Creación de hábitos Crear hábitos"
+  }, {
+    "name" : "testMethod",
+    "value" : "lo veo en el panel inferior"
+  }, {
+    "name" : "package",
+    "value" : "Creación de hábitos Crear hábitos"
+  }, {
+    "name" : "resultFormat",
+    "value" : "allure1"
+  } ],
+  "parameters" : [ ],
+  "links" : [ ],
+  "hidden" : false,
+  "extra" : {
+    "severity" : "normal",
+    "retries" : [ {
+      "uid" : "df54892ca4491f66",
+      "status" : "unknown",
+      "time" : {
+        "start" : 1510712588434,
+        "stop" : 0,
+        "duration" : -1510712588434
+      }
+    }, {
+      "uid" : "84355bf33cf265fd",
+      "status" : "broken",
+      "statusDetails" : "element (\"p*=1510712574654\") still not visible after 5000ms",
+      "time" : {
+        "start" : 1510712575343,
+        "stop" : 1510712580755,
+        "duration" : 5412
+      }
+    }, {
+      "uid" : "c6b758f90e6e1d6d",
+      "status" : "skipped",
+      "statusDetails" : "Test ignored",
+      "time" : {
+        "start" : 1510712575105,
+        "stop" : 1510712575105,
+        "duration" : 0
+      }
+    }, {
+      "uid" : "e05ed415d9bbd163",
+      "status" : "unknown",
+      "time" : {
+        "start" : 1510712575103,
+        "stop" : 0,
+        "duration" : -1510712575103
+      }
+    }, {
+      "uid" : "caceed28d07778b3",
+      "status" : "skipped",
+      "statusDetails" : "Test ignored",
+      "time" : {
+        "start" : 1510712572354,
+        "stop" : 1510712572354,
+        "duration" : 0
+      }
+    }, {
+      "uid" : "bea11d7a4c56ae8a",
+      "status" : "unknown",
+      "time" : {
+        "start" : 1510712572351,
+        "stop" : 0,
+        "duration" : -1510712572351
+      }
+    }, {
+      "uid" : "2bcb50916db02f9f",
+      "status" : "skipped",
+      "statusDetails" : "Test ignored",
+      "time" : {
+        "start" : 1510712477955,
+        "stop" : 1510712477955,
+        "duration" : 0
+      }
+    }, {
+      "uid" : "1377ac45ef5f7d05",
+      "status" : "unknown",
+      "time" : {
+        "start" : 1510712477952,
+        "stop" : 0,
+        "duration" : -1510712477952
+      }
+    }, {
+      "uid" : "9113aa5378bb7988",
+      "status" : "skipped",
+      "statusDetails" : "Test ignored",
+      "time" : {
+        "start" : 1510712477052,
+        "stop" : 1510712477052,
+        "duration" : 0
+      }
+    }, {
+      "uid" : "5819c3539e2bd632",
+      "status" : "unknown",
+      "time" : {
+        "start" : 1510712477047,
+        "stop" : 0,
+        "duration" : -1510712477047
+      }
+    }, {
+      "uid" : "4b5ddc4d5672acf0",
+      "status" : "broken",
+      "statusDetails" : "element (\"p*=1510712466848\") still not visible after 5000ms",
+      "time" : {
+        "start" : 1510712467509,
+        "stop" : 1510712473033,
+        "duration" : 5524
+      }
+    }, {
+      "uid" : "411276fe58b6b7b1",
+      "status" : "skipped",
+      "statusDetails" : "Test ignored",
+      "time" : {
+        "start" : 1510712465995,
+        "stop" : 1510712465995,
+        "duration" : 0
+      }
+    }, {
+      "uid" : "d582afbd5f69b033",
+      "status" : "unknown",
+      "time" : {
+        "start" : 1510712465987,
+        "stop" : 0,
+        "duration" : -1510712465987
+      }
+    }, {
+      "uid" : "8fd0841031d0f30e",
+      "status" : "skipped",
+      "statusDetails" : "Test ignored",
+      "time" : {
+        "start" : 1510712234008,
+        "stop" : 1510712234008,
+        "duration" : 0
+      }
+    }, {
+      "uid" : "a2d0a9033dd08158",
+      "status" : "unknown",
+      "time" : {
+        "start" : 1510712234004,
+        "stop" : 0,
+        "duration" : -1510712234004
+      }
+    } ],
+    "categories" : [ ],
+    "tags" : [ ]
+  },
+  "source" : "f7f155dc7759f35a.json",
+  "statusDetailsSafe" : {
+    "message" : "Test ignored",
+    "trace" : "undefined",
+    "flaky" : true
+  },
+  "statusMessage" : {
+    "present" : true
+  },
+  "parameterValues" : [ ]
+}

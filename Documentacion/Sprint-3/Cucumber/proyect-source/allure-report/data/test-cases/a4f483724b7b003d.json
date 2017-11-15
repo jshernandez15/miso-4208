@@ -1,0 +1,146 @@
+{
+  "uid" : "a4f483724b7b003d",
+  "name" : "espero estar en la página de acceso",
+  "fullName" : "Acceso a la aplicación Acceso con parámetros incorrectos.espero estar en la página de acceso",
+  "historyId" : "1fe2e85448ca12a45bdbbba9d37d8204",
+  "time" : {
+    "start" : 1510712581515,
+    "stop" : 1510712581515,
+    "duration" : 0
+  },
+  "description" : "",
+  "descriptionHtml" : "",
+  "status" : "skipped",
+  "statusDetails" : {
+    "message" : "Test ignored",
+    "trace" : "undefined",
+    "flaky" : true
+  },
+  "beforeStages" : [ ],
+  "afterStages" : [ ],
+  "labels" : [ {
+    "name" : "suite",
+    "value" : "Acceso a la aplicación Acceso con parámetros incorrectos"
+  }, {
+    "name" : "testClass",
+    "value" : "Acceso a la aplicación Acceso con parámetros incorrectos"
+  }, {
+    "name" : "testMethod",
+    "value" : "espero estar en la página de acceso"
+  }, {
+    "name" : "package",
+    "value" : "Acceso a la aplicación Acceso con parámetros incorrectos"
+  }, {
+    "name" : "resultFormat",
+    "value" : "allure1"
+  } ],
+  "parameters" : [ ],
+  "links" : [ ],
+  "hidden" : false,
+  "extra" : {
+    "severity" : "normal",
+    "retries" : [ {
+      "uid" : "2c0650f6c8b93198",
+      "status" : "unknown",
+      "time" : {
+        "start" : 1510712581511,
+        "stop" : 0,
+        "duration" : -1510712581511
+      }
+    }, {
+      "uid" : "d249153b7f902f62",
+      "status" : "skipped",
+      "statusDetails" : "Test ignored",
+      "time" : {
+        "start" : 1510712574751,
+        "stop" : 1510712574752,
+        "duration" : 1
+      }
+    }, {
+      "uid" : "7dfe5a962cc1aea3",
+      "status" : "unknown",
+      "time" : {
+        "start" : 1510712574750,
+        "stop" : 0,
+        "duration" : -1510712574750
+      }
+    }, {
+      "uid" : "c28759abdb8fbc6f",
+      "status" : "passed",
+      "time" : {
+        "start" : 1510712570756,
+        "stop" : 1510712570875,
+        "duration" : 119
+      }
+    }, {
+      "uid" : "e7905cb4d56af818",
+      "status" : "passed",
+      "time" : {
+        "start" : 1510712567430,
+        "stop" : 1510712567547,
+        "duration" : 117
+      }
+    }, {
+      "uid" : "245e9002f1b41ab1",
+      "status" : "skipped",
+      "statusDetails" : "Test ignored",
+      "time" : {
+        "start" : 1510712467768,
+        "stop" : 1510712467768,
+        "duration" : 0
+      }
+    }, {
+      "uid" : "ad474451acbfc234",
+      "status" : "unknown",
+      "time" : {
+        "start" : 1510712467766,
+        "stop" : 0,
+        "duration" : -1510712467766
+      }
+    }, {
+      "uid" : "7d0910f3c86ac295",
+      "status" : "passed",
+      "time" : {
+        "start" : 1510712463755,
+        "stop" : 1510712463914,
+        "duration" : 159
+      }
+    }, {
+      "uid" : "debf58df847c28dd",
+      "status" : "passed",
+      "time" : {
+        "start" : 1510712462438,
+        "stop" : 1510712462559,
+        "duration" : 121
+      }
+    }, {
+      "uid" : "5e7ccf2f3da149d9",
+      "status" : "passed",
+      "time" : {
+        "start" : 1510712460230,
+        "stop" : 1510712460391,
+        "duration" : 161
+      }
+    }, {
+      "uid" : "9b83a7305dc48e7a",
+      "status" : "passed",
+      "time" : {
+        "start" : 1510712228999,
+        "stop" : 1510712229116,
+        "duration" : 117
+      }
+    } ],
+    "categories" : [ ],
+    "tags" : [ ]
+  },
+  "source" : "a4f483724b7b003d.json",
+  "statusDetailsSafe" : {
+    "message" : "Test ignored",
+    "trace" : "undefined",
+    "flaky" : true
+  },
+  "statusMessage" : {
+    "present" : true
+  },
+  "parameterValues" : [ ]
+}

@@ -1,0 +1,9 @@
+{
+    "message": "An unknown server-side error occurred while processing the command. (WARNING: The server did not provide any stacktrace information)\nCommand duration or timeout: 25 milliseconds\nBuild info: version: '3.0.1', revision: '1969d75', time: '2016-10-18 09:48:19 -0700'\nSystem info: host: 'mac-208-78-105-34.browserstack.com', ip: '208.78.105.34', os.name: 'Mac OS X', os.arch: 'x86_64', os.version: '10.12.6', java.version: '1.8.0_51'\nDriver info: org.openqa.selenium.safari.SafariDriver\nCapabilities [{applicationCacheEnabled=true, rotatable=false, databaseEnabled=true, handlesAlerts=true, version=12603.3.8, cleanSession=true, platform=MAC, nativeEvents=true, locationContextEnabled=false, webStorageEnabled=true, browserName=safari, javascriptEnabled=true, platformName=macOS, cssSelectorsEnabled=true}]\nSession ID: 6619613F-1957-4446-91F9-26736946F58C",
+    "type": "RuntimeError",
+    "seleniumStack": {
+        "type": "UnknownError",
+        "message": "An unknown server-side error occurred while processing the command.",
+        "orgStatusMessage": "An unknown server-side error occurred while processing the command. (WARNING: The server did not provide any stacktrace information)\nCommand duration or timeout: 25 milliseconds\nBuild info: version: '3.0.1', revision: '1969d75', time: '2016-10-18 09:48:19 -0700'\nSystem info: host: 'mac-208-78-105-34.browserstack.com', ip: '208.78.105.34', os.name: 'Mac OS X', os.arch: 'x86_64', os.version: '10.12.6', java.version: '1.8.0_51'\nDriver info: org.openqa.selenium.safari.SafariDriver\nCapabilities [{applicationCacheEnabled=true, rotatable=false, databaseEnabled=true, handlesAlerts=true, version=12603.3.8, cleanSession=true, platform=MAC, nativeEvents=true, locationContextEnabled=false, webStorageEnabled=true, browserName=safari, javascriptEnabled=true, platformName=macOS, cssSelectorsEnabled=true}]\nSession ID: 6619613F-1957-4446-91F9-26736946F58C"
+    }
+}
