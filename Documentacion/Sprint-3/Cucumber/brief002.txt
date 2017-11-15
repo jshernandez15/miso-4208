@@ -1,0 +1,159 @@
+[internet explorer #2-0] Creación de hábitos
+[internet explorer #2-0]
+[internet explorer #2-0]     Crear hábitos
+[internet explorer #2-0]       1) que accedí a la página
+[internet explorer #2-0]       - registro un hábito
+[internet explorer #2-0]       - lo veo en el panel inferior
+[internet explorer #2-0]
+[internet explorer #2-0]
+[internet explorer #2-0] 2 pending (22s)
+[internet explorer #2-0] 1 failing
+
+
+[chrome #0-0] Creación de hábitos
+[chrome #0-0]
+[chrome #0-0]     Crear hábitos
+[chrome #0-0]       √ que accedí a la página
+[chrome #0-0]       1) registro un hábito
+[chrome #0-0]       - lo veo en el panel inferior
+[chrome #0-0]
+[chrome #0-0]
+[chrome #0-0] 1 passing (24s)
+[chrome #0-0] 1 pending
+[chrome #0-0] 1 failing
+
+[firefox #1-0] Creación de hábitos
+[firefox #1-0]
+[firefox #1-0]     Crear hábitos
+[firefox #1-0]       √ que accedí a la página
+[firefox #1-0]       √ registro un hábito
+[firefox #1-0]       1) lo veo en el panel inferior
+[firefox #1-0]
+[firefox #1-0]
+[firefox #1-0] 2 passing (27s)
+[firefox #1-0] 1 failing
+
+
+[safari #3-0] Creación de hábitos
+[safari #3-0]
+[safari #3-0]     Crear hábitos
+[safari #3-0]       1) que accedí a la página
+[safari #3-0]       - registro un hábito
+[safari #3-0]       - lo veo en el panel inferior
+[safari #3-0]
+[safari #3-0]
+[safari #3-0] 2 pending (1m)
+[safari #3-0] 1 failing
+
+
+
+
+[chrome #0-1] Acceso a la aplicación
+[chrome #0-1]
+[chrome #0-1]     Acceso con parámetros incorrectos
+[chrome #0-1]       √ que voy a la página principal
+[chrome #0-1]       √ abro la página de acceso
+[chrome #0-1]       √ diligencio mi miso@gmail.com y 1234
+[chrome #0-1]       √ intento acceder
+[chrome #0-1]       √ espero estar en la página de acceso
+[chrome #0-1]
+[chrome #0-1]     Acceso sin parámetros
+[chrome #0-1]       √ que voy a la página principal
+[chrome #0-1]       √ abro la página de acceso
+[chrome #0-1]       √ diligencio mi  y
+[chrome #0-1]       √ intento acceder
+[chrome #0-1]       √ espero ver y cerrar una alerta
+[chrome #0-1]
+[chrome #0-1]     Acceso éxitoso
+[chrome #0-1]       √ que voy a la página principal
+[chrome #0-1]       √ abro la página de acceso
+[chrome #0-1]       √ diligencio mi js.hernandez15@uniandes.edu.co y ASDasd123
+[chrome #0-1]       √ intento acceder
+[chrome #0-1]       √ espero acceder a mi página personal
+[chrome #0-1]
+[chrome #0-1]
+[chrome #0-1] 15 passing (25s)
+
+
+[firefox #1-1] Acceso a la aplicación
+[firefox #1-1]
+[firefox #1-1]     Acceso con parámetros incorrectos
+[firefox #1-1]       √ que voy a la página principal
+[firefox #1-1]       √ abro la página de acceso
+[firefox #1-1]       √ diligencio mi miso@gmail.com y 1234
+[firefox #1-1]       √ intento acceder
+[firefox #1-1]       √ espero estar en la página de acceso
+[firefox #1-1]
+[firefox #1-1]     Acceso sin parámetros
+[firefox #1-1]       √ que voy a la página principal
+[firefox #1-1]       √ abro la página de acceso
+[firefox #1-1]       √ diligencio mi  y
+[firefox #1-1]       √ intento acceder
+[firefox #1-1]       √ espero ver y cerrar una alerta
+[firefox #1-1]
+[firefox #1-1]     Acceso éxitoso
+[firefox #1-1]       √ que voy a la página principal
+[firefox #1-1]       √ abro la página de acceso
+[firefox #1-1]       √ diligencio mi js.hernandez15@uniandes.edu.co y ASDasd123
+[firefox #1-1]       √ intento acceder
+[firefox #1-1]       √ espero acceder a mi página personal
+[firefox #1-1]
+[firefox #1-1]
+[firefox #1-1] 15 passing (38s)
+
+[internet explorer #2-1] Acceso a la aplicación
+[internet explorer #2-1]
+[internet explorer #2-1]     Acceso con parámetros incorrectos
+[internet explorer #2-1]       √ que voy a la página principal
+[internet explorer #2-1]       1) abro la página de acceso
+[internet explorer #2-1]       - diligencio mi miso@gmail.com y 1234
+[internet explorer #2-1]       - intento acceder
+[internet explorer #2-1]       - espero estar en la página de acceso
+[internet explorer #2-1]
+[internet explorer #2-1]     Acceso sin parámetros
+[internet explorer #2-1]       √ que voy a la página principal
+[internet explorer #2-1]       2) abro la página de acceso
+[internet explorer #2-1]       - diligencio mi  y
+[internet explorer #2-1]       - intento acceder
+[internet explorer #2-1]       - espero ver y cerrar una alerta
+[internet explorer #2-1]
+[internet explorer #2-1]     Acceso éxitoso
+[internet explorer #2-1]       √ que voy a la página principal
+[internet explorer #2-1]       3) abro la página de acceso
+[internet explorer #2-1]       - diligencio mi js.hernandez15@uniandes.edu.co y ASDasd123
+[internet explorer #2-1]       - intento acceder
+[internet explorer #2-1]       - espero acceder a mi página personal
+[internet explorer #2-1]
+[internet explorer #2-1]
+[internet explorer #2-1] 3 passing (55s)
+[internet explorer #2-1] 9 pending
+[internet explorer #2-1] 3 failing
+
+
+[safari #3-1] Acceso a la aplicación
+[safari #3-1]
+[safari #3-1]     Acceso con parámetros incorrectos
+[safari #3-1]       √ que voy a la página principal
+[safari #3-1]       √ abro la página de acceso
+[safari #3-1]       √ diligencio mi miso@gmail.com y 1234
+[safari #3-1]       √ intento acceder
+[safari #3-1]       √ espero estar en la página de acceso
+[safari #3-1]
+[safari #3-1]     Acceso sin parámetros
+[safari #3-1]       √ que voy a la página principal
+[safari #3-1]       √ abro la página de acceso
+[safari #3-1]       1) diligencio mi  y
+[safari #3-1]       - intento acceder
+[safari #3-1]       - espero ver y cerrar una alerta
+[safari #3-1]
+[safari #3-1]     Acceso éxitoso
+[safari #3-1]       √ que voy a la página principal
+[safari #3-1]       √ abro la página de acceso
+[safari #3-1]       √ diligencio mi js.hernandez15@uniandes.edu.co y ASDasd123
+[safari #3-1]       √ intento acceder
+[safari #3-1]       2) espero acceder a mi página personal
+[safari #3-1]
+[safari #3-1]
+[safari #3-1] 11 passing (1m, 5s)
+[safari #3-1] 2 pending
+[safari #3-1] 2 failing
