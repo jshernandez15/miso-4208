@@ -1,0 +1,49 @@
+{
+  "uid" : "7ca5598f5f9bc906",
+  "name" : "intento acceder",
+  "fullName" : "Acceso a la aplicación Acceso sin parámetros.intento acceder",
+  "historyId" : "693f6af5496b89fb24625f2a75ea4f96",
+  "time" : {
+    "start" : 1510712480281,
+    "stop" : 0,
+    "duration" : -1510712480281
+  },
+  "description" : "",
+  "descriptionHtml" : "",
+  "status" : "unknown",
+  "statusDetails" : {
+    "flaky" : false
+  },
+  "beforeStages" : [ ],
+  "afterStages" : [ ],
+  "labels" : [ {
+    "name" : "suite",
+    "value" : "Acceso a la aplicación Acceso sin parámetros"
+  }, {
+    "name" : "testClass",
+    "value" : "Acceso a la aplicación Acceso sin parámetros"
+  }, {
+    "name" : "testMethod",
+    "value" : "intento acceder"
+  }, {
+    "name" : "package",
+    "value" : "Acceso a la aplicación Acceso sin parámetros"
+  }, {
+    "name" : "resultFormat",
+    "value" : "allure1"
+  } ],
+  "parameters" : [ ],
+  "links" : [ ],
+  "hidden" : true,
+  "extra" : {
+    "tags" : [ ]
+  },
+  "source" : "7ca5598f5f9bc906.json",
+  "statusDetailsSafe" : {
+    "flaky" : false
+  },
+  "statusMessage" : {
+    "present" : false
+  },
+  "parameterValues" : [ ]
+}

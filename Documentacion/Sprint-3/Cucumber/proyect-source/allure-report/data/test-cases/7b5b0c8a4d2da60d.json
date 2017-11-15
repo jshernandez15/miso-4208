@@ -1,0 +1,86 @@
+{
+  "uid" : "7b5b0c8a4d2da60d",
+  "name" : "que voy a la página principal",
+  "fullName" : "Acceso a la aplicación Acceso éxitoso.que voy a la página principal",
+  "historyId" : "559371b35831d2d387c83a9761091da0",
+  "time" : {
+    "start" : 1510712571432,
+    "stop" : 1510712574674,
+    "duration" : 3242
+  },
+  "description" : "",
+  "descriptionHtml" : "",
+  "status" : "passed",
+  "statusDetails" : {
+    "flaky" : false
+  },
+  "beforeStages" : [ ],
+  "testStage" : {
+    "status" : "passed",
+    "steps" : [ {
+      "name" : "POST /wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/url",
+      "time" : {
+        "start" : 1510712571432,
+        "stop" : 1510712574670,
+        "duration" : 3238
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ {
+        "uid" : "2d4a9a86f0a52422",
+        "name" : "Request",
+        "source" : "2d4a9a86f0a52422.json",
+        "type" : "application/json",
+        "size" : 38
+      }, {
+        "uid" : "58510f610e36b075",
+        "name" : "Response",
+        "source" : "58510f610e36b075.json",
+        "type" : "application/json",
+        "size" : 198
+      } ],
+      "parameters" : [ ],
+      "attachmentsCount" : 2,
+      "shouldDisplayMessage" : false,
+      "hasContent" : true,
+      "stepsCount" : 0
+    } ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "attachmentsCount" : 2,
+    "shouldDisplayMessage" : false,
+    "hasContent" : true,
+    "stepsCount" : 1
+  },
+  "afterStages" : [ ],
+  "labels" : [ {
+    "name" : "suite",
+    "value" : "Acceso a la aplicación Acceso éxitoso"
+  }, {
+    "name" : "testClass",
+    "value" : "Acceso a la aplicación Acceso éxitoso"
+  }, {
+    "name" : "testMethod",
+    "value" : "que voy a la página principal"
+  }, {
+    "name" : "package",
+    "value" : "Acceso a la aplicación Acceso éxitoso"
+  }, {
+    "name" : "resultFormat",
+    "value" : "allure1"
+  } ],
+  "parameters" : [ ],
+  "links" : [ ],
+  "hidden" : true,
+  "extra" : {
+    "tags" : [ ]
+  },
+  "source" : "7b5b0c8a4d2da60d.json",
+  "statusDetailsSafe" : {
+    "flaky" : false
+  },
+  "statusMessage" : {
+    "present" : false
+  },
+  "parameterValues" : [ ]
+}

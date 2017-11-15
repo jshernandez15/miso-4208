@@ -1,0 +1,53 @@
+{
+  "uid" : "b5e85c9d52b928e5",
+  "name" : "intento acceder",
+  "fullName" : "Acceso a la aplicación Acceso sin parámetros.intento acceder",
+  "historyId" : "693f6af5496b89fb24625f2a75ea4f96",
+  "time" : {
+    "start" : 1510712480284,
+    "stop" : 1510712480284,
+    "duration" : 0
+  },
+  "description" : "",
+  "descriptionHtml" : "",
+  "status" : "skipped",
+  "statusDetails" : {
+    "message" : "Test ignored",
+    "trace" : "undefined",
+    "flaky" : false
+  },
+  "beforeStages" : [ ],
+  "afterStages" : [ ],
+  "labels" : [ {
+    "name" : "suite",
+    "value" : "Acceso a la aplicación Acceso sin parámetros"
+  }, {
+    "name" : "testClass",
+    "value" : "Acceso a la aplicación Acceso sin parámetros"
+  }, {
+    "name" : "testMethod",
+    "value" : "intento acceder"
+  }, {
+    "name" : "package",
+    "value" : "Acceso a la aplicación Acceso sin parámetros"
+  }, {
+    "name" : "resultFormat",
+    "value" : "allure1"
+  } ],
+  "parameters" : [ ],
+  "links" : [ ],
+  "hidden" : true,
+  "extra" : {
+    "tags" : [ ]
+  },
+  "source" : "b5e85c9d52b928e5.json",
+  "statusDetailsSafe" : {
+    "message" : "Test ignored",
+    "trace" : "undefined",
+    "flaky" : false
+  },
+  "statusMessage" : {
+    "present" : true
+  },
+  "parameterValues" : [ ]
+}

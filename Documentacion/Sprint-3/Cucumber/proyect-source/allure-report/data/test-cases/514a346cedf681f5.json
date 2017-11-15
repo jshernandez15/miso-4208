@@ -1,0 +1,116 @@
+{
+  "uid" : "514a346cedf681f5",
+  "name" : "diligencio mi  y ",
+  "fullName" : "Acceso a la aplicación Acceso sin parámetros.diligencio mi  y ",
+  "historyId" : "ea1856a26f67acfc8540d85de89edcdd",
+  "time" : {
+    "start" : 1510712592196,
+    "stop" : 0,
+    "duration" : -1510712592196
+  },
+  "description" : "",
+  "descriptionHtml" : "",
+  "status" : "unknown",
+  "statusDetails" : {
+    "flaky" : true
+  },
+  "beforeStages" : [ ],
+  "afterStages" : [ ],
+  "labels" : [ {
+    "name" : "suite",
+    "value" : "Acceso a la aplicación Acceso sin parámetros"
+  }, {
+    "name" : "testClass",
+    "value" : "Acceso a la aplicación Acceso sin parámetros"
+  }, {
+    "name" : "testMethod",
+    "value" : "diligencio mi  y "
+  }, {
+    "name" : "package",
+    "value" : "Acceso a la aplicación Acceso sin parámetros"
+  }, {
+    "name" : "resultFormat",
+    "value" : "allure1"
+  } ],
+  "parameters" : [ ],
+  "links" : [ ],
+  "hidden" : false,
+  "extra" : {
+    "severity" : "normal",
+    "retries" : [ {
+      "uid" : "7e42d00ddb687264",
+      "status" : "unknown",
+      "time" : {
+        "start" : 1510712586166,
+        "stop" : 0,
+        "duration" : -1510712586166
+      }
+    }, {
+      "uid" : "eaab034e8f5914a5",
+      "status" : "passed",
+      "time" : {
+        "start" : 1510712573189,
+        "stop" : 1510712574111,
+        "duration" : 922
+      }
+    }, {
+      "uid" : "22561acbe686d12a",
+      "status" : "passed",
+      "time" : {
+        "start" : 1510712569572,
+        "stop" : 1510712570683,
+        "duration" : 1111
+      }
+    }, {
+      "uid" : "87fffb5aace29ac7",
+      "status" : "unknown",
+      "time" : {
+        "start" : 1510712480274,
+        "stop" : 0,
+        "duration" : -1510712480274
+      }
+    }, {
+      "uid" : "9bdf57231b84bf7c",
+      "status" : "passed",
+      "time" : {
+        "start" : 1510712466262,
+        "stop" : 1510712467166,
+        "duration" : 904
+      }
+    }, {
+      "uid" : "edb81adef23604e",
+      "status" : "passed",
+      "time" : {
+        "start" : 1510712463553,
+        "stop" : 1510712464473,
+        "duration" : 920
+      }
+    }, {
+      "uid" : "a03fa6f4a58e9b10",
+      "status" : "passed",
+      "time" : {
+        "start" : 1510712462179,
+        "stop" : 1510712463179,
+        "duration" : 1000
+      }
+    }, {
+      "uid" : "d49ba3e05b8eac84",
+      "status" : "passed",
+      "time" : {
+        "start" : 1510712230991,
+        "stop" : 1510712232002,
+        "duration" : 1011
+      }
+    } ],
+    "categories" : [ ],
+    "tags" : [ ]
+  },
+  "source" : "514a346cedf681f5.json",
+  "statusDetailsSafe" : {
+    "flaky" : true
+  },
+  "statusMessage" : {
+    "present" : false
+  },
+  "parameterValues" : [ ]
+}

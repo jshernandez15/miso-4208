@@ -1,0 +1,107 @@
+{
+  "uid" : "17f727090329ffd5",
+  "name" : "intento acceder",
+  "fullName" : "Acceso a la aplicación Acceso con parámetros incorrectos.intento acceder",
+  "historyId" : "858ef50ffad28b191a5916c924c480de",
+  "time" : {
+    "start" : 1510712459948,
+    "stop" : 1510712460227,
+    "duration" : 279
+  },
+  "description" : "",
+  "descriptionHtml" : "",
+  "status" : "passed",
+  "statusDetails" : {
+    "flaky" : false
+  },
+  "beforeStages" : [ ],
+  "testStage" : {
+    "status" : "passed",
+    "steps" : [ {
+      "name" : "POST /wd/hub/session/7b6fa90560f6a700efd2c717e0668ae96eebfd8a/element",
+      "time" : {
+        "start" : 1510712459959,
+        "stop" : 1510712460073,
+        "duration" : 114
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ {
+        "uid" : "6513dfc46c844066",
+        "name" : "Request",
+        "source" : "6513dfc46c844066.json",
+        "type" : "application/json",
+        "size" : 61
+      }, {
+        "uid" : "7f7d5f1858f8e1f1",
+        "name" : "Response",
+        "source" : "7f7d5f1858f8e1f1.json",
+        "type" : "application/json",
+        "size" : 224
+      } ],
+      "parameters" : [ ],
+      "attachmentsCount" : 2,
+      "shouldDisplayMessage" : false,
+      "hasContent" : true,
+      "stepsCount" : 0
+    }, {
+      "name" : "POST /wd/hub/session/7b6fa90560f6a700efd2c717e0668ae96eebfd8a/element/4/click",
+      "time" : {
+        "start" : 1510712460077,
+        "stop" : 1510712460226,
+        "duration" : 149
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ {
+        "uid" : "d14436fc6f28ca4f",
+        "name" : "Response",
+        "source" : "d14436fc6f28ca4f.json",
+        "type" : "application/json",
+        "size" : 198
+      } ],
+      "parameters" : [ ],
+      "attachmentsCount" : 1,
+      "shouldDisplayMessage" : false,
+      "hasContent" : true,
+      "stepsCount" : 0
+    } ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "attachmentsCount" : 3,
+    "shouldDisplayMessage" : false,
+    "hasContent" : true,
+    "stepsCount" : 2
+  },
+  "afterStages" : [ ],
+  "labels" : [ {
+    "name" : "suite",
+    "value" : "Acceso a la aplicación Acceso con parámetros incorrectos"
+  }, {
+    "name" : "testClass",
+    "value" : "Acceso a la aplicación Acceso con parámetros incorrectos"
+  }, {
+    "name" : "testMethod",
+    "value" : "intento acceder"
+  }, {
+    "name" : "package",
+    "value" : "Acceso a la aplicación Acceso con parámetros incorrectos"
+  }, {
+    "name" : "resultFormat",
+    "value" : "allure1"
+  } ],
+  "parameters" : [ ],
+  "links" : [ ],
+  "hidden" : true,
+  "extra" : {
+    "tags" : [ ]
+  },
+  "source" : "17f727090329ffd5.json",
+  "statusDetailsSafe" : {
+    "flaky" : false
+  },
+  "statusMessage" : {
+    "present" : false
+  },
+  "parameterValues" : [ ]
+}

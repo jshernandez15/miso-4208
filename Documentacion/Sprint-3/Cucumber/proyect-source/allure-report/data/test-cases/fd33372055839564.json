@@ -1,0 +1,152 @@
+{
+  "uid" : "fd33372055839564",
+  "name" : "registro un hábito",
+  "fullName" : "Creación de hábitos Crear hábitos.registro un hábito",
+  "historyId" : "8471fd22952ade2509a1df4b1af60de3",
+  "time" : {
+    "start" : 1510712464950,
+    "stop" : 1510712465984,
+    "duration" : 1034
+  },
+  "description" : "",
+  "descriptionHtml" : "",
+  "status" : "broken",
+  "statusDetails" : {
+    "message" : "unknown error: cannot focus element",
+    "trace" : "Error: An unknown server-side error occurred while processing the command.\n                    at Object.wait (D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\node_modules\\fibers\\future.js:449:15)\n                    at Object.setValue (D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\node_modules\\wdio-sync\\build\\index.js:353:27)\n                    at World.registerHabit (D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\features\\step-definitions\\index.js:58:14)\n                    at D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\node_modules\\wdio-sync\\build\\index.js:594:26\n                    at Promise.F (D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\node_modules\\core-js\\library\\modules\\_export.js:35:28)\n                    at World.executeSync (D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\node_modules\\wdio-sync\\build\\index.js:592:12)\n                    at D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\node_modules\\wdio-sync\\build\\index.js:214:29\n                    at elementIdValue(\"9\", \"1510712464950\") - D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\node_modules\\webdriverio\\build\\lib\\commands\\setValue.js:46:80",
+    "flaky" : false
+  },
+  "beforeStages" : [ ],
+  "testStage" : {
+    "status" : "broken",
+    "statusDetails" : {
+      "message" : "unknown error: cannot focus element",
+      "trace" : "Error: An unknown server-side error occurred while processing the command.\n                    at Object.wait (D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\node_modules\\fibers\\future.js:449:15)\n                    at Object.setValue (D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\node_modules\\wdio-sync\\build\\index.js:353:27)\n                    at World.registerHabit (D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\features\\step-definitions\\index.js:58:14)\n                    at D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\node_modules\\wdio-sync\\build\\index.js:594:26\n                    at Promise.F (D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\node_modules\\core-js\\library\\modules\\_export.js:35:28)\n                    at World.executeSync (D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\node_modules\\wdio-sync\\build\\index.js:592:12)\n                    at D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\node_modules\\wdio-sync\\build\\index.js:214:29\n                    at elementIdValue(\"9\", \"1510712464950\") - D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\node_modules\\webdriverio\\build\\lib\\commands\\setValue.js:46:80",
+      "flaky" : false
+    },
+    "steps" : [ {
+      "name" : "POST /wd/hub/session/920b65c97a8cfd48511e9213face78dc76e7d8f5/element",
+      "time" : {
+        "start" : 1510712464953,
+        "stop" : 1510712465064,
+        "duration" : 111
+      },
+      "status" : "passed",
+      "statusDetails" : {
+        "flaky" : false
+      },
+      "steps" : [ ],
+      "attachments" : [ {
+        "uid" : "dde46189c166cbd6",
+        "name" : "Request",
+        "source" : "dde46189c166cbd6.json",
+        "type" : "application/json",
+        "size" : 58
+      }, {
+        "uid" : "4befbdffc5a67f0",
+        "name" : "Response",
+        "source" : "4befbdffc5a67f0.json",
+        "type" : "application/json",
+        "size" : 223
+      } ],
+      "parameters" : [ ],
+      "attachmentsCount" : 2,
+      "shouldDisplayMessage" : false,
+      "hasContent" : true,
+      "stepsCount" : 0
+    }, {
+      "name" : "POST /wd/hub/session/920b65c97a8cfd48511e9213face78dc76e7d8f5/element/9/clear",
+      "time" : {
+        "start" : 1510712465076,
+        "stop" : 1510712465204,
+        "duration" : 128
+      },
+      "status" : "passed",
+      "statusDetails" : {
+        "flaky" : false
+      },
+      "steps" : [ ],
+      "attachments" : [ {
+        "uid" : "47401e23081071d8",
+        "name" : "Response",
+        "source" : "47401e23081071d8.json",
+        "type" : "application/json",
+        "size" : 197
+      } ],
+      "parameters" : [ ],
+      "attachmentsCount" : 1,
+      "shouldDisplayMessage" : false,
+      "hasContent" : true,
+      "stepsCount" : 0
+    }, {
+      "name" : "POST /wd/hub/session/920b65c97a8cfd48511e9213face78dc76e7d8f5/element/9/value",
+      "time" : {
+        "start" : 1510712465207,
+        "stop" : 1510712465970,
+        "duration" : 763
+      },
+      "status" : "passed",
+      "statusDetails" : {
+        "flaky" : false
+      },
+      "steps" : [ ],
+      "attachments" : [ {
+        "uid" : "3facedb38cc6c813",
+        "name" : "Request",
+        "source" : "3facedb38cc6c813.json",
+        "type" : "application/json",
+        "size" : 221
+      }, {
+        "uid" : "bdc15f3a2f32bdae",
+        "name" : "Response",
+        "source" : "bdc15f3a2f32bdae.json",
+        "type" : "application/json",
+        "size" : 86350
+      } ],
+      "parameters" : [ ],
+      "attachmentsCount" : 2,
+      "shouldDisplayMessage" : false,
+      "hasContent" : true,
+      "stepsCount" : 0
+    } ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "attachmentsCount" : 5,
+    "shouldDisplayMessage" : true,
+    "hasContent" : true,
+    "stepsCount" : 3
+  },
+  "afterStages" : [ ],
+  "labels" : [ {
+    "name" : "suite",
+    "value" : "Creación de hábitos Crear hábitos"
+  }, {
+    "name" : "testClass",
+    "value" : "Creación de hábitos Crear hábitos"
+  }, {
+    "name" : "testMethod",
+    "value" : "registro un hábito"
+  }, {
+    "name" : "package",
+    "value" : "Creación de hábitos Crear hábitos"
+  }, {
+    "name" : "resultFormat",
+    "value" : "allure1"
+  } ],
+  "parameters" : [ ],
+  "links" : [ ],
+  "hidden" : true,
+  "extra" : {
+    "tags" : [ ]
+  },
+  "source" : "fd33372055839564.json",
+  "statusDetailsSafe" : {
+    "message" : "unknown error: cannot focus element",
+    "trace" : "Error: An unknown server-side error occurred while processing the command.\n                    at Object.wait (D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\node_modules\\fibers\\future.js:449:15)\n                    at Object.setValue (D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\node_modules\\wdio-sync\\build\\index.js:353:27)\n                    at World.registerHabit (D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\features\\step-definitions\\index.js:58:14)\n                    at D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\node_modules\\wdio-sync\\build\\index.js:594:26\n                    at Promise.F (D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\node_modules\\core-js\\library\\modules\\_export.js:35:28)\n                    at World.executeSync (D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\node_modules\\wdio-sync\\build\\index.js:592:12)\n                    at D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\node_modules\\wdio-sync\\build\\index.js:214:29\n                    at elementIdValue(\"9\", \"1510712464950\") - D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\node_modules\\webdriverio\\build\\lib\\commands\\setValue.js:46:80",
+    "flaky" : false
+  },
+  "statusMessage" : {
+    "present" : true
+  },
+  "parameterValues" : [ ]
+}

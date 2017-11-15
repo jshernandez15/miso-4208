@@ -1,0 +1,158 @@
+{
+  "uid" : "df7e7090d342dbc2",
+  "name" : "registro un hábito",
+  "fullName" : "Creación de hábitos Crear hábitos.registro un hábito",
+  "historyId" : "8471fd22952ade2509a1df4b1af60de3",
+  "time" : {
+    "start" : 1510712588432,
+    "stop" : 1510712588432,
+    "duration" : 0
+  },
+  "description" : "",
+  "descriptionHtml" : "",
+  "status" : "skipped",
+  "statusDetails" : {
+    "message" : "Test ignored",
+    "trace" : "undefined",
+    "flaky" : true
+  },
+  "beforeStages" : [ ],
+  "afterStages" : [ ],
+  "labels" : [ {
+    "name" : "suite",
+    "value" : "Creación de hábitos Crear hábitos"
+  }, {
+    "name" : "testClass",
+    "value" : "Creación de hábitos Crear hábitos"
+  }, {
+    "name" : "testMethod",
+    "value" : "registro un hábito"
+  }, {
+    "name" : "package",
+    "value" : "Creación de hábitos Crear hábitos"
+  }, {
+    "name" : "resultFormat",
+    "value" : "allure1"
+  } ],
+  "parameters" : [ ],
+  "links" : [ ],
+  "hidden" : false,
+  "extra" : {
+    "severity" : "normal",
+    "retries" : [ {
+      "uid" : "2357d539ca349175",
+      "status" : "unknown",
+      "time" : {
+        "start" : 1510712588431,
+        "stop" : 0,
+        "duration" : -1510712588431
+      }
+    }, {
+      "uid" : "2957d7d311b13488",
+      "status" : "skipped",
+      "statusDetails" : "Test ignored",
+      "time" : {
+        "start" : 1510712575101,
+        "stop" : 1510712575101,
+        "duration" : 0
+      }
+    }, {
+      "uid" : "164d7c52a30ca1f7",
+      "status" : "unknown",
+      "time" : {
+        "start" : 1510712575100,
+        "stop" : 0,
+        "duration" : -1510712575100
+      }
+    }, {
+      "uid" : "91d29401985bf8d0",
+      "status" : "passed",
+      "time" : {
+        "start" : 1510712574654,
+        "stop" : 1510712575334,
+        "duration" : 680
+      }
+    }, {
+      "uid" : "a499ee2bd42da43b",
+      "status" : "broken",
+      "statusDetails" : "unknown error: cannot focus element",
+      "time" : {
+        "start" : 1510712571289,
+        "stop" : 1510712572351,
+        "duration" : 1062
+      }
+    }, {
+      "uid" : "53130c26478346eb",
+      "status" : "skipped",
+      "statusDetails" : "Test ignored",
+      "time" : {
+        "start" : 1510712477951,
+        "stop" : 1510712477951,
+        "duration" : 0
+      }
+    }, {
+      "uid" : "d0a11b39aaf30f6",
+      "status" : "unknown",
+      "time" : {
+        "start" : 1510712477949,
+        "stop" : 0,
+        "duration" : -1510712477949
+      }
+    }, {
+      "uid" : "fb1aab18eec97037",
+      "status" : "skipped",
+      "statusDetails" : "Test ignored",
+      "time" : {
+        "start" : 1510712477044,
+        "stop" : 1510712477044,
+        "duration" : 0
+      }
+    }, {
+      "uid" : "a7a3f15ceb5673a8",
+      "status" : "unknown",
+      "time" : {
+        "start" : 1510712477042,
+        "stop" : 0,
+        "duration" : -1510712477042
+      }
+    }, {
+      "uid" : "3412f5ced2348be2",
+      "status" : "passed",
+      "time" : {
+        "start" : 1510712466847,
+        "stop" : 1510712467506,
+        "duration" : 659
+      }
+    }, {
+      "uid" : "fd33372055839564",
+      "status" : "broken",
+      "statusDetails" : "unknown error: cannot focus element",
+      "time" : {
+        "start" : 1510712464950,
+        "stop" : 1510712465984,
+        "duration" : 1034
+      }
+    }, {
+      "uid" : "a373c04cd61992fc",
+      "status" : "broken",
+      "statusDetails" : "unknown error: cannot focus element",
+      "time" : {
+        "start" : 1510712232986,
+        "stop" : 1510712234003,
+        "duration" : 1017
+      }
+    } ],
+    "categories" : [ ],
+    "tags" : [ ]
+  },
+  "source" : "df7e7090d342dbc2.json",
+  "statusDetailsSafe" : {
+    "message" : "Test ignored",
+    "trace" : "undefined",
+    "flaky" : true
+  },
+  "statusMessage" : {
+    "present" : true
+  },
+  "parameterValues" : [ ]
+}

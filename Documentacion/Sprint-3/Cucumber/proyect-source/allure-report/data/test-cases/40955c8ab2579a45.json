@@ -1,0 +1,49 @@
+{
+  "uid" : "40955c8ab2579a45",
+  "name" : "intento acceder",
+  "fullName" : "Acceso a la aplicación Acceso éxitoso.intento acceder",
+  "historyId" : "6c19863ea0eff6e50038ddc4eb5c2bfe",
+  "time" : {
+    "start" : 1510712597719,
+    "stop" : 0,
+    "duration" : -1510712597719
+  },
+  "description" : "",
+  "descriptionHtml" : "",
+  "status" : "unknown",
+  "statusDetails" : {
+    "flaky" : false
+  },
+  "beforeStages" : [ ],
+  "afterStages" : [ ],
+  "labels" : [ {
+    "name" : "suite",
+    "value" : "Acceso a la aplicación Acceso éxitoso"
+  }, {
+    "name" : "testClass",
+    "value" : "Acceso a la aplicación Acceso éxitoso"
+  }, {
+    "name" : "testMethod",
+    "value" : "intento acceder"
+  }, {
+    "name" : "package",
+    "value" : "Acceso a la aplicación Acceso éxitoso"
+  }, {
+    "name" : "resultFormat",
+    "value" : "allure1"
+  } ],
+  "parameters" : [ ],
+  "links" : [ ],
+  "hidden" : true,
+  "extra" : {
+    "tags" : [ ]
+  },
+  "source" : "40955c8ab2579a45.json",
+  "statusDetailsSafe" : {
+    "flaky" : false
+  },
+  "statusMessage" : {
+    "present" : false
+  },
+  "parameterValues" : [ ]
+}

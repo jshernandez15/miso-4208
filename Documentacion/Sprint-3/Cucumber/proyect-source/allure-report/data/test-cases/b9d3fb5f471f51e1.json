@@ -1,0 +1,107 @@
+{
+  "uid" : "b9d3fb5f471f51e1",
+  "name" : "intento acceder",
+  "fullName" : "Acceso a la aplicación Acceso sin parámetros.intento acceder",
+  "historyId" : "693f6af5496b89fb24625f2a75ea4f96",
+  "time" : {
+    "start" : 1510712467170,
+    "stop" : 1510712467432,
+    "duration" : 262
+  },
+  "description" : "",
+  "descriptionHtml" : "",
+  "status" : "passed",
+  "statusDetails" : {
+    "flaky" : false
+  },
+  "beforeStages" : [ ],
+  "testStage" : {
+    "status" : "passed",
+    "steps" : [ {
+      "name" : "POST /wd/hub/session/756bbc5ef3922980b7b180393483f6495a2076e0/element",
+      "time" : {
+        "start" : 1510712467176,
+        "stop" : 1510712467280,
+        "duration" : 104
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ {
+        "uid" : "bd77f3fe06716c0f",
+        "name" : "Request",
+        "source" : "bd77f3fe06716c0f.json",
+        "type" : "application/json",
+        "size" : 61
+      }, {
+        "uid" : "d0e28047d6f49ea8",
+        "name" : "Response",
+        "source" : "d0e28047d6f49ea8.json",
+        "type" : "application/json",
+        "size" : 224
+      } ],
+      "parameters" : [ ],
+      "attachmentsCount" : 2,
+      "shouldDisplayMessage" : false,
+      "hasContent" : true,
+      "stepsCount" : 0
+    }, {
+      "name" : "POST /wd/hub/session/756bbc5ef3922980b7b180393483f6495a2076e0/element/9/click",
+      "time" : {
+        "start" : 1510712467290,
+        "stop" : 1510712467424,
+        "duration" : 134
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ {
+        "uid" : "69b5f2f15e0c97af",
+        "name" : "Response",
+        "source" : "69b5f2f15e0c97af.json",
+        "type" : "application/json",
+        "size" : 198
+      } ],
+      "parameters" : [ ],
+      "attachmentsCount" : 1,
+      "shouldDisplayMessage" : false,
+      "hasContent" : true,
+      "stepsCount" : 0
+    } ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "attachmentsCount" : 3,
+    "shouldDisplayMessage" : false,
+    "hasContent" : true,
+    "stepsCount" : 2
+  },
+  "afterStages" : [ ],
+  "labels" : [ {
+    "name" : "suite",
+    "value" : "Acceso a la aplicación Acceso sin parámetros"
+  }, {
+    "name" : "testClass",
+    "value" : "Acceso a la aplicación Acceso sin parámetros"
+  }, {
+    "name" : "testMethod",
+    "value" : "intento acceder"
+  }, {
+    "name" : "package",
+    "value" : "Acceso a la aplicación Acceso sin parámetros"
+  }, {
+    "name" : "resultFormat",
+    "value" : "allure1"
+  } ],
+  "parameters" : [ ],
+  "links" : [ ],
+  "hidden" : true,
+  "extra" : {
+    "tags" : [ ]
+  },
+  "source" : "b9d3fb5f471f51e1.json",
+  "statusDetailsSafe" : {
+    "flaky" : false
+  },
+  "statusMessage" : {
+    "present" : false
+  },
+  "parameterValues" : [ ]
+}

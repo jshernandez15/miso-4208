@@ -1,0 +1,61 @@
+{
+  "uid" : "4b4757e66a1912dae1a509f688f20b0f",
+  "name" : "categories",
+  "children" : [ {
+    "name" : "Test defects",
+    "children" : [ {
+      "name" : "element (\".login-button\") still not visible after 10000ms",
+      "children" : [ {
+        "name" : "que accedí a la página",
+        "uid" : "90fa4f57c90ce3aa",
+        "parentUid" : "c865f983a233356d73037e3afe7466da",
+        "status" : "broken",
+        "time" : {
+          "start" : 1510712568107,
+          "stop" : 1510712588429,
+          "duration" : 20322
+        },
+        "flaky" : true,
+        "parameters" : [ ]
+      }, {
+        "name" : "abro la página de acceso",
+        "uid" : "acfe97f535c702b0",
+        "parentUid" : "c865f983a233356d73037e3afe7466da",
+        "status" : "broken",
+        "time" : {
+          "start" : 1510712571223,
+          "stop" : 1510712581494,
+          "duration" : 10271
+        },
+        "flaky" : true,
+        "parameters" : [ ]
+      }, {
+        "name" : "abro la página de acceso",
+        "uid" : "956f6f1ad12fcede",
+        "parentUid" : "c865f983a233356d73037e3afe7466da",
+        "status" : "broken",
+        "time" : {
+          "start" : 1510712581877,
+          "stop" : 1510712592193,
+          "duration" : 10316
+        },
+        "flaky" : true,
+        "parameters" : [ ]
+      }, {
+        "name" : "abro la página de acceso",
+        "uid" : "4c80455724e829cc",
+        "parentUid" : "c865f983a233356d73037e3afe7466da",
+        "status" : "broken",
+        "time" : {
+          "start" : 1510712592640,
+          "stop" : 1510712602891,
+          "duration" : 10251
+        },
+        "flaky" : true,
+        "parameters" : [ ]
+      } ],
+      "uid" : "c865f983a233356d73037e3afe7466da"
+    } ],
+    "uid" : "bdbf199525818fae7a8651db9eafe741"
+  } ]
+}

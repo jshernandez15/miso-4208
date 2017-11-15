@@ -1,0 +1,320 @@
+<?xml version='1.0'?>
+<ns2:test-suite xmlns:ns2='urn:model.allure.qatools.yandex.ru' start='1510712467801' stop='1510712480298'>
+    <name>Acceso a la aplicación Acceso sin parámetros</name>
+    <title>Acceso a la aplicación Acceso sin parámetros</title>
+    <test-cases>
+        <test-case start='1510712467801' status='passed' stop='1510712468577'>
+            <name>que voy a la página principal</name>
+            <title>que voy a la página principal</title>
+            <labels/>
+            <parameters>
+                <parameter kind='environment-variable' name='capabilities' value='{"browser":"internet explorer"}'/>
+                <parameter kind='environment-variable' name='spec files' value='["D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\features\\login.feature"]'/>
+            </parameters>
+            <steps>
+                <step start='1510712467802' status='passed' stop='1510712468567'>
+                    <name>POST /wd/hub/session/f149b4f51e926dc4c0721ccb19438edefcf82d01/url</name>
+                    <title>POST /wd/hub/session/f149b4f51e926dc4c0721ccb19438edefcf82d01/url</title>
+                    <attachments>
+                        <attachment title='Request' source='b994435e-0758-42c6-8e25-d9c48dfa6844-attachment.json' type='application/json' size='38'/>
+                        <attachment title='Response' source='682c7fd4-cfec-494f-8200-f7fb0727b947-attachment.json' type='application/json' size='198'/>
+                    </attachments>
+                    <steps/>
+                </step>
+            </steps>
+            <attachments/>
+        </test-case>
+        <test-case start='1510712468581' status='broken' stop='1510712480270'>
+            <name>abro la página de acceso</name>
+            <title>abro la página de acceso</title>
+            <labels/>
+            <parameters>
+                <parameter kind='environment-variable' name='capabilities' value='{"browser":"internet explorer"}'/>
+                <parameter kind='environment-variable' name='spec files' value='["D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\features\\login.feature"]'/>
+            </parameters>
+            <steps>
+                <step start='1510712468594' status='passed' stop='1510712469095'>
+                    <name>POST /wd/hub/session/f149b4f51e926dc4c0721ccb19438edefcf82d01/elements</name>
+                    <title>POST /wd/hub/session/f149b4f51e926dc4c0721ccb19438edefcf82d01/elements</title>
+                    <attachments>
+                        <attachment title='Request' source='04bf8a54-2bfe-42c8-a22d-c2ebad3b20c8-attachment.json' type='application/json' size='61'/>
+                        <attachment title='Response' source='1597fe8a-6af6-4f49-a1d1-038183cadcdc-attachment.json' type='application/json' size='196'/>
+                    </attachments>
+                    <steps/>
+                </step>
+                <step start='1510712469098' status='passed' stop='1510712469568'>
+                    <name>POST /wd/hub/session/f149b4f51e926dc4c0721ccb19438edefcf82d01/elements</name>
+                    <title>POST /wd/hub/session/f149b4f51e926dc4c0721ccb19438edefcf82d01/elements</title>
+                    <attachments>
+                        <attachment title='Request' source='352573f5-a356-424e-913b-df9cd524e328-attachment.json' type='application/json' size='61'/>
+                        <attachment title='Response' source='40fd1bf6-4eb4-4e03-838e-d182dddcf266-attachment.json' type='application/json' size='196'/>
+                    </attachments>
+                    <steps/>
+                </step>
+                <step start='1510712469592' status='passed' stop='1510712470065'>
+                    <name>POST /wd/hub/session/f149b4f51e926dc4c0721ccb19438edefcf82d01/elements</name>
+                    <title>POST /wd/hub/session/f149b4f51e926dc4c0721ccb19438edefcf82d01/elements</title>
+                    <attachments>
+                        <attachment title='Request' source='df309c9b-e707-448d-b5a4-3877b81fa160-attachment.json' type='application/json' size='61'/>
+                        <attachment title='Response' source='e6b6d4f6-30cd-4d5c-ae12-17ef60e5ce5a-attachment.json' type='application/json' size='195'/>
+                    </attachments>
+                    <steps/>
+                </step>
+                <step start='1510712470098' status='passed' stop='1510712470608'>
+                    <name>POST /wd/hub/session/f149b4f51e926dc4c0721ccb19438edefcf82d01/elements</name>
+                    <title>POST /wd/hub/session/f149b4f51e926dc4c0721ccb19438edefcf82d01/elements</title>
+                    <attachments>
+                        <attachment title='Request' source='5f3df06a-a42a-469b-8c2f-f38e776cca5a-attachment.json' type='application/json' size='61'/>
+                        <attachment title='Response' source='4691129d-f28a-45a6-be21-bb8cca3825e2-attachment.json' type='application/json' size='195'/>
+                    </attachments>
+                    <steps/>
+                </step>
+                <step start='1510712470613' status='passed' stop='1510712471089'>
+                    <name>POST /wd/hub/session/f149b4f51e926dc4c0721ccb19438edefcf82d01/elements</name>
+                    <title>POST /wd/hub/session/f149b4f51e926dc4c0721ccb19438edefcf82d01/elements</title>
+                    <attachments>
+                        <attachment title='Request' source='9585edc4-11d4-435d-a800-b3eb41026bb7-attachment.json' type='application/json' size='61'/>
+                        <attachment title='Response' source='124a2e91-ea9e-47ce-be8e-9f4ddc4f7450-attachment.json' type='application/json' size='195'/>
+                    </attachments>
+                    <steps/>
+                </step>
+                <step start='1510712471091' status='passed' stop='1510712471557'>
+                    <name>POST /wd/hub/session/f149b4f51e926dc4c0721ccb19438edefcf82d01/elements</name>
+                    <title>POST /wd/hub/session/f149b4f51e926dc4c0721ccb19438edefcf82d01/elements</title>
+                    <attachments>
+                        <attachment title='Request' source='e17d706a-6e52-4800-94cb-afadb9f89640-attachment.json' type='application/json' size='61'/>
+                        <attachment title='Response' source='10c5a76c-9132-40ab-9a3b-7fe9378b601f-attachment.json' type='application/json' size='195'/>
+                    </attachments>
+                    <steps/>
+                </step>
+                <step start='1510712471592' status='passed' stop='1510712472075'>
+                    <name>POST /wd/hub/session/f149b4f51e926dc4c0721ccb19438edefcf82d01/elements</name>
+                    <title>POST /wd/hub/session/f149b4f51e926dc4c0721ccb19438edefcf82d01/elements</title>
+                    <attachments>
+                        <attachment title='Request' source='cff5b1c9-2228-4824-8939-2cd6a72db9c7-attachment.json' type='application/json' size='61'/>
+                        <attachment title='Response' source='7f51dffa-98e9-4f06-ba8c-7dc0665a2776-attachment.json' type='application/json' size='196'/>
+                    </attachments>
+                    <steps/>
+                </step>
+                <step start='1510712472089' status='passed' stop='1510712472549'>
+                    <name>POST /wd/hub/session/f149b4f51e926dc4c0721ccb19438edefcf82d01/elements</name>
+                    <title>POST /wd/hub/session/f149b4f51e926dc4c0721ccb19438edefcf82d01/elements</title>
+                    <attachments>
+                        <attachment title='Request' source='69fce6a8-e9fc-425f-aaf7-52746aa946df-attachment.json' type='application/json' size='61'/>
+                        <attachment title='Response' source='9c69494b-379a-4ba7-a27f-15f84dd8767e-attachment.json' type='application/json' size='195'/>
+                    </attachments>
+                    <steps/>
+                </step>
+                <step start='1510712472595' status='passed' stop='1510712473061'>
+                    <name>POST /wd/hub/session/f149b4f51e926dc4c0721ccb19438edefcf82d01/elements</name>
+                    <title>POST /wd/hub/session/f149b4f51e926dc4c0721ccb19438edefcf82d01/elements</title>
+                    <attachments>
+                        <attachment title='Request' source='cfda9618-ef1a-4747-b26a-eeb976c40df7-attachment.json' type='application/json' size='61'/>
+                        <attachment title='Response' source='8dab8861-4da8-456c-8b69-ce1fdf352f7b-attachment.json' type='application/json' size='196'/>
+                    </attachments>
+                    <steps/>
+                </step>
+                <step start='1510712473097' status='passed' stop='1510712473562'>
+                    <name>POST /wd/hub/session/f149b4f51e926dc4c0721ccb19438edefcf82d01/elements</name>
+                    <title>POST /wd/hub/session/f149b4f51e926dc4c0721ccb19438edefcf82d01/elements</title>
+                    <attachments>
+                        <attachment title='Request' source='c174bc8a-40eb-4cb9-a578-c17a07caffdd-attachment.json' type='application/json' size='61'/>
+                        <attachment title='Response' source='4329abc3-abc4-46d0-8abc-0f854fcca625-attachment.json' type='application/json' size='195'/>
+                    </attachments>
+                    <steps/>
+                </step>
+                <step start='1510712473597' status='passed' stop='1510712474081'>
+                    <name>POST /wd/hub/session/f149b4f51e926dc4c0721ccb19438edefcf82d01/elements</name>
+                    <title>POST /wd/hub/session/f149b4f51e926dc4c0721ccb19438edefcf82d01/elements</title>
+                    <attachments>
+                        <attachment title='Request' source='75b7ebcf-79d8-4b44-8eb0-73937bdfc920-attachment.json' type='application/json' size='61'/>
+                        <attachment title='Response' source='d8efeddf-0b61-41ba-a7a1-51f17658d123-attachment.json' type='application/json' size='196'/>
+                    </attachments>
+                    <steps/>
+                </step>
+                <step start='1510712474091' status='passed' stop='1510712474561'>
+                    <name>POST /wd/hub/session/f149b4f51e926dc4c0721ccb19438edefcf82d01/elements</name>
+                    <title>POST /wd/hub/session/f149b4f51e926dc4c0721ccb19438edefcf82d01/elements</title>
+                    <attachments>
+                        <attachment title='Request' source='afa6c772-b17d-48b0-87ab-cbe99f536a29-attachment.json' type='application/json' size='61'/>
+                        <attachment title='Response' source='1193ac1a-e03b-4a7c-8820-d4eaa80bb5f2-attachment.json' type='application/json' size='196'/>
+                    </attachments>
+                    <steps/>
+                </step>
+                <step start='1510712474597' status='passed' stop='1510712475066'>
+                    <name>POST /wd/hub/session/f149b4f51e926dc4c0721ccb19438edefcf82d01/elements</name>
+                    <title>POST /wd/hub/session/f149b4f51e926dc4c0721ccb19438edefcf82d01/elements</title>
+                    <attachments>
+                        <attachment title='Request' source='2fbd507e-0ec9-4f52-b5ff-00b25b1520f1-attachment.json' type='application/json' size='61'/>
+                        <attachment title='Response' source='644ce92e-096a-41be-a93e-df92bfcdca66-attachment.json' type='application/json' size='195'/>
+                    </attachments>
+                    <steps/>
+                </step>
+                <step start='1510712475095' status='passed' stop='1510712475572'>
+                    <name>POST /wd/hub/session/f149b4f51e926dc4c0721ccb19438edefcf82d01/elements</name>
+                    <title>POST /wd/hub/session/f149b4f51e926dc4c0721ccb19438edefcf82d01/elements</title>
+                    <attachments>
+                        <attachment title='Request' source='aa66e693-1d44-443a-be42-bbd922ab7683-attachment.json' type='application/json' size='61'/>
+                        <attachment title='Response' source='5583b394-e1b5-40fd-b24c-bc4680bfd92c-attachment.json' type='application/json' size='196'/>
+                    </attachments>
+                    <steps/>
+                </step>
+                <step start='1510712475593' status='passed' stop='1510712476117'>
+                    <name>POST /wd/hub/session/f149b4f51e926dc4c0721ccb19438edefcf82d01/elements</name>
+                    <title>POST /wd/hub/session/f149b4f51e926dc4c0721ccb19438edefcf82d01/elements</title>
+                    <attachments>
+                        <attachment title='Request' source='e4b52070-3198-4186-89f0-d8db4e33728c-attachment.json' type='application/json' size='61'/>
+                        <attachment title='Response' source='ca4cb84d-6bfa-4ed9-a0e4-0c30b53913a8-attachment.json' type='application/json' size='195'/>
+                    </attachments>
+                    <steps/>
+                </step>
+                <step start='1510712476142' status='passed' stop='1510712476612'>
+                    <name>POST /wd/hub/session/f149b4f51e926dc4c0721ccb19438edefcf82d01/elements</name>
+                    <title>POST /wd/hub/session/f149b4f51e926dc4c0721ccb19438edefcf82d01/elements</title>
+                    <attachments>
+                        <attachment title='Request' source='5c5ee771-662b-4aca-98f6-cec70231f9e6-attachment.json' type='application/json' size='61'/>
+                        <attachment title='Response' source='cc1ee536-c06b-48c1-9aab-219d99d44bff-attachment.json' type='application/json' size='196'/>
+                    </attachments>
+                    <steps/>
+                </step>
+                <step start='1510712476618' status='passed' stop='1510712477084'>
+                    <name>POST /wd/hub/session/f149b4f51e926dc4c0721ccb19438edefcf82d01/elements</name>
+                    <title>POST /wd/hub/session/f149b4f51e926dc4c0721ccb19438edefcf82d01/elements</title>
+                    <attachments>
+                        <attachment title='Request' source='9f9fa084-cd5e-4ee7-acd0-e4db3d0f80c3-attachment.json' type='application/json' size='61'/>
+                        <attachment title='Response' source='92d6c31f-f3a2-4805-9ccb-51aafcb25c8d-attachment.json' type='application/json' size='196'/>
+                    </attachments>
+                    <steps/>
+                </step>
+                <step start='1510712477088' status='passed' stop='1510712477572'>
+                    <name>POST /wd/hub/session/f149b4f51e926dc4c0721ccb19438edefcf82d01/elements</name>
+                    <title>POST /wd/hub/session/f149b4f51e926dc4c0721ccb19438edefcf82d01/elements</title>
+                    <attachments>
+                        <attachment title='Request' source='0ce47b61-8a50-4ce7-938f-44a4fd38e1aa-attachment.json' type='application/json' size='61'/>
+                        <attachment title='Response' source='98f25422-087f-48d9-8654-c7daead405ef-attachment.json' type='application/json' size='196'/>
+                    </attachments>
+                    <steps/>
+                </step>
+                <step start='1510712477602' status='passed' stop='1510712478084'>
+                    <name>POST /wd/hub/session/f149b4f51e926dc4c0721ccb19438edefcf82d01/elements</name>
+                    <title>POST /wd/hub/session/f149b4f51e926dc4c0721ccb19438edefcf82d01/elements</title>
+                    <attachments>
+                        <attachment title='Request' source='5e5a8d9f-805e-4fd1-b48b-fecd43102be8-attachment.json' type='application/json' size='61'/>
+                        <attachment title='Response' source='0c60b2d9-8c99-4422-9526-d3d9453de74f-attachment.json' type='application/json' size='196'/>
+                    </attachments>
+                    <steps/>
+                </step>
+                <step start='1510712478090' status='passed' stop='1510712478560'>
+                    <name>POST /wd/hub/session/f149b4f51e926dc4c0721ccb19438edefcf82d01/elements</name>
+                    <title>POST /wd/hub/session/f149b4f51e926dc4c0721ccb19438edefcf82d01/elements</title>
+                    <attachments>
+                        <attachment title='Request' source='2c3097be-3bfe-40c4-b58e-f8f80aea069c-attachment.json' type='application/json' size='61'/>
+                        <attachment title='Response' source='1988a9c1-0288-4171-b3f2-7474d7cbfe1d-attachment.json' type='application/json' size='196'/>
+                    </attachments>
+                    <steps/>
+                </step>
+                <step start='1510712478595' status='passed' stop='1510712480264'>
+                    <name>POST /wd/hub/session/f149b4f51e926dc4c0721ccb19438edefcf82d01/elements</name>
+                    <title>POST /wd/hub/session/f149b4f51e926dc4c0721ccb19438edefcf82d01/elements</title>
+                    <attachments>
+                        <attachment title='Request' source='c77c1eeb-51fb-4590-884a-9767ffea0a9c-attachment.json' type='application/json' size='61'/>
+                        <attachment title='Screenshot' source='63f7c0f8-b48a-472b-8011-84bc9b13c7d9-attachment.png' type='image/png' size='6339'/>
+                    </attachments>
+                    <steps>
+                        <step start='1510712478605' status='passed' stop='1510712479090'>
+                            <name>GET /wd/hub/session/f149b4f51e926dc4c0721ccb19438edefcf82d01/screenshot</name>
+                            <title>GET /wd/hub/session/f149b4f51e926dc4c0721ccb19438edefcf82d01/screenshot</title>
+                            <attachments>
+                                <attachment title='Response' source='8a5dbb09-ebd4-4908-949a-e5149b8eb159-attachment.json' type='application/json' size='196'/>
+                            </attachments>
+                            <steps/>
+                        </step>
+                    </steps>
+                </step>
+            </steps>
+            <attachments/>
+            <failure>
+                <message>element (".login-button") still not visible after 10000ms</message>
+                <stack-trace>Error: element (".login-button") still not visible after 10000ms
+                    at Object.wait (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\fibers\future.js:449:15)
+                    at Object.waitForVisible (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:353:27)
+                    at World.navigateToLogin (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\features\step-definitions\index.js:9:11)
+                    at D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:594:26
+                    at Promise.F (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\core-js\library\modules\_export.js:35:28)
+                    at World.executeSync (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:592:12)
+                    at D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:214:29
+                    at elements(".login-button") - D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\webdriverio\build\lib\commands\isVisible.js:54:17
+                    at isVisible(".login-button") - D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\webdriverio\build\lib\commands\waitForVisible.js:73:22</stack-trace>
+            </failure>
+        </test-case>
+        <test-case start='1510712480274' status='undefined'>
+            <name>diligencio mi  y </name>
+            <title>diligencio mi  y </title>
+            <labels/>
+            <parameters>
+                <parameter kind='environment-variable' name='capabilities' value='{"browser":"internet explorer"}'/>
+                <parameter kind='environment-variable' name='spec files' value='["D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\features\\login.feature"]'/>
+            </parameters>
+            <steps/>
+            <attachments/>
+        </test-case>
+        <test-case start='1510712480278' status='pending' stop='1510712480278'>
+            <name>diligencio mi  y</name>
+            <title>diligencio mi  y</title>
+            <labels/>
+            <parameters/>
+            <steps/>
+            <attachments/>
+            <failure>
+                <message>Test ignored</message>
+                <stack-trace>undefined</stack-trace>
+            </failure>
+        </test-case>
+        <test-case start='1510712480281' status='undefined'>
+            <name>intento acceder</name>
+            <title>intento acceder</title>
+            <labels/>
+            <parameters>
+                <parameter kind='environment-variable' name='capabilities' value='{"browser":"internet explorer"}'/>
+                <parameter kind='environment-variable' name='spec files' value='["D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\features\\login.feature"]'/>
+            </parameters>
+            <steps/>
+            <attachments/>
+        </test-case>
+        <test-case start='1510712480284' status='pending' stop='1510712480284'>
+            <name>intento acceder</name>
+            <title>intento acceder</title>
+            <labels/>
+            <parameters/>
+            <steps/>
+            <attachments/>
+            <failure>
+                <message>Test ignored</message>
+                <stack-trace>undefined</stack-trace>
+            </failure>
+        </test-case>
+        <test-case start='1510712480287' status='undefined'>
+            <name>espero ver y cerrar una alerta</name>
+            <title>espero ver y cerrar una alerta</title>
+            <labels/>
+            <parameters>
+                <parameter kind='environment-variable' name='capabilities' value='{"browser":"internet explorer"}'/>
+                <parameter kind='environment-variable' name='spec files' value='["D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\features\\login.feature"]'/>
+            </parameters>
+            <steps/>
+            <attachments/>
+        </test-case>
+        <test-case start='1510712480293' status='pending' stop='1510712480293'>
+            <name>espero ver y cerrar una alerta</name>
+            <title>espero ver y cerrar una alerta</title>
+            <labels/>
+            <parameters/>
+            <steps/>
+            <attachments/>
+            <failure>
+                <message>Test ignored</message>
+                <stack-trace>undefined</stack-trace>
+            </failure>
+        </test-case>
+    </test-cases>
+</ns2:test-suite>

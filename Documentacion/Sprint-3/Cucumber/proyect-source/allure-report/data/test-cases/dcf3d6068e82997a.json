@@ -1,0 +1,49 @@
+{
+  "uid" : "dcf3d6068e82997a",
+  "name" : "diligencio mi miso@gmail.com y 1234",
+  "fullName" : "Acceso a la aplicación Acceso con parámetros incorrectos.diligencio mi miso@gmail.com y 1234",
+  "historyId" : "72fc1fef61a17e5df9129c721671c335",
+  "time" : {
+    "start" : 1510712574742,
+    "stop" : 0,
+    "duration" : -1510712574742
+  },
+  "description" : "",
+  "descriptionHtml" : "",
+  "status" : "unknown",
+  "statusDetails" : {
+    "flaky" : false
+  },
+  "beforeStages" : [ ],
+  "afterStages" : [ ],
+  "labels" : [ {
+    "name" : "suite",
+    "value" : "Acceso a la aplicación Acceso con parámetros incorrectos"
+  }, {
+    "name" : "testClass",
+    "value" : "Acceso a la aplicación Acceso con parámetros incorrectos"
+  }, {
+    "name" : "testMethod",
+    "value" : "diligencio mi miso@gmail.com y 1234"
+  }, {
+    "name" : "package",
+    "value" : "Acceso a la aplicación Acceso con parámetros incorrectos"
+  }, {
+    "name" : "resultFormat",
+    "value" : "allure1"
+  } ],
+  "parameters" : [ ],
+  "links" : [ ],
+  "hidden" : true,
+  "extra" : {
+    "tags" : [ ]
+  },
+  "source" : "dcf3d6068e82997a.json",
+  "statusDetailsSafe" : {
+    "flaky" : false
+  },
+  "statusMessage" : {
+    "present" : false
+  },
+  "parameterValues" : [ ]
+}

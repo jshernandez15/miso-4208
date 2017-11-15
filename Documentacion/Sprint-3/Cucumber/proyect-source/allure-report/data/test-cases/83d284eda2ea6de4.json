@@ -1,0 +1,53 @@
+{
+  "uid" : "83d284eda2ea6de4",
+  "name" : "diligencio mi js.hernandez15@uniandes.edu.co y ASDasd123",
+  "fullName" : "Acceso a la aplicación Acceso éxitoso.diligencio mi js.hernandez15@uniandes.edu.co y ASDasd123",
+  "historyId" : "cee721c2a62efd87c3e8ac7c017b068a",
+  "time" : {
+    "start" : 1510712597718,
+    "stop" : 1510712597718,
+    "duration" : 0
+  },
+  "description" : "",
+  "descriptionHtml" : "",
+  "status" : "skipped",
+  "statusDetails" : {
+    "message" : "Test ignored",
+    "trace" : "undefined",
+    "flaky" : false
+  },
+  "beforeStages" : [ ],
+  "afterStages" : [ ],
+  "labels" : [ {
+    "name" : "suite",
+    "value" : "Acceso a la aplicación Acceso éxitoso"
+  }, {
+    "name" : "testClass",
+    "value" : "Acceso a la aplicación Acceso éxitoso"
+  }, {
+    "name" : "testMethod",
+    "value" : "diligencio mi js.hernandez15@uniandes.edu.co y ASDasd123"
+  }, {
+    "name" : "package",
+    "value" : "Acceso a la aplicación Acceso éxitoso"
+  }, {
+    "name" : "resultFormat",
+    "value" : "allure1"
+  } ],
+  "parameters" : [ ],
+  "links" : [ ],
+  "hidden" : true,
+  "extra" : {
+    "tags" : [ ]
+  },
+  "source" : "83d284eda2ea6de4.json",
+  "statusDetailsSafe" : {
+    "message" : "Test ignored",
+    "trace" : "undefined",
+    "flaky" : false
+  },
+  "statusMessage" : {
+    "present" : true
+  },
+  "parameterValues" : [ ]
+}

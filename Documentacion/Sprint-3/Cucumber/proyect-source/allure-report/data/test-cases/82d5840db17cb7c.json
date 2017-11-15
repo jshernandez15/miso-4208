@@ -1,0 +1,153 @@
+{
+  "uid" : "82d5840db17cb7c",
+  "name" : "que voy a la página principal",
+  "fullName" : "Acceso a la aplicación Acceso con parámetros incorrectos.que voy a la página principal",
+  "historyId" : "19b03f4da05cbf7e6001208d39a54f14",
+  "time" : {
+    "start" : 1510712569756,
+    "stop" : 1510712571220,
+    "duration" : 1464
+  },
+  "description" : "",
+  "descriptionHtml" : "",
+  "status" : "passed",
+  "statusDetails" : {
+    "flaky" : false
+  },
+  "beforeStages" : [ ],
+  "testStage" : {
+    "status" : "passed",
+    "steps" : [ {
+      "name" : "POST /wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/url",
+      "time" : {
+        "start" : 1510712569766,
+        "stop" : 1510712571206,
+        "duration" : 1440
+      },
+      "status" : "passed",
+      "steps" : [ ],
+      "attachments" : [ {
+        "uid" : "61c90bf2c70785c",
+        "name" : "Request",
+        "source" : "61c90bf2c70785c.json",
+        "type" : "application/json",
+        "size" : 38
+      }, {
+        "uid" : "600989c8ba42f24e",
+        "name" : "Response",
+        "source" : "600989c8ba42f24e.json",
+        "type" : "application/json",
+        "size" : 199
+      } ],
+      "parameters" : [ ],
+      "attachmentsCount" : 2,
+      "shouldDisplayMessage" : false,
+      "hasContent" : true,
+      "stepsCount" : 0
+    } ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "attachmentsCount" : 2,
+    "shouldDisplayMessage" : false,
+    "hasContent" : true,
+    "stepsCount" : 1
+  },
+  "afterStages" : [ ],
+  "labels" : [ {
+    "name" : "suite",
+    "value" : "Acceso a la aplicación Acceso con parámetros incorrectos"
+  }, {
+    "name" : "testClass",
+    "value" : "Acceso a la aplicación Acceso con parámetros incorrectos"
+  }, {
+    "name" : "testMethod",
+    "value" : "que voy a la página principal"
+  }, {
+    "name" : "package",
+    "value" : "Acceso a la aplicación Acceso con parámetros incorrectos"
+  }, {
+    "name" : "resultFormat",
+    "value" : "allure1"
+  } ],
+  "parameters" : [ ],
+  "links" : [ ],
+  "hidden" : false,
+  "extra" : {
+    "severity" : "normal",
+    "retries" : [ {
+      "uid" : "152fe7fbb3afe678",
+      "status" : "passed",
+      "time" : {
+        "start" : 1510712565940,
+        "stop" : 1510712568604,
+        "duration" : 2664
+      }
+    }, {
+      "uid" : "9bbf8d051a08c91c",
+      "status" : "passed",
+      "time" : {
+        "start" : 1510712562334,
+        "stop" : 1510712565230,
+        "duration" : 2896
+      }
+    }, {
+      "uid" : "4b6202b3a5ca65af",
+      "status" : "passed",
+      "time" : {
+        "start" : 1510712561883,
+        "stop" : 1510712563448,
+        "duration" : 1565
+      }
+    }, {
+      "uid" : "1f07f518104ce5d6",
+      "status" : "passed",
+      "time" : {
+        "start" : 1510712458584,
+        "stop" : 1510712461115,
+        "duration" : 2531
+      }
+    }, {
+      "uid" : "f9063c9575a914ac",
+      "status" : "passed",
+      "time" : {
+        "start" : 1510712457936,
+        "stop" : 1510712460877,
+        "duration" : 2941
+      }
+    }, {
+      "uid" : "8261966f180854c8",
+      "status" : "passed",
+      "time" : {
+        "start" : 1510712455107,
+        "stop" : 1510712458187,
+        "duration" : 3080
+      }
+    }, {
+      "uid" : "3f5f0cee734e8a89",
+      "status" : "passed",
+      "time" : {
+        "start" : 1510712454569,
+        "stop" : 1510712455972,
+        "duration" : 1403
+      }
+    }, {
+      "uid" : "a47fad26bbcf70c6",
+      "status" : "passed",
+      "time" : {
+        "start" : 1510712224186,
+        "stop" : 1510712226996,
+        "duration" : 2810
+      }
+    } ],
+    "categories" : [ ],
+    "tags" : [ ]
+  },
+  "source" : "82d5840db17cb7c.json",
+  "statusDetailsSafe" : {
+    "flaky" : false
+  },
+  "statusMessage" : {
+    "present" : false
+  },
+  "parameterValues" : [ ]
+}

@@ -1,0 +1,233 @@
+{
+  "uid" : "b1a8273437954620fa374b796ffaacdd",
+  "name" : "behaviors",
+  "children" : [ {
+    "name" : "que accedí a la página",
+    "uid" : "90fa4f57c90ce3aa",
+    "parentUid" : "b1a8273437954620fa374b796ffaacdd",
+    "status" : "broken",
+    "time" : {
+      "start" : 1510712568107,
+      "stop" : 1510712588429,
+      "duration" : 20322
+    },
+    "flaky" : true,
+    "parameters" : [ ]
+  }, {
+    "name" : "que voy a la página principal",
+    "uid" : "82d5840db17cb7c",
+    "parentUid" : "b1a8273437954620fa374b796ffaacdd",
+    "status" : "passed",
+    "time" : {
+      "start" : 1510712569756,
+      "stop" : 1510712571220,
+      "duration" : 1464
+    },
+    "flaky" : false,
+    "parameters" : [ ]
+  }, {
+    "name" : "abro la página de acceso",
+    "uid" : "acfe97f535c702b0",
+    "parentUid" : "b1a8273437954620fa374b796ffaacdd",
+    "status" : "broken",
+    "time" : {
+      "start" : 1510712571223,
+      "stop" : 1510712581494,
+      "duration" : 10271
+    },
+    "flaky" : true,
+    "parameters" : [ ]
+  }, {
+    "name" : "diligencio mi miso@gmail.com y 1234",
+    "uid" : "840122c45a9855fc",
+    "parentUid" : "b1a8273437954620fa374b796ffaacdd",
+    "status" : "skipped",
+    "time" : {
+      "start" : 1510712581504,
+      "stop" : 1510712581504,
+      "duration" : 0
+    },
+    "flaky" : true,
+    "parameters" : [ ]
+  }, {
+    "name" : "intento acceder",
+    "uid" : "62a3e879c32e7e87",
+    "parentUid" : "b1a8273437954620fa374b796ffaacdd",
+    "status" : "skipped",
+    "time" : {
+      "start" : 1510712581509,
+      "stop" : 1510712581509,
+      "duration" : 0
+    },
+    "flaky" : true,
+    "parameters" : [ ]
+  }, {
+    "name" : "espero estar en la página de acceso",
+    "uid" : "a4f483724b7b003d",
+    "parentUid" : "b1a8273437954620fa374b796ffaacdd",
+    "status" : "skipped",
+    "time" : {
+      "start" : 1510712581515,
+      "stop" : 1510712581515,
+      "duration" : 0
+    },
+    "flaky" : true,
+    "parameters" : [ ]
+  }, {
+    "name" : "que voy a la página principal",
+    "uid" : "13aa61ed9bd8fd3a",
+    "parentUid" : "b1a8273437954620fa374b796ffaacdd",
+    "status" : "passed",
+    "time" : {
+      "start" : 1510712581535,
+      "stop" : 1510712581873,
+      "duration" : 338
+    },
+    "flaky" : false,
+    "parameters" : [ ]
+  }, {
+    "name" : "abro la página de acceso",
+    "uid" : "956f6f1ad12fcede",
+    "parentUid" : "b1a8273437954620fa374b796ffaacdd",
+    "status" : "broken",
+    "time" : {
+      "start" : 1510712581877,
+      "stop" : 1510712592193,
+      "duration" : 10316
+    },
+    "flaky" : true,
+    "parameters" : [ ]
+  }, {
+    "name" : "registro un hábito",
+    "uid" : "df7e7090d342dbc2",
+    "parentUid" : "b1a8273437954620fa374b796ffaacdd",
+    "status" : "skipped",
+    "time" : {
+      "start" : 1510712588432,
+      "stop" : 1510712588432,
+      "duration" : 0
+    },
+    "flaky" : true,
+    "parameters" : [ ]
+  }, {
+    "name" : "lo veo en el panel inferior",
+    "uid" : "f7f155dc7759f35a",
+    "parentUid" : "b1a8273437954620fa374b796ffaacdd",
+    "status" : "skipped",
+    "time" : {
+      "start" : 1510712588437,
+      "stop" : 1510712588437,
+      "duration" : 0
+    },
+    "flaky" : true,
+    "parameters" : [ ]
+  }, {
+    "name" : "diligencio mi  y ",
+    "uid" : "514a346cedf681f5",
+    "parentUid" : "b1a8273437954620fa374b796ffaacdd",
+    "status" : "unknown",
+    "time" : {
+      "start" : 1510712592196,
+      "stop" : 0,
+      "duration" : -1510712592196
+    },
+    "flaky" : true,
+    "parameters" : [ ]
+  }, {
+    "name" : "diligencio mi  y",
+    "uid" : "33e857c4f27c5389",
+    "parentUid" : "b1a8273437954620fa374b796ffaacdd",
+    "status" : "skipped",
+    "time" : {
+      "start" : 1510712592202,
+      "stop" : 1510712592202,
+      "duration" : 0
+    },
+    "flaky" : false,
+    "parameters" : [ ]
+  }, {
+    "name" : "intento acceder",
+    "uid" : "f1d18bfffe0da26e",
+    "parentUid" : "b1a8273437954620fa374b796ffaacdd",
+    "status" : "skipped",
+    "time" : {
+      "start" : 1510712592205,
+      "stop" : 1510712592205,
+      "duration" : 0
+    },
+    "flaky" : true,
+    "parameters" : [ ]
+  }, {
+    "name" : "espero ver y cerrar una alerta",
+    "uid" : "c4a9a3fa1affd1da",
+    "parentUid" : "b1a8273437954620fa374b796ffaacdd",
+    "status" : "skipped",
+    "time" : {
+      "start" : 1510712592207,
+      "stop" : 1510712592207,
+      "duration" : 0
+    },
+    "flaky" : true,
+    "parameters" : [ ]
+  }, {
+    "name" : "que voy a la página principal",
+    "uid" : "db01b423a7e6270",
+    "parentUid" : "b1a8273437954620fa374b796ffaacdd",
+    "status" : "passed",
+    "time" : {
+      "start" : 1510712592231,
+      "stop" : 1510712592638,
+      "duration" : 407
+    },
+    "flaky" : false,
+    "parameters" : [ ]
+  }, {
+    "name" : "abro la página de acceso",
+    "uid" : "4c80455724e829cc",
+    "parentUid" : "b1a8273437954620fa374b796ffaacdd",
+    "status" : "broken",
+    "time" : {
+      "start" : 1510712592640,
+      "stop" : 1510712602891,
+      "duration" : 10251
+    },
+    "flaky" : true,
+    "parameters" : [ ]
+  }, {
+    "name" : "diligencio mi js.hernandez15@uniandes.edu.co y ASDasd123",
+    "uid" : "4532032e5be482d2",
+    "parentUid" : "b1a8273437954620fa374b796ffaacdd",
+    "status" : "skipped",
+    "time" : {
+      "start" : 1510712602901,
+      "stop" : 1510712602901,
+      "duration" : 0
+    },
+    "flaky" : true,
+    "parameters" : [ ]
+  }, {
+    "name" : "intento acceder",
+    "uid" : "d3e59ba256139f15",
+    "parentUid" : "b1a8273437954620fa374b796ffaacdd",
+    "status" : "skipped",
+    "time" : {
+      "start" : 1510712602909,
+      "stop" : 1510712602909,
+      "duration" : 0
+    },
+    "flaky" : true,
+    "parameters" : [ ]
+  }, {
+    "name" : "espero acceder a mi página personal",
+    "uid" : "c656ac6f55e6b39",
+    "parentUid" : "b1a8273437954620fa374b796ffaacdd",
+    "status" : "skipped",
+    "time" : {
+      "start" : 1510712602913,
+      "stop" : 1510712602913,
+      "duration" : 0
+    },
+    "flaky" : true,
+    "parameters" : [ ]
+  } ]
+}

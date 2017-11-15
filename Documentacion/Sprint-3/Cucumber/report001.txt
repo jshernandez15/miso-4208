@@ -1,0 +1,1501 @@
+
+D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source>"./node_modules/.bin/wdio"
+[21:22:37]  COMMAND     POST     "/wd/hub/session"
+[21:22:37]  DATA                {"desiredCapabilities":{"javascriptEnabled":true,"locationContextEnabled":true,"handlesAlerts":true,"rotatable":true,"browser":"internet explorer","browserName":"firefox","loggingPrefs":{"browser":"ALL","driver":"ALL"},"requestOrigins":{"url":"http://webdriver.io","version":"4.9.8","name":"webdriverio"}}}
+[21:22:37]  COMMAND     POST     "/wd/hub/session"
+[21:22:37]  DATA                {"desiredCapabilities":{"javascriptEnabled":true,"locationContextEnabled":true,"handlesAlerts":true,"rotatable":true,"browser":"chrome","browserName":"firefox","loggingPrefs":{"browser":"ALL","driver":"ALL"},"requestOrigins":{"url":"http://webdriver.io","version":"4.9.8","name":"webdriverio"}}}
+[21:22:37]  COMMAND     POST     "/wd/hub/session"
+[21:22:37]  DATA                {"desiredCapabilities":{"javascriptEnabled":true,"locationContextEnabled":true,"handlesAlerts":true,"rotatable":true,"browser":"safari","browserName":"firefox","loggingPrefs":{"browser":"ALL","driver":"ALL"},"requestOrigins":{"url":"http://webdriver.io","version":"4.9.8","name":"webdriverio"}}}
+[21:22:37]  COMMAND     POST     "/wd/hub/session"
+[21:22:38]  DATA                {"desiredCapabilities":{"javascriptEnabled":true,"locationContextEnabled":true,"handlesAlerts":true,"rotatable":true,"browser":"firefox","browserName":"firefox","loggingPrefs":{"browser":"ALL","driver":"ALL"},"requestOrigins":{"url":"http://webdriver.io","version":"4.9.8","name":"webdriverio"}}}
+[21:22:37]  COMMAND     POST     "/wd/hub/session"
+[21:22:38]  DATA                {"desiredCapabilities":{"javascriptEnabled":true,"locationContextEnabled":true,"handlesAlerts":true,"rotatable":true,"browser":"firefox","browserName":"firefox","loggingPrefs":{"browser":"ALL","driver":"ALL"},"requestOrigins":{"url":"http://webdriver.io","version":"4.9.8","name":"webdriverio"}}}
+[21:22:38]  COMMAND     POST     "/wd/hub/session"
+[21:22:38]  DATA                {"desiredCapabilities":{"javascriptEnabled":true,"locationContextEnabled":true,"handlesAlerts":true,"rotatable":true,"browser":"internet explorer","browserName":"firefox","loggingPrefs":{"browser":"ALL","driver":"ALL"},"requestOrigins":{"url":"http://webdriver.io","version":"4.9.8","name":"webdriverio"}}}
+[21:22:38]  COMMAND     POST     "/wd/hub/session"
+[21:22:38]  DATA                {"desiredCapabilities":{"javascriptEnabled":true,"locationContextEnabled":true,"handlesAlerts":true,"rotatable":true,"browser":"chrome","browserName":"firefox","loggingPrefs":{"browser":"ALL","driver":"ALL"},"requestOrigins":{"url":"http://webdriver.io","version":"4.9.8","name":"webdriverio"}}}
+[21:22:38]  COMMAND     POST     "/wd/hub/session"
+[21:22:38]  DATA                {"desiredCapabilities":{"javascriptEnabled":true,"locationContextEnabled":true,"handlesAlerts":true,"rotatable":true,"browser":"safari","browserName":"firefox","loggingPrefs":{"browser":"ALL","driver":"ALL"},"requestOrigins":{"url":"http://webdriver.io","version":"4.9.8","name":"webdriverio"}}}
+[21:22:41]  INFO        SET SESSION ID 9a3051eb1c3f193688adc389101868a2171a16da
+[21:22:41]  RESULT              {"browserAttachTimeout":0,"enablePersistentHover":true,"ie.forceCreateProcessApi":false,"pageLoadStrategy":"normal","ie.usePerProcessProxy":false,"ignoreZoomSetting":false,"handlesAlerts":true,"version":"11","platform":"WINDOWS","nativeEvents":true,"ie.ensureCleanSession":false,"elementScrollBehavior":0,"ie.browserCommandLineSwitches":"","webdriver.remote.sessionid":"9a3051eb1c3f193688adc389101868a2171a16da","requireWindowFocus":false,"browserName":"internet explorer","initialBrowserUrl":"about:blank","takesScreenshot":true,"javascriptEnabled":true,"ignoreProtectedModeSettings":false,"enableElementCacheCleanup":true,"cssSelectorsEnabled":true,"unexpectedAlertBehaviour":"dismiss"}
+[21:22:41]  INFO        SET SESSION ID dbc76e126d3b10e3cf104c524bbbd599bf355099
+[21:22:41]  RESULT              {"applicationCacheEnabled":false,"rotatable":false,"mobileEmulationEnabled":false,"networkConnectionEnabled":false,"chrome":{"chromedriverVersion":"2.33.506120 (e3e53437346286c0bc2d2dc9aa4915ba81d9023f)","userDataDir":"C:\\Windows\\proxy\\scoped_dir1180_31314"},"takesHeapSnapshot":true,"pageLoadStrategy":"normal","databaseEnabled":false,"handlesAlerts":true,"hasTouchScreen":false,"version":"62.0.3202.62","platform":"WINDOWS","browserConnectionEnabled":false,"nativeEvents":true,"acceptSslCerts":true,"webdriver.remote.sessionid":"dbc76e126d3b10e3cf104c524bbbd599bf355099","locationContextEnabled":true,"webStorageEnabled":true,"browserName":"chrome","takesScreenshot":true,"javascriptEnabled":true,"cssSelectorsEnabled":true,"setWindowRect":true,"unexpectedAlertBehaviour":""}
+[21:22:41]  INFO        SET SESSION ID 1098da9b2df531051d570b863503ae02231b8ced
+[21:22:41]  RESULT              {"browserAttachTimeout":0,"enablePersistentHover":false,"ie.forceCreateProcessApi":false,"pageLoadStrategy":"normal","ie.usePerProcessProxy":false,"ignoreZoomSetting":false,"handlesAlerts":true,"version":"10","platform":"WINDOWS","nativeEvents":false,"ie.ensureCleanSession":false,"elementScrollBehavior":0,"ie.browserCommandLineSwitches":"","webdriver.remote.sessionid":"1098da9b2df531051d570b863503ae02231b8ced","requireWindowFocus":false,"browserName":"internet explorer","initialBrowserUrl":"about:blank","takesScreenshot":true,"javascriptEnabled":true,"ignoreProtectedModeSettings":false,"enableElementCacheCleanup":true,"cssSelectorsEnabled":true,"unexpectedAlertBehaviour":"dismiss"}
+[Browserstack] firefox internet explorer session: https://www.browserstack.com/automate/builds/652011a40c8880fae951d51e3f1c8d4ff6e9c314/sessions/9a3051eb1c3f193688adc389101868a2171a16da
+[21:22:41]  COMMAND     POST     "/wd/hub/session/9a3051eb1c3f193688adc389101868a2171a16da/url"
+[21:22:41]  DATA                {"url":"https://habitica.com/"}
+[21:22:41]  INFO        SET SESSION ID c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a
+[21:22:41]  RESULT              {"applicationCacheEnabled":false,"rotatable":false,"mobileEmulationEnabled":false,"networkConnectionEnabled":false,"chrome":{"chromedriverVersion":"2.33.506120 (e3e53437346286c0bc2d2dc9aa4915ba81d9023f)","userDataDir":"C:\\Windows\\proxy\\scoped_dir3592_21873"},"takesHeapSnapshot":true,"pageLoadStrategy":"normal","databaseEnabled":false,"handlesAlerts":true,"hasTouchScreen":false,"version":"62.0.3202.62","platform":"WINDOWS","browserConnectionEnabled":false,"nativeEvents":true,"acceptSslCerts":true,"webdriver.remote.sessionid":"c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a","locationContextEnabled":true,"webStorageEnabled":true,"browserName":"chrome","takesScreenshot":true,"javascriptEnabled":true,"cssSelectorsEnabled":true,"setWindowRect":true,"unexpectedAlertBehaviour":""}
+[Browserstack] firefox chrome session: https://www.browserstack.com/automate/builds/652011a40c8880fae951d51e3f1c8d4ff6e9c314/sessions/dbc76e126d3b10e3cf104c524bbbd599bf355099
+[21:22:41]  COMMAND     POST     "/wd/hub/session/dbc76e126d3b10e3cf104c524bbbd599bf355099/url"
+[21:22:41]  DATA                {"url":"https://habitica.com/"}
+[Browserstack] firefox internet explorer session: https://www.browserstack.com/automate/builds/652011a40c8880fae951d51e3f1c8d4ff6e9c314/sessions/1098da9b2df531051d570b863503ae02231b8ced
+[21:22:41]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/url"
+[21:22:41]  DATA                {"url":"https://habitica.com/"}
+[Browserstack] firefox chrome session: https://www.browserstack.com/automate/builds/652011a40c8880fae951d51e3f1c8d4ff6e9c314/sessions/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a
+[21:22:42]  COMMAND     POST     "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/url"
+[21:22:42]  DATA                {"url":"https://habitica.com/"}
+[21:22:43]  COMMAND     POST     "/wd/hub/session/9a3051eb1c3f193688adc389101868a2171a16da/elements"
+[21:22:43]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:43]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:22:43]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:43]  RESULT              []
+[21:22:43]  COMMAND     POST     "/wd/hub/session/9a3051eb1c3f193688adc389101868a2171a16da/elements"
+[21:22:43]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:43]  RESULT              []
+[21:22:43]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:22:43]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:44]  RESULT              []
+[21:22:44]  COMMAND     POST     "/wd/hub/session/9a3051eb1c3f193688adc389101868a2171a16da/elements"
+[21:22:44]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:44]  RESULT              []
+[21:22:44]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:22:44]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:44]  COMMAND     POST     "/wd/hub/session/dbc76e126d3b10e3cf104c524bbbd599bf355099/elements"
+[21:22:44]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:44]  RESULT              []
+[21:22:44]  COMMAND     POST     "/wd/hub/session/9a3051eb1c3f193688adc389101868a2171a16da/elements"
+[21:22:44]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:44]  RESULT              [{"ELEMENT":"0"}]
+[21:22:44]  COMMAND     GET      "/wd/hub/session/dbc76e126d3b10e3cf104c524bbbd599bf355099/element/0/displayed"
+[21:22:44]  DATA                {}
+[21:22:44]  RESULT              true
+[21:22:44]  COMMAND     POST     "/wd/hub/session/dbc76e126d3b10e3cf104c524bbbd599bf355099/element"
+[21:22:44]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:44]  RESULT              []
+[21:22:44]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:22:44]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:45]  RESULT              {"ELEMENT":"0"}
+[21:22:45]  COMMAND     POST     "/wd/hub/session/dbc76e126d3b10e3cf104c524bbbd599bf355099/element/0/click"
+[21:22:45]  DATA                {}
+[21:22:45]  COMMAND     POST     "/wd/hub/session/dbc76e126d3b10e3cf104c524bbbd599bf355099/elements"
+[21:22:45]  DATA                {"using":"css selector","value":".gryphon"}
+[21:22:45]  COMMAND     POST     "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/elements"
+[21:22:45]  RESULT              []
+[21:22:45]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:45]  COMMAND     POST     "/wd/hub/session/9a3051eb1c3f193688adc389101868a2171a16da/elements"
+[21:22:45]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:45]  RESULT              [{"ELEMENT":"1"}]
+[21:22:45]  COMMAND     GET      "/wd/hub/session/dbc76e126d3b10e3cf104c524bbbd599bf355099/element/1/displayed"
+[21:22:45]  DATA                {}
+[21:22:45]  INFO        SET SESSION ID d70ce9f43b683bd9b5fb245954281ef4bcc90a52
+[21:22:45]  RESULT              []
+[21:22:45]  RESULT              {"moz:profile":"C:\\Windows\\proxy\\rust_mozprofile.pQLlTIfmCAQp","rotatable":false,"timeouts":{"implicit":0,"pageLoad":300000,"script":30000},"pageLoadStrategy":"normal","moz:headless":false,"platform":"WINDOWS","specificationLevel":0,"moz:accessibilityChecks":false,"webdriver.remote.sessionid":"d70ce9f43b683bd9b5fb245954281ef4bcc90a52","acceptInsecureCerts":false,"browserVersion":"56.0","platformVersion":"6.1","moz:processID":772,"browserName":"firefox","takesScreenshot":true,"javascriptEnabled":true,"platformName":"windows_nt","cssSelectorsEnabled":true}
+[21:22:45]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:22:45]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:45]  RESULT              [{"ELEMENT":"0"}]
+[21:22:45]  RESULT              true
+[21:22:45]  COMMAND     GET      "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/element/0/displayed"
+[21:22:45]  DATA                {}
+[21:22:45]  COMMAND     POST     "/wd/hub/session/dbc76e126d3b10e3cf104c524bbbd599bf355099/element"
+[21:22:45]  DATA                {"using":"id","value":"usernameInput"}
+[21:22:45]  RESULT              {"ELEMENT":"2"}
+[21:22:45]  RESULT              true
+[21:22:45]  COMMAND     POST     "/wd/hub/session/dbc76e126d3b10e3cf104c524bbbd599bf355099/element/2/clear"
+[21:22:45]  COMMAND     POST     "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/element"
+[21:22:45]  DATA                {}
+[21:22:45]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:45]  INFO        SET SESSION ID 783abf375771885fdd8224191df8b83277268f94
+[21:22:45]  RESULT              {"moz:profile":"C:\\Windows\\proxy\\rust_mozprofile.Cd1BJhqZKxIX","rotatable":false,"timeouts":{"implicit":0,"pageLoad":300000,"script":30000},"pageLoadStrategy":"normal","moz:headless":false,"platform":"WINDOWS","specificationLevel":0,"moz:accessibilityChecks":false,"webdriver.remote.sessionid":"783abf375771885fdd8224191df8b83277268f94","acceptInsecureCerts":false,"browserVersion":"56.0","platformVersion":"6.3","moz:processID":4040,"browserName":"firefox","takesScreenshot":true,"javascriptEnabled":true,"platformName":"windows_nt","cssSelectorsEnabled":true}
+[21:22:45]  RESULT              {"ELEMENT":"0"}
+[21:22:45]  COMMAND     POST     "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/element/0/click"
+[21:22:45]  RESULT              []
+[21:22:45]  DATA                {}
+[21:22:45]  COMMAND     POST     "/wd/hub/session/dbc76e126d3b10e3cf104c524bbbd599bf355099/element/2/value"
+[21:22:45]  DATA                {"value":["j","s",".","h","e","r","n","a","n","d","(20 more items)"],"text":"js.hernandez15@uniandes.edu.co"}
+[21:22:45]  COMMAND     POST     "/wd/hub/session/9a3051eb1c3f193688adc389101868a2171a16da/elements"
+[21:22:45]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:45]  COMMAND     POST     "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/elements"
+[21:22:45]  DATA                {"using":"css selector","value":".gryphon"}
+[Browserstack] firefox firefox session: https://www.browserstack.com/automate/builds/652011a40c8880fae951d51e3f1c8d4ff6e9c314/sessions/d70ce9f43b683bd9b5fb245954281ef4bcc90a52
+[21:22:45]  COMMAND     POST     "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/url"
+[21:22:45]  DATA                {"url":"https://habitica.com/"}
+[21:22:46]  RESULT              []
+[21:22:46]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:22:46]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:46]  COMMAND     POST     "/wd/hub/session/dbc76e126d3b10e3cf104c524bbbd599bf355099/element"
+[21:22:46]  RESULT              [{"ELEMENT":"1"}]
+[21:22:46]  DATA                {"using":"id","value":"passwordInput"}
+[21:22:46]  COMMAND     GET      "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/element/1/displayed"
+[21:22:46]  DATA                {}
+[Browserstack] firefox firefox session: https://www.browserstack.com/automate/builds/652011a40c8880fae951d51e3f1c8d4ff6e9c314/sessions/783abf375771885fdd8224191df8b83277268f94
+[21:22:46]  COMMAND     POST     "/wd/hub/session/783abf375771885fdd8224191df8b83277268f94/url"
+[21:22:46]  DATA                {"url":"https://habitica.com/"}
+[21:22:46]  RESULT              true
+[21:22:46]  RESULT              {"ELEMENT":"3"}
+[21:22:46]  COMMAND     POST     "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/element"
+[21:22:46]  DATA                {"using":"id","value":"usernameInput"}
+[21:22:46]  COMMAND     POST     "/wd/hub/session/dbc76e126d3b10e3cf104c524bbbd599bf355099/element/3/clear"
+[21:22:46]  DATA                {}
+[21:22:46]  RESULT              []
+[21:22:46]  COMMAND     POST     "/wd/hub/session/9a3051eb1c3f193688adc389101868a2171a16da/elements"
+[21:22:46]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:46]  RESULT              {"ELEMENT":"2"}
+[21:22:46]  COMMAND     POST     "/wd/hub/session/dbc76e126d3b10e3cf104c524bbbd599bf355099/element/3/value"
+[21:22:46]  DATA                {"value":["A","S","D","a","s","d","1","2","3"],"text":"ASDasd123"}
+[21:22:46]  COMMAND     POST     "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/element/2/clear"
+[21:22:46]  DATA                {}
+[21:22:46]  COMMAND     POST     "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/element/2/value"
+[21:22:46]  DATA                {"value":["m","i","s","o","@","g","m","a","i","l","(4 more items)"],"text":"miso@gmail.com"}
+[21:22:46]  COMMAND     POST     "/wd/hub/session/dbc76e126d3b10e3cf104c524bbbd599bf355099/element"
+[21:22:46]  DATA                {"using":"css selector","value":".btn.btn-info"}
+[21:22:46]  RESULT              []
+[21:22:46]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:22:46]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:46]  RESULT              {"ELEMENT":"4"}
+[21:22:46]  COMMAND     POST     "/wd/hub/session/dbc76e126d3b10e3cf104c524bbbd599bf355099/element/4/click"
+[21:22:46]  DATA                {}
+[21:22:46]  COMMAND     POST     "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/element"
+[21:22:46]  DATA                {"using":"id","value":"passwordInput"}
+[21:22:46]  RESULT              []
+[21:22:46]  COMMAND     POST     "/wd/hub/session/9a3051eb1c3f193688adc389101868a2171a16da/elements"
+[21:22:46]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:46]  COMMAND     POST     "/wd/hub/session/dbc76e126d3b10e3cf104c524bbbd599bf355099/elements"
+[21:22:46]  DATA                {"using":"css selector","value":".member-stats"}
+[21:22:46]  RESULT              {"ELEMENT":"3"}
+[21:22:46]  COMMAND     POST     "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/element/3/clear"
+[21:22:46]  DATA                {}
+[21:22:46]  RESULT              []
+[21:22:46]  COMMAND     POST     "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/element/3/value"
+[21:22:46]  DATA                {"value":["1","2","3","4"],"text":"1234"}
+[21:22:46]  RESULT              []
+[21:22:46]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:22:46]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:47]  COMMAND     POST     "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/element"
+[21:22:47]  DATA                {"using":"css selector","value":".btn.btn-info"}
+[21:22:47]  RESULT              []
+[21:22:47]  COMMAND     POST     "/wd/hub/session/9a3051eb1c3f193688adc389101868a2171a16da/elements"
+[21:22:47]  RESULT              {"ELEMENT":"4"}
+[21:22:47]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:47]  COMMAND     POST     "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/element/4/click"
+[21:22:47]  DATA                {}
+[21:22:47]  COMMAND     POST     "/wd/hub/session/dbc76e126d3b10e3cf104c524bbbd599bf355099/elements"
+[21:22:47]  DATA                {"using":"css selector","value":".member-stats"}
+[21:22:47]  COMMAND     GET      "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/url"
+[21:22:47]  DATA                {}
+[21:22:47]  INFO        SET SESSION ID ce76372efbe20bf37a9ad71d70731f3d419e128e
+[21:22:47]  RESULT              {"platform":"MAC","javascriptEnabled":true,"cssSelectorsEnabled":true,"secureSsl":true,"browserName":"safari","webdriver.remote.sessionid":"ce76372efbe20bf37a9ad71d70731f3d419e128e","takesScreenshot":true,"version":"6.2.8"}
+[21:22:47]  RESULT              []
+[21:22:47]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:22:47]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:47]  RESULT              "https://habitica.com/login"
+[21:22:47]  COMMAND     POST     "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/url"
+[21:22:47]  DATA                {"url":"https://habitica.com/"}
+[21:22:47]  RESULT              []
+[21:22:47]  COMMAND     POST     "/wd/hub/session/9a3051eb1c3f193688adc389101868a2171a16da/elements"
+[21:22:47]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:47]  RESULT              []
+[21:22:47]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:22:47]  DATA                {"using":"css selector","value":".login-button"}
+[Browserstack] firefox safari session: https://www.browserstack.com/automate/builds/652011a40c8880fae951d51e3f1c8d4ff6e9c314/sessions/ce76372efbe20bf37a9ad71d70731f3d419e128e
+[21:22:48]  COMMAND     POST     "/wd/hub/session/ce76372efbe20bf37a9ad71d70731f3d419e128e/url"
+[21:22:48]  DATA                {"url":"https://habitica.com/"}
+[21:22:48]  RESULT              []
+[21:22:48]  COMMAND     POST     "/wd/hub/session/dbc76e126d3b10e3cf104c524bbbd599bf355099/elements"
+[21:22:48]  DATA                {"using":"css selector","value":".member-stats"}
+[21:22:48]  RESULT              []
+[21:22:48]  COMMAND     POST     "/wd/hub/session/9a3051eb1c3f193688adc389101868a2171a16da/elements"
+[21:22:48]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:48]  RESULT              []
+[21:22:48]  COMMAND     POST     "/wd/hub/session/783abf375771885fdd8224191df8b83277268f94/elements"
+[21:22:48]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:48]  COMMAND     POST     "/wd/hub/session/dbc76e126d3b10e3cf104c524bbbd599bf355099/elements"
+[21:22:48]  DATA                {"using":"css selector","value":".member-stats"}
+[21:22:48]  RESULT              []
+[21:22:48]  RESULT              []
+[21:22:48]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:22:48]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:48]  RESULT              [{"ELEMENT":"0"}]
+[21:22:48]  COMMAND     GET      "/wd/hub/session/783abf375771885fdd8224191df8b83277268f94/element/0/displayed"
+[21:22:48]  DATA                {}
+[21:22:48]  COMMAND     POST     "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/elements"
+[21:22:48]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:48]  RESULT              true
+[21:22:48]  COMMAND     POST     "/wd/hub/session/783abf375771885fdd8224191df8b83277268f94/element"
+[21:22:48]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:48]  RESULT              {"ELEMENT":"0"}
+[21:22:48]  RESULT              [{"ELEMENT":"0"}]
+[21:22:48]  COMMAND     POST     "/wd/hub/session/783abf375771885fdd8224191df8b83277268f94/element/0/click"
+[21:22:48]  DATA                {}
+[21:22:48]  COMMAND     GET      "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/element/0/displayed"
+[21:22:48]  DATA                {}
+[21:22:48]  RESULT              []
+[21:22:48]  COMMAND     POST     "/wd/hub/session/dbc76e126d3b10e3cf104c524bbbd599bf355099/elements"
+[21:22:48]  COMMAND     POST     "/wd/hub/session/9a3051eb1c3f193688adc389101868a2171a16da/elements"
+[21:22:48]  DATA                {"using":"css selector","value":".member-stats"}
+[21:22:48]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:48]  RESULT              true
+[21:22:48]  COMMAND     POST     "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/element"
+[21:22:48]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:48]  RESULT              []
+[21:22:48]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:22:48]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:49]  COMMAND     POST     "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/elements"
+[21:22:49]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:49]  RESULT              {"ELEMENT":"0"}
+[21:22:49]  COMMAND     POST     "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/element/0/click"
+[21:22:49]  DATA                {}
+[21:22:49]  COMMAND     POST     "/wd/hub/session/783abf375771885fdd8224191df8b83277268f94/elements"
+[21:22:49]  DATA                {"using":"css selector","value":".gryphon"}
+[21:22:49]  RESULT              [{"ELEMENT":"5"}]
+[21:22:49]  COMMAND     GET      "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/element/5/displayed"
+[21:22:49]  DATA                {}
+[21:22:49]  RESULT              [{"ELEMENT":"1"}]
+[21:22:49]  INFO        SET SESSION ID 0de834512b32647c5bfc10ff80f61324ba429a4d
+[21:22:49]  COMMAND     GET      "/wd/hub/session/783abf375771885fdd8224191df8b83277268f94/element/1/displayed"
+[21:22:49]  RESULT              {"webdriver.remote.sessionid":"0de834512b32647c5bfc10ff80f61324ba429a4d","browserName":"safari","takesScreenshot":true,"javascriptEnabled":true,"version":"8.0.8","cssSelectorsEnabled":true,"platform":"MAC","secureSsl":true}
+[21:22:49]  DATA                {}
+[21:22:49]  RESULT              []
+[21:22:49]  COMMAND     POST     "/wd/hub/session/9a3051eb1c3f193688adc389101868a2171a16da/elements"
+[21:22:49]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:49]  RESULT              true
+[21:22:49]  COMMAND     POST     "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/element"
+[21:22:49]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:49]  RESULT              true
+[21:22:49]  COMMAND     POST     "/wd/hub/session/783abf375771885fdd8224191df8b83277268f94/element"
+[21:22:49]  DATA                {"using":"id","value":"usernameInput"}
+[21:22:49]  COMMAND     POST     "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/elements"
+[21:22:49]  DATA                {"using":"css selector","value":".gryphon"}
+[21:22:49]  RESULT              {"ELEMENT":"5"}
+[21:22:49]  COMMAND     POST     "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/element/5/click"
+[21:22:49]  DATA                {}
+[21:22:49]  RESULT              []
+[21:22:49]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:22:49]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:49]  RESULT              {"ELEMENT":"2"}
+[21:22:49]  RESULT              [{"ELEMENT":"1"}]
+[21:22:49]  COMMAND     POST     "/wd/hub/session/783abf375771885fdd8224191df8b83277268f94/element/2/clear"
+[21:22:49]  COMMAND     GET      "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/element/1/displayed"
+[21:22:49]  DATA                {}
+[21:22:49]  DATA                {}
+[21:22:49]  COMMAND     POST     "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/elements"
+[21:22:49]  DATA                {"using":"css selector","value":".gryphon"}
+[21:22:49]  COMMAND     POST     "/wd/hub/session/783abf375771885fdd8224191df8b83277268f94/element/2/value"
+[21:22:49]  DATA                {"value":["j","s",".","h","e","r","n","a","n","d","(20 more items)"],"text":"js.hernandez15@uniandes.edu.co"}
+[21:22:49]  RESULT              true
+[21:22:49]  COMMAND     POST     "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/element"
+[21:22:49]  DATA                {"using":"id","value":"usernameInput"}
+[21:22:49]  RESULT              [{"ELEMENT":"6"}]
+[21:22:49]  COMMAND     GET      "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/element/6/displayed"
+[21:22:49]  DATA                {}
+[21:22:49]  RESULT              {"ELEMENT":"2"}
+[21:22:49]  RESULT              []
+[21:22:49]  COMMAND     POST     "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/element/2/clear"
+[21:22:49]  DATA                {}
+[Browserstack] firefox safari session: https://www.browserstack.com/automate/builds/652011a40c8880fae951d51e3f1c8d4ff6e9c314/sessions/0de834512b32647c5bfc10ff80f61324ba429a4d
+[21:22:49]  COMMAND     POST     "/wd/hub/session/783abf375771885fdd8224191df8b83277268f94/element"
+[21:22:49]  DATA                {"using":"id","value":"passwordInput"}
+[21:22:49]  COMMAND     POST     "/wd/hub/session/9a3051eb1c3f193688adc389101868a2171a16da/elements"
+[21:22:49]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:49]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/url"
+[21:22:49]  DATA                {"url":"https://habitica.com/"}
+[21:22:49]  RESULT              true
+[21:22:49]  COMMAND     POST     "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/element"
+[21:22:49]  DATA                {"using":"id","value":"usernameInput"}
+[21:22:49]  COMMAND     POST     "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/element/2/value"
+[21:22:49]  DATA                {"value":["m","i","s","o","@","g","m","a","i","l","(4 more items)"],"text":"miso@gmail.com"}
+[21:22:49]  RESULT              {"ELEMENT":"3"}
+[21:22:49]  COMMAND     POST     "/wd/hub/session/783abf375771885fdd8224191df8b83277268f94/element/3/clear"
+[21:22:49]  DATA                {}
+[21:22:49]  RESULT              []
+[21:22:49]  RESULT              {"ELEMENT":"7"}
+[21:22:49]  COMMAND     POST     "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/element/7/clear"
+[21:22:49]  DATA                {}
+[21:22:49]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:22:49]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:49]  COMMAND     POST     "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/element"
+[21:22:49]  DATA                {"using":"id","value":"passwordInput"}
+[21:22:49]  COMMAND     POST     "/wd/hub/session/783abf375771885fdd8224191df8b83277268f94/element/3/value"
+[21:22:49]  DATA                {"value":["A","S","D","a","s","d","1","2","3"],"text":"ASDasd123"}
+[21:22:50]  RESULT              {"ELEMENT":"3"}
+[21:22:50]  COMMAND     POST     "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/element/3/clear"
+[21:22:50]  DATA                {}
+[21:22:50]  COMMAND     POST     "/wd/hub/session/783abf375771885fdd8224191df8b83277268f94/element"
+[21:22:50]  DATA                {"using":"css selector","value":".btn.btn-info"}
+[21:22:50]  COMMAND     POST     "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/element/7/value"
+[21:22:50]  DATA                {"value":[],"text":""}
+[21:22:50]  COMMAND     POST     "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/element/3/value"
+[21:22:50]  DATA                {"value":["1","2","3","4"],"text":"1234"}
+[21:22:50]  RESULT              []
+[21:22:50]  RESULT              {"ELEMENT":"4"}
+[21:22:50]  COMMAND     POST     "/wd/hub/session/783abf375771885fdd8224191df8b83277268f94/element/4/click"
+[21:22:50]  DATA                {}
+[21:22:50]  COMMAND     POST     "/wd/hub/session/9a3051eb1c3f193688adc389101868a2171a16da/elements"
+[21:22:50]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:50]  COMMAND     POST     "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/element"
+[21:22:50]  DATA                {"using":"id","value":"passwordInput"}
+[21:22:50]  COMMAND     POST     "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/element"
+[21:22:50]  DATA                {"using":"css selector","value":".btn.btn-info"}
+[21:22:50]  RESULT              {"ELEMENT":"8"}
+[21:22:50]  COMMAND     POST     "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/element/8/clear"
+[21:22:50]  DATA                {}
+[21:22:50]  RESULT              []
+[21:22:50]  RESULT              {"ELEMENT":"4"}
+[21:22:50]  COMMAND     POST     "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/element/4/click"
+[21:22:50]  DATA                {}
+[21:22:50]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:22:50]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:50]  COMMAND     POST     "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/element/8/value"
+[21:22:50]  DATA                {"value":[],"text":""}
+[21:22:50]  RESULT              [{"ELEMENT":"5"},{"ELEMENT":"6"}]
+[21:22:50]  COMMAND     GET      "/wd/hub/session/dbc76e126d3b10e3cf104c524bbbd599bf355099/element/5/displayed"
+[21:22:50]  DATA                {}
+[21:22:50]  COMMAND     GET      "/wd/hub/session/dbc76e126d3b10e3cf104c524bbbd599bf355099/element/6/displayed"
+[21:22:50]  DATA                {}
+[21:22:50]  COMMAND     POST     "/wd/hub/session/783abf375771885fdd8224191df8b83277268f94/elements"
+[21:22:50]  DATA                {"using":"css selector","value":".member-stats"}
+[21:22:50]  RESULT              []
+[21:22:50]  COMMAND     POST     "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/element"
+[21:22:50]  DATA                {"using":"css selector","value":".btn.btn-info"}
+[21:22:50]  RESULT              []
+[21:22:50]  COMMAND     POST     "/wd/hub/session/9a3051eb1c3f193688adc389101868a2171a16da/elements"
+[21:22:50]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:50]  COMMAND     GET      "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/url"
+[21:22:50]  DATA                {}
+[21:22:50]  RESULT              {"ELEMENT":"9"}
+[21:22:50]  COMMAND     POST     "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/element/9/click"
+[21:22:50]  DATA                {}
+[21:22:50]  RESULT              "https://habitica.com/login"
+[21:22:50]  COMMAND     POST     "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/url"
+[21:22:50]  DATA                {"url":"https://habitica.com/"}
+[21:22:50]  RESULT              []
+[21:22:50]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:22:50]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:51]  RESULT              true
+[21:22:51]  COMMAND     POST     "/wd/hub/session/dbc76e126d3b10e3cf104c524bbbd599bf355099/elements"
+[21:22:51]  DATA                {"using":"css selector","value":".character-name"}
+[21:22:51]  COMMAND     POST     "/wd/hub/session/783abf375771885fdd8224191df8b83277268f94/elements"
+[21:22:51]  DATA                {"using":"css selector","value":".member-stats"}
+[21:22:51]  COMMAND     GET      "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/alert_text"
+[21:22:51]  DATA                {}
+[21:22:51]  RESULT              [{"ELEMENT":"7"},{"ELEMENT":"8"}]
+[21:22:51]  COMMAND     GET      "/wd/hub/session/dbc76e126d3b10e3cf104c524bbbd599bf355099/element/7/text"
+[21:22:51]  DATA                {}
+[21:22:51]  COMMAND     GET      "/wd/hub/session/dbc76e126d3b10e3cf104c524bbbd599bf355099/element/8/text"
+[21:22:51]  DATA                {}
+[21:22:51]  RESULT              "Email is required"
+[21:22:51]  COMMAND     POST     "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/dismiss_alert"
+[21:22:51]  DATA                {}
+[21:22:51]  RESULT              []
+[21:22:51]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:22:51]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:51]  COMMAND     POST     "/wd/hub/session/9a3051eb1c3f193688adc389101868a2171a16da/elements"
+[21:22:51]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:51]  RESULT              "js.hernandez15"
+[21:22:51]  COMMAND     POST     "/wd/hub/session/dbc76e126d3b10e3cf104c524bbbd599bf355099/element"
+[21:22:51]  DATA                {"using":"css selector","value":".quick-add"}
+[21:22:51]  COMMAND     GET      "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/url"
+[21:22:51]  DATA                {}
+[21:22:51]  RESULT              []
+[21:22:51]  RESULT              "https://habitica.com/login"
+[21:22:51]  RESULT              {"ELEMENT":"9"}
+[21:22:51]  COMMAND     POST     "/wd/hub/session/dbc76e126d3b10e3cf104c524bbbd599bf355099/element/9/clear"
+[21:22:51]  DATA                {}
+[21:22:51]  RESULT              []
+[21:22:51]  COMMAND     POST     "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/url"
+[21:22:51]  DATA                {"url":"https://habitica.com/"}
+[21:22:51]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:22:51]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:51]  COMMAND     POST     "/wd/hub/session/dbc76e126d3b10e3cf104c524bbbd599bf355099/element/9/value"
+[21:22:51]  DATA                {"value":["1","5","1","0","7","1","2","5","7","1","(3 more items)"],"text":"1510712571289"}
+[21:22:51]  RESULT              []
+[21:22:51]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:22:51]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:51]  COMMAND     POST     "/wd/hub/session/9a3051eb1c3f193688adc389101868a2171a16da/elements"
+[21:22:51]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:51]  RESULT              []
+[21:22:51]  RESULT              []
+[21:22:51]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:22:51]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:52]  RESULT              []
+[21:22:52]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:22:52]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:52]  COMMAND     POST     "/wd/hub/session/9a3051eb1c3f193688adc389101868a2171a16da/elements"
+[21:22:52]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:52]      Saved screenshot: ERROR_firefox_2017-11-15T02-22-52.326Z.png
+[21:22:52]  RESULT              []
+[21:22:52]  COMMAND     POST     "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/elements"
+[21:22:52]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:52]  RESULT              []
+[21:22:52]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:22:52]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:52]  RESULT              [{"ELEMENT":"5"}]
+[21:22:52]  COMMAND     GET      "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/element/5/displayed"
+[21:22:52]  DATA                {}
+[21:22:52]  RESULT              true
+[21:22:52]  COMMAND     POST     "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/element"
+[21:22:52]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:52]  RESULT              []
+[21:22:52]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:22:52]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:52]  COMMAND     POST     "/wd/hub/session/9a3051eb1c3f193688adc389101868a2171a16da/elements"
+[21:22:52]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:52]  COMMAND     DELETE   "/wd/hub/session/dbc76e126d3b10e3cf104c524bbbd599bf355099"
+[21:22:52]  DATA                {}
+[21:22:52]  RESULT              {"ELEMENT":"5"}
+[21:22:52]  COMMAND     POST     "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/element/5/click"
+[21:22:52]  DATA                {}
+[21:22:52]  RESULT              []
+[21:22:52]  RESULT              []
+[21:22:52]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:22:52]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:53]  COMMAND     POST     "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/elements"
+[21:22:53]  DATA                {"using":"css selector","value":".gryphon"}
+[21:22:53]  RESULT              []
+[21:22:53]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:22:53]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:53]  COMMAND     POST     "/wd/hub/session/9a3051eb1c3f193688adc389101868a2171a16da/elements"
+[21:22:53]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:53]  COMMAND     GET      "/wd/hub/session/9a3051eb1c3f193688adc389101868a2171a16da/screenshot"
+[21:22:53]  DATA                {}
+[21:22:53]  RESULT              [{"ELEMENT":"6"}]
+[21:22:53]  COMMAND     GET      "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/element/6/displayed"
+[21:22:53]  DATA                {}
+[21:22:53]  RESULT              []
+[21:22:53]  RESULT              true
+[21:22:53]  COMMAND     POST     "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/element"
+[21:22:53]  DATA                {"using":"id","value":"usernameInput"}
+[21:22:53]  RESULT              []
+[21:22:53]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:22:53]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:53]  COMMAND     GET      "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/screenshot"
+[21:22:53]  DATA                {}
+[21:22:53]  RESULT              {"ELEMENT":"7"}
+[21:22:53]  COMMAND     POST     "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/element/7/clear"
+[21:22:53]  DATA                {}
+[21:22:53]  COMMAND     POST     "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/element/7/value"
+[21:22:53]  DATA                {"value":[],"text":""}
+[21:22:53]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:22:53]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:53]  RESULT              []
+[21:22:53]  COMMAND     POST     "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/element"
+[21:22:53]  DATA                {"using":"id","value":"passwordInput"}
+[21:22:53]  RESULT              []
+[21:22:53]  RESULT              [{"ELEMENT":"5"},{"ELEMENT":"6"}]
+[21:22:53]  COMMAND     GET      "/wd/hub/session/783abf375771885fdd8224191df8b83277268f94/element/5/displayed"
+[21:22:53]  DATA                {}
+[21:22:53]  RESULT              {"ELEMENT":"8"}
+[21:22:53]  COMMAND     GET      "/wd/hub/session/783abf375771885fdd8224191df8b83277268f94/element/6/displayed"
+[21:22:53]  DATA                {}
+[21:22:53]  COMMAND     POST     "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/element/8/clear"
+[21:22:53]  DATA                {}
+[21:22:53]  RESULT              []
+[21:22:54]  COMMAND     POST     "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/element/8/value"
+[21:22:54]  DATA                {"value":[],"text":""}
+[21:22:54]  COMMAND     POST     "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/element"
+[21:22:54]  DATA                {"using":"css selector","value":".btn.btn-info"}
+[21:22:54]  RESULT              {"ELEMENT":"9"}
+[21:22:54]  COMMAND     POST     "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/element/9/click"
+[21:22:54]  DATA                {}
+[21:22:54]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:22:54]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:54]  RESULT              true
+[21:22:54]  COMMAND     POST     "/wd/hub/session/783abf375771885fdd8224191df8b83277268f94/elements"
+[21:22:54]  DATA                {"using":"css selector","value":".character-name"}
+[21:22:54]  RESULT              []
+[21:22:54]  COMMAND     GET      "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/alert_text"
+[21:22:54]  DATA                {}
+[21:22:54]  RESULT              "Email is required"
+[21:22:54]  RESULT              [{"ELEMENT":"7"},{"ELEMENT":"8"}]
+[21:22:54]  COMMAND     POST     "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/dismiss_alert"
+[21:22:54]  DATA                {}
+[21:22:54]  COMMAND     GET      "/wd/hub/session/783abf375771885fdd8224191df8b83277268f94/element/7/text"
+[21:22:54]  DATA                {}
+[21:22:54]  COMMAND     GET      "/wd/hub/session/783abf375771885fdd8224191df8b83277268f94/element/8/text"
+[21:22:54]  DATA                {}
+[21:22:54]  COMMAND     GET      "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/url"
+[21:22:54]  DATA                {}
+[21:22:54]  RESULT              "js.hernandez15"
+[21:22:54]  COMMAND     POST     "/wd/hub/session/783abf375771885fdd8224191df8b83277268f94/element"
+[21:22:54]  DATA                {"using":"css selector","value":".quick-add"}
+[21:22:54]  COMMAND     POST     "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/elements"
+[21:22:54]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:54]  RESULT              "https://habitica.com/login"
+[21:22:54]  COMMAND     POST     "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/url"
+[21:22:54]  DATA                {"url":"https://habitica.com/"}
+[21:22:54]  RESULT              "iVBORw0KGgoAAAANSUhEUgAABAAAAAKrCAYAAABvFv+UAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAABk5SURBVHhe7d3fix31/cfx/jlf6IUgeFHwQhACiqKUikIgWERpqRAI/YZIahPiL4KRSGokBqVKMJbWBiuB0JS ... (8554 more bytes)
+[21:22:54]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:22:54]      Saved screenshot: ERROR_firefox_2017-11-15T02-22-53.469Z.png
+[21:22:54]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:54]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/url"
+[21:22:54]  DATA                {"url":"https://habitica.com/"}
+[21:22:54]  RESULT              {"ELEMENT":"9"}
+[21:22:54]  COMMAND     POST     "/wd/hub/session/783abf375771885fdd8224191df8b83277268f94/element/9/clear"
+[21:22:54]  RESULT              [{"ELEMENT":"10"}]
+[21:22:54]  DATA                {}
+[21:22:54]  COMMAND     GET      "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/element/10/displayed"
+[21:22:54]  DATA                {}
+[21:22:54]  RESULT              []
+[21:22:54]  COMMAND     POST     "/wd/hub/session/783abf375771885fdd8224191df8b83277268f94/element/9/value"
+[21:22:54]  DATA                {"value":["1","5","1","0","7","1","2","5","7","4","(3 more items)"],"text":"1510712574654"}
+[21:22:54]  RESULT              true
+[21:22:54]  COMMAND     POST     "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/element"
+[21:22:54]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:55]  RESULT              {"ELEMENT":"10"}
+[21:22:55]  COMMAND     POST     "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/element/10/click"
+[21:22:55]  DATA                {}
+[21:22:55]  RESULT              "iVBORw0KGgoAAAANSUhEUgAABAAAAAKDCAYAAACE6XjPAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAABhYSURBVHhe7d3bq13lvcfh/eds8EIoeCF4IQgBpaKIUiEQLKIoFgKhDZF4aIitZWEkJR7IDhZTgrpJalBZEFT ... (8254 more bytes)
+[21:22:55]      Saved screenshot: ERROR_firefox_2017-11-15T02-22-53.262Z.png
+[21:22:55]  COMMAND     POST     "/wd/hub/session/783abf375771885fdd8224191df8b83277268f94/keys"
+[21:22:55]  DATA                {"value":[""]}
+[21:22:55]  COMMAND     POST     "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/elements"
+[21:22:55]  DATA                {"using":"css selector","value":".gryphon"}
+[21:22:55]  COMMAND     POST     "/wd/hub/session/783abf375771885fdd8224191df8b83277268f94/actions"
+[21:22:55]  DATA                {"actions":[{"type":"key","id":"keys","actions":[{"type":"keyDown","value":""},{"type":"keyUp","value":""}]}]}
+[21:22:55]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:22:55]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:55]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:22:55]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:55]  RESULT              [{"ELEMENT":"11"}]
+[21:22:55]  COMMAND     GET      "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/element/11/displayed"
+[21:22:55]  DATA                {}
+[21:22:55]  RESULT              []
+[21:22:55]  COMMAND     POST     "/wd/hub/session/783abf375771885fdd8224191df8b83277268f94/elements"
+[21:22:55]  DATA                {"using":"xpath","value":"//p[contains(., \"1510712574654\")]"}
+[21:22:55]  RESULT              true
+[21:22:55]  COMMAND     POST     "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/element"
+[21:22:55]  DATA                {"using":"id","value":"usernameInput"}
+[21:22:55]  RESULT              []
+[21:22:55]  RESULT              {"ELEMENT":"12"}
+[21:22:55]  COMMAND     POST     "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/element/12/clear"
+[21:22:55]  DATA                {}
+[21:22:55]  COMMAND     DELETE   "/wd/hub/session/9a3051eb1c3f193688adc389101868a2171a16da"
+[21:22:55]  DATA                {}
+[21:22:55]  COMMAND     POST     "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/element/12/value"
+[21:22:55]  DATA                {"value":["j","s",".","h","e","r","n","a","n","d","(20 more items)"],"text":"js.hernandez15@uniandes.edu.co"}
+[21:22:55]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:22:55]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:55]  RESULT              []
+[21:22:55]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:22:55]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:55]  RESULT              []
+[21:22:55]  COMMAND     POST     "/wd/hub/session/783abf375771885fdd8224191df8b83277268f94/elements"
+[21:22:55]  DATA                {"using":"xpath","value":"//p[contains(., \"1510712574654\")]"}
+[21:22:55]  RESULT              []
+[21:22:56]  COMMAND     POST     "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/element"
+[21:22:56]  DATA                {"using":"id","value":"passwordInput"}
+[21:22:56]  RESULT              {"ELEMENT":"13"}
+[21:22:56]  COMMAND     POST     "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/element/13/clear"
+[21:22:56]  DATA                {}
+------------------------------------------------------------------
+[chrome #0-0] Session ID: dbc76e126d3b10e3cf104c524bbbd599bf355099
+[chrome #0-0] Spec: D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\features\habits.feature
+[chrome #0-0] Running: chrome
+[chrome #0-0]
+[chrome #0-0] Creación de hábitos
+[chrome #0-0]
+[chrome #0-0]     Crear hábitos
+[chrome #0-0]       √ que accedí a la página
+[chrome #0-0]       1) registro un hábito
+[chrome #0-0]       - lo veo en el panel inferior
+[chrome #0-0]
+[chrome #0-0]
+[chrome #0-0] 1 passing (18s)
+[chrome #0-0] 1 pending
+[chrome #0-0] 1 failing
+[chrome #0-0]
+[chrome #0-0] 1) Crear hábitos15 registro un hábito:
+[chrome #0-0] unknown error: cannot focus element
+[chrome #0-0] Error: An unknown server-side error occurred while processing the command.
+[chrome #0-0]     at Object.wait (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\fibers\future.js:449:15)
+[chrome #0-0]     at Object.setValue (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:353:27)
+[chrome #0-0]     at World.registerHabit (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\features\step-definitions\index.js:58:14)
+[chrome #0-0]     at D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:594:26
+[chrome #0-0]     at Promise.F (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\core-js\library\modules\_export.js:35:28)
+[chrome #0-0]     at World.executeSync (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:592:12)
+[chrome #0-0]     at D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:214:29
+[chrome #0-0]     at elementIdValue("9", "1510712571289") - D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\webdriverio\build\lib\commands\setValue.js:46:80
+[chrome #0-0]
+
+[21:22:56]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:22:56]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:56]  RESULT              []
+[21:22:56]  COMMAND     POST     "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/element/13/value"
+[21:22:56]  DATA                {"value":["A","S","D","a","s","d","1","2","3"],"text":"ASDasd123"}
+[21:22:56]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:22:56]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:56]  RESULT              []
+[21:22:56]  COMMAND     POST     "/wd/hub/session/783abf375771885fdd8224191df8b83277268f94/elements"
+[21:22:56]  DATA                {"using":"xpath","value":"//p[contains(., \"1510712574654\")]"}
+[21:22:56]  RESULT              []
+[21:22:56]  COMMAND     POST     "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/element"
+[21:22:56]  DATA                {"using":"css selector","value":".btn.btn-info"}
+[21:22:56]  RESULT              {"ELEMENT":"14"}
+[21:22:56]  COMMAND     POST     "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/element/14/click"
+[21:22:56]  DATA                {}
+[21:22:56]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:22:56]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:56]  COMMAND     POST     "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/elements"
+[21:22:56]  DATA                {"using":"css selector","value":".member-stats"}
+[21:22:56]  RESULT              []
+[21:22:56]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:22:56]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:56]  RESULT              []
+[21:22:56]  COMMAND     POST     "/wd/hub/session/783abf375771885fdd8224191df8b83277268f94/elements"
+[21:22:56]  DATA                {"using":"xpath","value":"//p[contains(., \"1510712574654\")]"}
+[21:22:56]  RESULT              []
+[21:22:56]  RESULT              []
+[21:22:57]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:22:57]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:57]  COMMAND     POST     "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/elements"
+[21:22:57]  DATA                {"using":"css selector","value":".member-stats"}
+[21:22:57]  RESULT              []
+[21:22:57]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:22:57]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:57]  RESULT              []
+[21:22:57]  COMMAND     POST     "/wd/hub/session/783abf375771885fdd8224191df8b83277268f94/elements"
+[21:22:57]  DATA                {"using":"xpath","value":"//p[contains(., \"1510712574654\")]"}
+[21:22:57]  RESULT              []
+[21:22:57]  COMMAND     POST     "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/elements"
+[21:22:57]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:57]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:22:57]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:57]  RESULT              []
+[21:22:57]  RESULT              []
+[21:22:57]  COMMAND     POST     "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/elements"
+[21:22:57]  DATA                {"using":"css selector","value":".member-stats"}
+[21:22:57]  RESULT              [{"ELEMENT":"10"}]
+[21:22:57]  COMMAND     GET      "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/element/10/displayed"
+[21:22:57]  DATA                {}
+[21:22:57]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:22:57]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:57]  RESULT              []
+[21:22:57]  COMMAND     POST     "/wd/hub/session/783abf375771885fdd8224191df8b83277268f94/elements"
+[21:22:57]  DATA                {"using":"xpath","value":"//p[contains(., \"1510712574654\")]"}
+[21:22:57]  RESULT              []
+[21:22:57]  RESULT              true
+[21:22:57]  COMMAND     POST     "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/element"
+[21:22:57]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:57]  RESULT              []
+[21:22:58]  RESULT              {"ELEMENT":"10"}
+[21:22:58]  COMMAND     POST     "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/element/10/click"
+[21:22:58]  DATA                {}
+[21:22:58]  COMMAND     POST     "/wd/hub/session/ce76372efbe20bf37a9ad71d70731f3d419e128e/elements"
+[21:22:58]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:58]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:22:58]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:58]  COMMAND     POST     "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/elements"
+[21:22:58]  RESULT              []
+[21:22:58]  DATA                {"using":"css selector","value":".member-stats"}
+[21:22:58]  RESULT              []
+[21:22:58]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:22:58]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:58]  RESULT              []
+[21:22:58]  COMMAND     POST     "/wd/hub/session/783abf375771885fdd8224191df8b83277268f94/elements"
+[21:22:58]  DATA                {"using":"xpath","value":"//p[contains(., \"1510712574654\")]"}
+[21:22:58]  COMMAND     POST     "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/elements"
+[21:22:58]  DATA                {"using":"css selector","value":".gryphon"}
+[21:22:58]  RESULT              []
+[21:22:58]  RESULT              [{"ELEMENT":"11"}]
+[21:22:58]  COMMAND     GET      "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/element/11/displayed"
+[21:22:58]  DATA                {}
+[21:22:58]  RESULT              true
+[21:22:58]  COMMAND     POST     "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/element"
+[21:22:58]  DATA                {"using":"id","value":"usernameInput"}
+[21:22:58]  COMMAND     POST     "/wd/hub/session/ce76372efbe20bf37a9ad71d70731f3d419e128e/elements"
+[21:22:58]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:58]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:22:58]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:58]  RESULT              {"ELEMENT":"12"}
+[21:22:58]  COMMAND     POST     "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/element/12/clear"
+[21:22:58]  DATA                {}
+[21:22:58]  RESULT              []
+[21:22:58]  RESULT              []
+[21:22:58]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:22:58]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:58]  RESULT              []
+[21:22:58]  COMMAND     POST     "/wd/hub/session/783abf375771885fdd8224191df8b83277268f94/elements"
+[21:22:58]  DATA                {"using":"xpath","value":"//p[contains(., \"1510712574654\")]"}
+[21:22:58]  COMMAND     POST     "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/element/12/value"
+[21:22:58]  DATA                {"value":["j","s",".","h","e","r","n","a","n","d","(20 more items)"],"text":"js.hernandez15@uniandes.edu.co"}
+------------------------------------------------------------------
+[internet explorer #2-0] Session ID: 9a3051eb1c3f193688adc389101868a2171a16da
+[internet explorer #2-0] Spec: D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\features\habits.feature
+[internet explorer #2-0] Running: internet explorer
+[internet explorer #2-0]
+[internet explorer #2-0] Creación de hábitos
+[internet explorer #2-0]
+[internet explorer #2-0]     Crear hábitos
+[internet explorer #2-0]       1) que accedí a la página
+[internet explorer #2-0]       - registro un hábito
+[internet explorer #2-0]       - lo veo en el panel inferior
+[internet explorer #2-0]
+[internet explorer #2-0]
+[internet explorer #2-0] 2 pending (21s)
+[internet explorer #2-0] 1 failing
+[internet explorer #2-0]
+[internet explorer #2-0] 1) Crear hábitos15 que accedí a la página:
+[internet explorer #2-0] element (".login-button") still not visible after 10000ms
+[internet explorer #2-0] Error: element (".login-button") still not visible after 10000ms
+[internet explorer #2-0]     at Object.wait (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\fibers\future.js:449:15)
+[internet explorer #2-0]     at Object.waitForVisible (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:353:27)
+[internet explorer #2-0]     at navigateToLogin (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\features\step-definitions\index.js:9:11)
+[internet explorer #2-0]     at World.alreadyLoggedIn (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\features\step-definitions\index.js:47:3)
+[internet explorer #2-0]     at D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:594:26
+[internet explorer #2-0]     at Promise.F (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\core-js\library\modules\_export.js:35:28)
+[internet explorer #2-0]     at World.executeSync (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:592:12)
+[internet explorer #2-0]     at D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:214:29
+[internet explorer #2-0]     at elements(".login-button") - D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\webdriverio\build\lib\commands\isVisible.js:54:17
+[internet explorer #2-0]     at isVisible(".login-button") - D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\webdriverio\build\lib\commands\waitForVisible.js:73:22
+[internet explorer #2-0]
+
+[21:22:58]  RESULT              []
+[21:22:59]  COMMAND     POST     "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/element"
+[21:22:59]  DATA                {"using":"id","value":"passwordInput"}
+[21:22:59]  RESULT              {"ELEMENT":"13"}
+[21:22:59]  COMMAND     POST     "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/element/13/clear"
+[21:22:59]  DATA                {}
+[21:22:59]  COMMAND     POST     "/wd/hub/session/ce76372efbe20bf37a9ad71d70731f3d419e128e/elements"
+[21:22:59]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:59]  COMMAND     POST     "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/element/13/value"
+[21:22:59]  DATA                {"value":["A","S","D","a","s","d","1","2","3"],"text":"ASDasd123"}
+[21:22:59]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:22:59]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:59]  RESULT              []
+[21:22:59]  RESULT              []
+[21:22:59]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:22:59]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:59]  COMMAND     POST     "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/element"
+[21:22:59]  DATA                {"using":"css selector","value":".btn.btn-info"}
+[21:22:59]  RESULT              []
+[21:22:59]  COMMAND     POST     "/wd/hub/session/783abf375771885fdd8224191df8b83277268f94/elements"
+[21:22:59]  DATA                {"using":"xpath","value":"//p[contains(., \"1510712574654\")]"}
+[21:22:59]  RESULT              {"ELEMENT":"14"}
+[21:22:59]  COMMAND     POST     "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/element/14/click"
+[21:22:59]  DATA                {}
+[21:22:59]  RESULT              []
+[21:22:59]  COMMAND     POST     "/wd/hub/session/ce76372efbe20bf37a9ad71d70731f3d419e128e/elements"
+[21:22:59]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:59]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:22:59]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:59]  RESULT              []
+[21:22:59]  RESULT              []
+[21:22:59]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:22:59]  DATA                {"using":"css selector","value":".login-button"}
+[21:22:59]  COMMAND     POST     "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/elements"
+[21:22:59]  DATA                {"using":"css selector","value":".member-stats"}
+[21:22:59]  RESULT              []
+[21:22:59]  COMMAND     POST     "/wd/hub/session/783abf375771885fdd8224191df8b83277268f94/elements"
+[21:22:59]  DATA                {"using":"xpath","value":"//p[contains(., \"1510712574654\")]"}
+[21:22:59]  RESULT              []
+[21:22:59]  RESULT              []
+[21:23:00]  RESULT              [{"ELEMENT":"15"},{"ELEMENT":"16"}]
+[21:23:00]  COMMAND     GET      "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/element/15/displayed"
+[21:23:00]  DATA                {}
+[21:23:00]  COMMAND     GET      "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/element/16/displayed"
+[21:23:00]  DATA                {}
+[21:23:00]  COMMAND     POST     "/wd/hub/session/ce76372efbe20bf37a9ad71d70731f3d419e128e/elements"
+[21:23:00]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:00]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:23:00]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:00]  RESULT              []
+[21:23:00]  RESULT              []
+[21:23:00]  RESULT              true
+[21:23:00]  COMMAND     POST     "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/elements"
+[21:23:00]  DATA                {"using":"css selector","value":".character-name"}
+[21:23:00]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:23:00]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:00]  COMMAND     POST     "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/elements"
+[21:23:00]  DATA                {"using":"css selector","value":".member-stats"}
+[21:23:00]  RESULT              []
+[21:23:00]  COMMAND     GET      "/wd/hub/session/783abf375771885fdd8224191df8b83277268f94/screenshot"
+[21:23:00]  DATA                {}
+[21:23:00]  RESULT              [{"ELEMENT":"17"},{"ELEMENT":"18"}]
+[21:23:00]  COMMAND     GET      "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/element/17/text"
+[21:23:00]  DATA                {}
+[21:23:00]  COMMAND     GET      "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a/element/18/text"
+[21:23:00]  DATA                {}
+[21:23:00]  RESULT              "js.hernandez15"
+[21:23:00]  COMMAND     POST     "/wd/hub/session/ce76372efbe20bf37a9ad71d70731f3d419e128e/elements"
+[21:23:00]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:00]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:23:00]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:00]  RESULT              "iVBORw0KGgoAAAANSUhEUgAAA+8AAAK6CAYAAABITm3VAAAgAElEQVR4nOy9+5Mj9Z2mu/+JmXF4SqW6l65VXWV33a8qSSVVYHew3AbaB7qaLnWV6iaVpPKuscMsEe1gTCyB7YF1MDPBcmBg3WuOG3CbWczYA+ELBmzPtrEB002DmwPdMWHOenjPD3n7ZipT11QpM+t ... (86866 more bytes)
+[21:23:00]      Saved screenshot: ERROR_firefox_2017-11-15T02-23-00.348Z.png
+[21:23:00]  RESULT              []
+[21:23:00]  RESULT              []
+[21:23:00]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:23:00]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:00]  RESULT              []
+[21:23:01]  COMMAND     DELETE   "/wd/hub/session/c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a"
+[21:23:01]  DATA                {}
+[21:23:01]  COMMAND     POST     "/wd/hub/session/ce76372efbe20bf37a9ad71d70731f3d419e128e/elements"
+[21:23:01]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:01]  COMMAND     DELETE   "/wd/hub/session/783abf375771885fdd8224191df8b83277268f94"
+[21:23:01]  DATA                {}
+[21:23:01]  COMMAND     GET      "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/screenshot"
+[21:23:01]  DATA                {}
+[21:23:01]  RESULT              []
+[21:23:01]  RESULT              []
+[21:23:01]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:23:01]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:01]  RESULT              "iVBORw0KGgoAAAANSUhEUgAABAAAAAK+CAYAAAA8DWy8AAAAAXNSR0IArs4c6QAAQABJREFUeAHt3X2QJ3R9H/Dv7i0Pdyccz8fDoRxPgpCoUB9KrJWApqmxNNFIEw1toraGaJtkrKZWC9NO00wjgZiJ4xiN2kxMlMTR1oZKtGKMj6iJERREBHlGMKDI4z11d2ekt3e ... (23362 more bytes)
+[21:23:01]      Saved screenshot: ERROR_firefox_2017-11-15T02-23-01.232Z.png
+[21:23:01]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/url"
+[21:23:01]  DATA                {"url":"https://habitica.com/"}
+[21:23:01]  COMMAND     POST     "/wd/hub/session/ce76372efbe20bf37a9ad71d70731f3d419e128e/elements"
+[21:23:01]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:01]  RESULT              []
+[21:23:01]  RESULT              []
+[21:23:01]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:23:01]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:01]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:23:01]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:02]  RESULT              []
+[21:23:02]  COMMAND     POST     "/wd/hub/session/ce76372efbe20bf37a9ad71d70731f3d419e128e/elements"
+[21:23:02]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:02]  RESULT              []
+[21:23:02]  RESULT              []
+[21:23:02]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:23:02]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:02]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:23:02]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:02]  RESULT              []
+[21:23:02]  COMMAND     POST     "/wd/hub/session/ce76372efbe20bf37a9ad71d70731f3d419e128e/elements"
+[21:23:02]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:02]  RESULT              []
+[21:23:02]  RESULT              []
+[21:23:02]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:23:02]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:02]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:23:02]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:02]  RESULT              []
+[21:23:03]  COMMAND     POST     "/wd/hub/session/ce76372efbe20bf37a9ad71d70731f3d419e128e/elements"
+[21:23:03]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:03]  RESULT              []
+[21:23:03]  RESULT              []
+[21:23:03]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:23:03]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:03]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:23:03]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:03]  RESULT              []
+[21:23:03]  COMMAND     POST     "/wd/hub/session/ce76372efbe20bf37a9ad71d70731f3d419e128e/elements"
+[21:23:03]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:03]  RESULT              [{"ELEMENT":"15"},{"ELEMENT":"16"}]
+[21:23:03]  COMMAND     GET      "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/element/15/displayed"
+[21:23:03]  DATA                {}
+[21:23:03]  COMMAND     GET      "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/element/16/displayed"
+[21:23:03]  DATA                {}
+[21:23:03]  RESULT              []
+[21:23:03]  RESULT              []
+[21:23:03]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:23:03]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:03]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:23:03]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:03]  RESULT              []
+[21:23:04]  COMMAND     POST     "/wd/hub/session/ce76372efbe20bf37a9ad71d70731f3d419e128e/elements"
+[21:23:04]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:04]  RESULT              []
+[21:23:04]  RESULT              true
+[21:23:04]  COMMAND     POST     "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/elements"
+[21:23:04]  DATA                {"using":"css selector","value":".character-name"}
+[21:23:04]  RESULT              []
+[21:23:04]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:23:04]  DATA                {"using":"css selector","value":".login-button"}
+------------------------------------------------------------------
+[chrome #0-1] Session ID: c30bf86798be3b3303cd1a0ebce4d78dd20b6c1a
+[chrome #0-1] Spec: D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\features\login.feature
+[chrome #0-1] Running: chrome
+[chrome #0-1]
+[chrome #0-1] Acceso a la aplicación
+[chrome #0-1]
+[chrome #0-1]     Acceso con parámetros incorrectos
+[chrome #0-1]       √ que voy a la página principal
+[chrome #0-1]       √ abro la página de acceso
+[chrome #0-1]       √ diligencio mi miso@gmail.com y 1234
+[chrome #0-1]       √ intento acceder
+[chrome #0-1]       √ espero estar en la página de acceso
+[chrome #0-1]
+[chrome #0-1]     Acceso sin parámetros
+[chrome #0-1]       √ que voy a la página principal
+[chrome #0-1]       √ abro la página de acceso
+[chrome #0-1]       √ diligencio mi  y
+[chrome #0-1]       √ intento acceder
+[chrome #0-1]       √ espero ver y cerrar una alerta
+[chrome #0-1]
+[chrome #0-1]     Acceso éxitoso
+[chrome #0-1]       √ que voy a la página principal
+[chrome #0-1]       √ abro la página de acceso
+[chrome #0-1]       √ diligencio mi js.hernandez15@uniandes.edu.co y ASDasd123
+[chrome #0-1]       √ intento acceder
+[chrome #0-1]       √ espero acceder a mi página personal
+[chrome #0-1]
+[chrome #0-1]
+[chrome #0-1] 15 passing (26s)
+[chrome #0-1]
+
+[21:23:04]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:23:04]  RESULT              [{"ELEMENT":"17"},{"ELEMENT":"18"}]
+[21:23:04]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:04]  COMMAND     GET      "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/element/17/text"
+[21:23:04]  DATA                {}
+[21:23:04]  COMMAND     GET      "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52/element/18/text"
+[21:23:04]  DATA                {}
+[21:23:04]  RESULT              []
+[21:23:04]  RESULT              "js.hernandez15"
+------------------------------------------------------------------
+[firefox #1-0] Session ID: 783abf375771885fdd8224191df8b83277268f94
+[firefox #1-0] Spec: D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\features\habits.feature
+[firefox #1-0] Running: firefox
+[firefox #1-0]
+[firefox #1-0] Creación de hábitos
+[firefox #1-0]
+[firefox #1-0]     Crear hábitos
+[firefox #1-0]       √ que accedí a la página
+[firefox #1-0]       √ registro un hábito
+[firefox #1-0]       1) lo veo en el panel inferior
+[firefox #1-0]
+[firefox #1-0]
+[firefox #1-0] 2 passing (27s)
+[firefox #1-0] 1 failing
+[firefox #1-0]
+[firefox #1-0] 1) Crear hábitos15 lo veo en el panel inferior:
+[firefox #1-0] element ("p*=1510712574654") still not visible after 5000ms
+[firefox #1-0] Error: element ("p*=1510712574654") still not visible after 5000ms
+[firefox #1-0]     at Object.wait (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\fibers\future.js:449:15)
+[firefox #1-0]     at Object.waitForVisible (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:353:27)
+[firefox #1-0]     at World.checkHabitIsPresent (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\features\step-definitions\index.js:63:11)
+[firefox #1-0]     at D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:594:26
+[firefox #1-0]     at Promise.F (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\core-js\library\modules\_export.js:35:28)
+[firefox #1-0]     at World.executeSync (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:592:12)
+[firefox #1-0]     at D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:214:29
+[firefox #1-0]     at elements("p*=1510712574654") - D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\webdriverio\build\lib\commands\isVisible.js:54:17
+[firefox #1-0]     at isVisible("p*=1510712574654") - D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\webdriverio\build\lib\commands\waitForVisible.js:73:22
+[firefox #1-0]
+
+[21:23:04]  COMMAND     POST     "/wd/hub/session/ce76372efbe20bf37a9ad71d70731f3d419e128e/elements"
+[21:23:04]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:04]  RESULT              []
+[21:23:04]  RESULT              []
+[21:23:04]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:23:04]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:04]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:23:04]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:04]  RESULT              []
+[21:23:04]  COMMAND     DELETE   "/wd/hub/session/d70ce9f43b683bd9b5fb245954281ef4bcc90a52"
+[21:23:04]  DATA                {}
+[21:23:05]  COMMAND     POST     "/wd/hub/session/ce76372efbe20bf37a9ad71d70731f3d419e128e/elements"
+[21:23:05]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:05]  RESULT              []
+[21:23:05]  RESULT              []
+[21:23:05]  COMMAND     GET      "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/screenshot"
+[21:23:05]  DATA                {}
+[21:23:05]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:23:05]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:05]  RESULT              []
+[21:23:05]  COMMAND     POST     "/wd/hub/session/ce76372efbe20bf37a9ad71d70731f3d419e128e/elements"
+[21:23:05]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:05]  RESULT              []
+[21:23:05]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:23:05]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:05]  RESULT              []
+[21:23:06]  RESULT              "iVBORw0KGgoAAAANSUhEUgAABAAAAAKrCAYAAABvFv+UAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAABkySURBVHhe7d3di13l2cfx58956IEgHhQEQRAqQZFWJBAQlUqLElAeCZJqrEaCkTDUEEIwEDSkVlKVhIYokVR ... (8546 more bytes)
+[21:23:06]  COMMAND     POST     "/wd/hub/session/ce76372efbe20bf37a9ad71d70731f3d419e128e/elements"
+[21:23:06]      Saved screenshot: ERROR_firefox_2017-11-15T02-23-05.307Z.png
+[21:23:06]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:06]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/url"
+[21:23:06]  DATA                {"url":"https://habitica.com/"}
+[21:23:06]  RESULT              []
+[21:23:06]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:23:06]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:06]  RESULT              []
+[21:23:06]  COMMAND     POST     "/wd/hub/session/ce76372efbe20bf37a9ad71d70731f3d419e128e/elements"
+[21:23:06]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:06]  RESULT              []
+[21:23:06]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:23:06]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:06]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:23:06]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:06]  RESULT              []
+[21:23:07]  COMMAND     POST     "/wd/hub/session/ce76372efbe20bf37a9ad71d70731f3d419e128e/elements"
+[21:23:07]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:07]  RESULT              []
+[21:23:07]  RESULT              []
+[21:23:07]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:23:07]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:07]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:23:07]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:07]  RESULT              []
+[21:23:07]  COMMAND     POST     "/wd/hub/session/ce76372efbe20bf37a9ad71d70731f3d419e128e/elements"
+[21:23:07]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:07]  RESULT              []
+[21:23:07]  RESULT              []
+[21:23:07]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:23:07]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:07]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:23:07]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:07]  RESULT              []
+[21:23:08]  COMMAND     GET      "/wd/hub/session/ce76372efbe20bf37a9ad71d70731f3d419e128e/screenshot"
+[21:23:08]  DATA                {}
+[21:23:08]  RESULT              []
+[21:23:08]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:23:08]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:08]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:23:08]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:08]  RESULT              "iVBORw0KGgoAAAANSUhEUgAABAAAAAKeCAYAAAA7oWmKAABAAElEQVR4Ae3dfZAndH0f8O/uLQ93JxzPx8OhHE+CkKhQH0qslYCmqbE00UgTDW2itoZom2SsplYL007TTCOBmInjGI3aTEyUxNHWhkq0YoyPqIkRFEQEeUYwoMjjPXV3Z6S3d7vHe497et+9dsbx7rf ... (22426 more bytes)
+[21:23:08]      Saved screenshot: ERROR_firefox_2017-11-15T02-23-08.154Z.png
+------------------------------------------------------------------
+[firefox #1-1] Session ID: d70ce9f43b683bd9b5fb245954281ef4bcc90a52
+[firefox #1-1] Spec: D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\features\login.feature
+[firefox #1-1] Running: firefox
+[firefox #1-1]
+[firefox #1-1] Acceso a la aplicación
+[firefox #1-1]
+[firefox #1-1]     Acceso con parámetros incorrectos
+[firefox #1-1]       √ que voy a la página principal
+[firefox #1-1]       √ abro la página de acceso
+[firefox #1-1]       √ diligencio mi miso@gmail.com y 1234
+[firefox #1-1]       √ intento acceder
+[firefox #1-1]       √ espero estar en la página de acceso
+[firefox #1-1]
+[firefox #1-1]     Acceso sin parámetros
+[firefox #1-1]       √ que voy a la página principal
+[firefox #1-1]       √ abro la página de acceso
+[firefox #1-1]       √ diligencio mi  y
+[firefox #1-1]       √ intento acceder
+[firefox #1-1]       √ espero ver y cerrar una alerta
+[firefox #1-1]
+[firefox #1-1]     Acceso éxitoso
+[firefox #1-1]       √ que voy a la página principal
+[firefox #1-1]       √ abro la página de acceso
+[firefox #1-1]       √ diligencio mi js.hernandez15@uniandes.edu.co y ASDasd123
+[firefox #1-1]       √ intento acceder
+[firefox #1-1]       √ espero acceder a mi página personal
+[firefox #1-1]
+[firefox #1-1]
+[firefox #1-1] 15 passing (31s)
+[firefox #1-1]
+
+[21:23:08]  RESULT              []
+[21:23:08]  RESULT              []
+[21:23:08]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:23:08]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:08]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:23:08]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:08]  COMMAND     DELETE   "/wd/hub/session/ce76372efbe20bf37a9ad71d70731f3d419e128e"
+[21:23:08]  DATA                {}
+[21:23:08]  RESULT              []
+[21:23:09]  RESULT              []
+[21:23:09]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:23:09]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:09]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:23:09]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:09]  RESULT              []
+[21:23:09]  RESULT              []
+[21:23:09]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:23:09]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:09]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:23:09]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:09]  RESULT              []
+[21:23:10]  RESULT              []
+[21:23:10]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:23:10]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:10]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:23:10]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:10]  RESULT              []
+[21:23:10]  RESULT              []
+[21:23:10]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:23:10]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:10]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:23:10]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:10]  RESULT              []
+[21:23:11]  RESULT              []
+[21:23:11]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:23:11]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:11]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:23:11]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:11]  RESULT              []
+[21:23:11]  RESULT              []
+[21:23:11]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:23:11]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:11]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:23:11]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:11]  COMMAND     GET      "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/screenshot"
+[21:23:11]  DATA                {}
+[21:23:11]  RESULT              []
+[21:23:12]  RESULT              "iVBORw0KGgoAAAANSUhEUgAABAAAAAK+CAYAAAA8DWy8AAAAAXNSR0IArs4c6QAAQABJREFUeAHt3X2QJ3R9H/Dv7i0Pdyccz8fDoRxPgpCoUB9KrJWApqmxNNFIEw1toraGaJtkrKZWC9NO00wjgZiJ4xiN2kxMlMTR1oZKtGKMj6iJERREBHlGMKDI4z11d2ekt3e ... (23362 more bytes)
+[21:23:12]      Saved screenshot: ERROR_firefox_2017-11-15T02-23-11.888Z.png
+[21:23:12]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/url"
+[21:23:12]  DATA                {"url":"https://habitica.com/"}
+[21:23:12]  RESULT              []
+[21:23:12]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:23:12]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:12]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:23:12]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:12]  RESULT              []
+[21:23:12]  RESULT              []
+[21:23:12]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:23:12]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:13]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:23:13]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:13]  RESULT              []
+[21:23:13]  RESULT              []
+[21:23:13]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:23:13]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:13]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:23:13]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:13]  RESULT              []
+[21:23:13]  RESULT              []
+[21:23:13]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:23:13]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:14]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:23:14]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:14]  RESULT              []
+[21:23:14]  RESULT              []
+[21:23:14]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:23:14]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:14]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:23:14]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:14]  RESULT              []
+[21:23:14]  RESULT              []
+[21:23:14]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:23:14]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:15]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:23:15]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:15]  RESULT              []
+[21:23:15]  RESULT              []
+[21:23:15]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:23:15]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:15]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:23:15]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:15]  RESULT              []
+[21:23:15]  RESULT              []
+[21:23:15]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:23:15]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:16]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:23:16]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:16]  RESULT              []
+[21:23:16]  RESULT              []
+[21:23:16]  COMMAND     POST     "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/elements"
+[21:23:16]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:16]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:23:16]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:16]  RESULT              []
+[21:23:16]  RESULT              []
+[21:23:16]  COMMAND     GET      "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced/screenshot"
+[21:23:16]  DATA                {}
+[21:23:17]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:23:17]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:17]  RESULT              []
+[21:23:17]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:23:17]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:17]  RESULT              "iVBORw0KGgoAAAANSUhEUgAABAAAAAKrCAYAAABvFv+UAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAABk9SURBVHhe7d3di13l3cfh/jkP9EAEDwoeCD5YCASlRRFFERRLi/gCKUGxIWoIhtTYEGWw2pcnRCuVECspWsU ... (8562 more bytes)
+[21:23:17]      Saved screenshot: ERROR_firefox_2017-11-15T02-23-16.821Z.png
+[21:23:17]  RESULT              []
+[21:23:18]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:23:18]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:18]  COMMAND     DELETE   "/wd/hub/session/1098da9b2df531051d570b863503ae02231b8ced"
+[21:23:18]  DATA                {}
+[21:23:18]  RESULT              []
+[21:23:18]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:23:18]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:18]  RESULT              []
+[21:23:19]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:23:19]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:19]  RESULT              []
+[21:23:19]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:23:19]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:19]  RESULT              []
+[21:23:20]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:23:20]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:20]  RESULT              []
+[21:23:20]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:23:20]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:20]  RESULT              []
+[21:23:21]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:23:21]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:21]  RESULT              []
+[21:23:21]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:23:21]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:21]  RESULT              []
+[21:23:22]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:23:22]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:22]  RESULT              []
+[21:23:22]  COMMAND     POST     "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/elements"
+[21:23:22]  DATA                {"using":"css selector","value":".login-button"}
+[21:23:22]  COMMAND     GET      "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d/screenshot"
+[21:23:22]  DATA                {}
+------------------------------------------------------------------
+[internet explorer #2-1] Session ID: 1098da9b2df531051d570b863503ae02231b8ced
+[internet explorer #2-1] Spec: D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\features\login.feature
+[internet explorer #2-1] Running: internet explorer
+[internet explorer #2-1]
+[internet explorer #2-1] Acceso a la aplicación
+[internet explorer #2-1]
+[internet explorer #2-1]     Acceso con parámetros incorrectos
+[internet explorer #2-1]       √ que voy a la página principal
+[internet explorer #2-1]       1) abro la página de acceso
+[internet explorer #2-1]       - diligencio mi miso@gmail.com y 1234
+[internet explorer #2-1]       - intento acceder
+[internet explorer #2-1]       - espero estar en la página de acceso
+[internet explorer #2-1]
+[internet explorer #2-1]     Acceso sin parámetros
+[internet explorer #2-1]       √ que voy a la página principal
+[internet explorer #2-1]       2) abro la página de acceso
+[internet explorer #2-1]       - diligencio mi  y
+[internet explorer #2-1]       - intento acceder
+[internet explorer #2-1]       - espero ver y cerrar una alerta
+[internet explorer #2-1]
+[internet explorer #2-1]     Acceso éxitoso
+[internet explorer #2-1]       √ que voy a la página principal
+[internet explorer #2-1]       3) abro la página de acceso
+[internet explorer #2-1]       - diligencio mi js.hernandez15@uniandes.edu.co y ASDasd123
+[internet explorer #2-1]       - intento acceder
+[internet explorer #2-1]       - espero acceder a mi página personal
+[internet explorer #2-1]
+[internet explorer #2-1]
+[internet explorer #2-1] 3 passing (45s)
+[internet explorer #2-1] 9 pending
+[internet explorer #2-1] 3 failing
+[internet explorer #2-1]
+[internet explorer #2-1] 1) Acceso con parámetros incorrectos17 abro la página de acceso:
+[internet explorer #2-1] element (".login-button") still not visible after 10000ms
+[internet explorer #2-1] Error: element (".login-button") still not visible after 10000ms
+[internet explorer #2-1]     at Object.wait (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\fibers\future.js:449:15)
+[internet explorer #2-1]     at Object.waitForVisible (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:353:27)
+[internet explorer #2-1]     at World.navigateToLogin (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\features\step-definitions\index.js:9:11)
+[internet explorer #2-1]     at D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:594:26
+[internet explorer #2-1]     at Promise.F (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\core-js\library\modules\_export.js:35:28)
+[internet explorer #2-1]     at World.executeSync (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:592:12)
+[internet explorer #2-1]     at D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:214:29
+[internet explorer #2-1]     at elements(".login-button") - D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\webdriverio\build\lib\commands\isVisible.js:54:17
+[internet explorer #2-1]     at isVisible(".login-button") - D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\webdriverio\build\lib\commands\waitForVisible.js:73:22
+[internet explorer #2-1]
+[internet explorer #2-1] 2) Acceso sin parámetros29 abro la página de acceso:
+[internet explorer #2-1] element (".login-button") still not visible after 10000ms
+[internet explorer #2-1] Error: element (".login-button") still not visible after 10000ms
+[internet explorer #2-1]     at Object.wait (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\fibers\future.js:449:15)
+[internet explorer #2-1]     at Object.waitForVisible (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:353:27)
+[internet explorer #2-1]     at World.navigateToLogin (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\features\step-definitions\index.js:9:11)
+[internet explorer #2-1]     at D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:594:26
+[internet explorer #2-1]     at Promise.F (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\core-js\library\modules\_export.js:35:28)
+[internet explorer #2-1]     at World.executeSync (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:592:12)
+[internet explorer #2-1]     at D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:214:29
+[internet explorer #2-1]     at elements(".login-button") - D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\webdriverio\build\lib\commands\isVisible.js:54:17
+[internet explorer #2-1]     at isVisible(".login-button") - D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\webdriverio\build\lib\commands\waitForVisible.js:73:22
+[internet explorer #2-1]
+[internet explorer #2-1] 3) Acceso éxitoso41 abro la página de acceso:
+[internet explorer #2-1] element (".login-button") still not visible after 10000ms
+[internet explorer #2-1] Error: element (".login-button") still not visible after 10000ms
+[internet explorer #2-1]     at Object.wait (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\fibers\future.js:449:15)
+[internet explorer #2-1]     at Object.waitForVisible (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:353:27)
+[internet explorer #2-1]     at World.navigateToLogin (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\features\step-definitions\index.js:9:11)
+[internet explorer #2-1]     at D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:594:26
+[internet explorer #2-1]     at Promise.F (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\core-js\library\modules\_export.js:35:28)
+[internet explorer #2-1]     at World.executeSync (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:592:12)
+[internet explorer #2-1]     at D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:214:29
+[internet explorer #2-1]     at elements(".login-button") - D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\webdriverio\build\lib\commands\isVisible.js:54:17
+[internet explorer #2-1]     at isVisible(".login-button") - D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\webdriverio\build\lib\commands\waitForVisible.js:73:22
+[internet explorer #2-1]
+
+[21:23:22]  RESULT              []
+[21:23:22]  RESULT              "iVBORw0KGgoAAAANSUhEUgAABAAAAAK+CAYAAAA8DWy8AAAAAXNSR0IArs4c6QAAQABJREFUeAHt3X2QJ3R9H/Dv7i0Pdyccz8fDoRxPgpCoUB9KrJWApqmxNNFIEw1toraGaJtkrKZWC9NO00wjgZiJ4xiN2kxMlMTR1oZKtGKMj6iJERREBHlGMKDI4z11d2ekt3e ... (23362 more bytes)
+[21:23:22]      Saved screenshot: ERROR_firefox_2017-11-15T02-23-22.653Z.png
+[21:23:23]  COMMAND     DELETE   "/wd/hub/session/0de834512b32647c5bfc10ff80f61324ba429a4d"
+[21:23:23]  DATA                {}
+------------------------------------------------------------------
+[safari #3-0] Session ID: ce76372efbe20bf37a9ad71d70731f3d419e128e
+[safari #3-0] Spec: D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\features\habits.feature
+[safari #3-0] Running: safari
+[safari #3-0]
+[safari #3-0] Creación de hábitos
+[safari #3-0]
+[safari #3-0]     Crear hábitos
+[safari #3-0]       1) que accedí a la página
+[safari #3-0]       - registro un hábito
+[safari #3-0]       - lo veo en el panel inferior
+[safari #3-0]
+[safari #3-0]
+[safari #3-0] 2 pending (47s)
+[safari #3-0] 1 failing
+[safari #3-0]
+[safari #3-0] 1) Crear hábitos15 que accedí a la página:
+[safari #3-0] element (".login-button") still not visible after 10000ms
+[safari #3-0] Error: element (".login-button") still not visible after 10000ms
+[safari #3-0]     at Object.wait (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\fibers\future.js:449:15)
+[safari #3-0]     at Object.waitForVisible (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:353:27)
+[safari #3-0]     at navigateToLogin (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\features\step-definitions\index.js:9:11)
+[safari #3-0]     at World.alreadyLoggedIn (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\features\step-definitions\index.js:47:3)
+[safari #3-0]     at D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:594:26
+[safari #3-0]     at Promise.F (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\core-js\library\modules\_export.js:35:28)
+[safari #3-0]     at World.executeSync (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:592:12)
+[safari #3-0]     at D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:214:29
+[safari #3-0]     at elements(".login-button") - D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\webdriverio\build\lib\commands\isVisible.js:54:17
+[safari #3-0]     at isVisible(".login-button") - D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\webdriverio\build\lib\commands\waitForVisible.js:73:22
+[safari #3-0]
+
+------------------------------------------------------------------
+[safari #3-1] Session ID: 0de834512b32647c5bfc10ff80f61324ba429a4d
+[safari #3-1] Spec: D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\features\login.feature
+[safari #3-1] Running: safari
+[safari #3-1]
+[safari #3-1] Acceso a la aplicación
+[safari #3-1]
+[safari #3-1]     Acceso con parámetros incorrectos
+[safari #3-1]       √ que voy a la página principal
+[safari #3-1]       1) abro la página de acceso
+[safari #3-1]       - diligencio mi miso@gmail.com y 1234
+[safari #3-1]       - intento acceder
+[safari #3-1]       - espero estar en la página de acceso
+[safari #3-1]
+[safari #3-1]     Acceso sin parámetros
+[safari #3-1]       √ que voy a la página principal
+[safari #3-1]       2) abro la página de acceso
+[safari #3-1]       - diligencio mi  y
+[safari #3-1]       - intento acceder
+[safari #3-1]       - espero ver y cerrar una alerta
+[safari #3-1]
+[safari #3-1]     Acceso éxitoso
+[safari #3-1]       √ que voy a la página principal
+[safari #3-1]       3) abro la página de acceso
+[safari #3-1]       - diligencio mi js.hernandez15@uniandes.edu.co y ASDasd123
+[safari #3-1]       - intento acceder
+[safari #3-1]       - espero acceder a mi página personal
+[safari #3-1]
+[safari #3-1]
+[safari #3-1] 3 passing (1m, 6s)
+[safari #3-1] 9 pending
+[safari #3-1] 3 failing
+[safari #3-1]
+[safari #3-1] 1) Acceso con parámetros incorrectos17 abro la página de acceso:
+[safari #3-1] element (".login-button") still not visible after 10000ms
+[safari #3-1] Error: element (".login-button") still not visible after 10000ms
+[safari #3-1]     at Object.wait (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\fibers\future.js:449:15)
+[safari #3-1]     at Object.waitForVisible (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:353:27)
+[safari #3-1]     at World.navigateToLogin (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\features\step-definitions\index.js:9:11)
+[safari #3-1]     at D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:594:26
+[safari #3-1]     at Promise.F (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\core-js\library\modules\_export.js:35:28)
+[safari #3-1]     at World.executeSync (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:592:12)
+[safari #3-1]     at D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:214:29
+[safari #3-1]     at elements(".login-button") - D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\webdriverio\build\lib\commands\isVisible.js:54:17
+[safari #3-1]     at isVisible(".login-button") - D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\webdriverio\build\lib\commands\waitForVisible.js:73:22
+[safari #3-1]
+[safari #3-1] 2) Acceso sin parámetros29 abro la página de acceso:
+[safari #3-1] element (".login-button") still not visible after 10000ms
+[safari #3-1] Error: element (".login-button") still not visible after 10000ms
+[safari #3-1]     at Object.wait (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\fibers\future.js:449:15)
+[safari #3-1]     at Object.waitForVisible (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:353:27)
+[safari #3-1]     at World.navigateToLogin (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\features\step-definitions\index.js:9:11)
+[safari #3-1]     at D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:594:26
+[safari #3-1]     at Promise.F (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\core-js\library\modules\_export.js:35:28)
+[safari #3-1]     at World.executeSync (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:592:12)
+[safari #3-1]     at D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:214:29
+[safari #3-1]     at elements(".login-button") - D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\webdriverio\build\lib\commands\isVisible.js:54:17
+[safari #3-1]     at isVisible(".login-button") - D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\webdriverio\build\lib\commands\waitForVisible.js:73:22
+[safari #3-1]
+[safari #3-1] 3) Acceso éxitoso41 abro la página de acceso:
+[safari #3-1] element (".login-button") still not visible after 10000ms
+[safari #3-1] Error: element (".login-button") still not visible after 10000ms
+[safari #3-1]     at Object.wait (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\fibers\future.js:449:15)
+[safari #3-1]     at Object.waitForVisible (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:353:27)
+[safari #3-1]     at World.navigateToLogin (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\features\step-definitions\index.js:9:11)
+[safari #3-1]     at D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:594:26
+[safari #3-1]     at Promise.F (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\core-js\library\modules\_export.js:35:28)
+[safari #3-1]     at World.executeSync (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:592:12)
+[safari #3-1]     at D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:214:29
+[safari #3-1]     at elements(".login-button") - D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\webdriverio\build\lib\commands\isVisible.js:54:17
+[safari #3-1]     at isVisible(".login-button") - D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\webdriverio\build\lib\commands\waitForVisible.js:73:22
+[safari #3-1]
+
+
+
+==================================================================
+Number of specs: 8
+
+
+39 passing (104.20s)
+23 skipped
+10 failing
+
+1) Crear hábitos15 registro un hábito:
+unknown error: cannot focus element
+running
+Error: An unknown server-side error occurred while processing the command.
+    at Object.wait (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\fibers\future.js:449:15)
+    at Object.setValue (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:353:27)
+    at World.registerHabit (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\features\step-definitions\index.js:58:14)
+    at D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:594:26
+    at Promise.F (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\core-js\library\modules\_export.js:35:28)
+    at World.executeSync (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:592:12)
+    at D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:214:29
+    at elementIdValue("9", "1510712571289") - D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\webdriverio\build\lib\commands\setValue.js:46:80
+
+2) Acceso con parámetros incorrectos17 abro la página de acceso:
+element (".login-button") still not visible after 10000ms
+running
+running
+Error: element (".login-button") still not visible after 10000ms
+    at Object.wait (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\fibers\future.js:449:15)
+    at Object.waitForVisible (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:353:27)
+    at World.navigateToLogin (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\features\step-definitions\index.js:9:11)
+    at D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:594:26
+    at Promise.F (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\core-js\library\modules\_export.js:35:28)
+    at World.executeSync (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:592:12)
+    at D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:214:29
+    at elements(".login-button") - D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\webdriverio\build\lib\commands\isVisible.js:54:17
+    at isVisible(".login-button") - D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\webdriverio\build\lib\commands\waitForVisible.js:73:22
+
+3) Crear hábitos15 que accedí a la página:
+element (".login-button") still not visible after 10000ms
+running
+running
+Error: element (".login-button") still not visible after 10000ms
+    at Object.wait (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\fibers\future.js:449:15)
+    at Object.waitForVisible (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:353:27)
+    at navigateToLogin (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\features\step-definitions\index.js:9:11)
+    at World.alreadyLoggedIn (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\features\step-definitions\index.js:47:3)
+    at D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:594:26
+    at Promise.F (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\core-js\library\modules\_export.js:35:28)
+    at World.executeSync (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:592:12)
+    at D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:214:29
+    at elements(".login-button") - D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\webdriverio\build\lib\commands\isVisible.js:54:17
+    at isVisible(".login-button") - D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\webdriverio\build\lib\commands\waitForVisible.js:73:22
+
+4) Crear hábitos15 lo veo en el panel inferior:
+element ("p*=1510712574654") still not visible after 5000ms
+running
+Error: element ("p*=1510712574654") still not visible after 5000ms
+    at Object.wait (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\fibers\future.js:449:15)
+    at Object.waitForVisible (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:353:27)
+    at World.checkHabitIsPresent (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\features\step-definitions\index.js:63:11)
+    at D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:594:26
+    at Promise.F (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\core-js\library\modules\_export.js:35:28)
+    at World.executeSync (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:592:12)
+    at D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:214:29
+    at elements("p*=1510712574654") - D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\webdriverio\build\lib\commands\isVisible.js:54:17
+    at isVisible("p*=1510712574654") - D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\webdriverio\build\lib\commands\waitForVisible.js:73:22
+
+5) Acceso sin parámetros29 abro la página de acceso:
+element (".login-button") still not visible after 10000ms
+running
+running
+Error: element (".login-button") still not visible after 10000ms
+    at Object.wait (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\fibers\future.js:449:15)
+    at Object.waitForVisible (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:353:27)
+    at World.navigateToLogin (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\features\step-definitions\index.js:9:11)
+    at D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:594:26
+    at Promise.F (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\core-js\library\modules\_export.js:35:28)
+    at World.executeSync (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:592:12)
+    at D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:214:29
+    at elements(".login-button") - D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\webdriverio\build\lib\commands\isVisible.js:54:17
+    at isVisible(".login-button") - D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\webdriverio\build\lib\commands\waitForVisible.js:73:22
+
+6) Acceso éxitoso41 abro la página de acceso:
+element (".login-button") still not visible after 10000ms
+running
+running
+Error: element (".login-button") still not visible after 10000ms
+    at Object.wait (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\fibers\future.js:449:15)
+    at Object.waitForVisible (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:353:27)
+    at World.navigateToLogin (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\features\step-definitions\index.js:9:11)
+    at D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:594:26
+    at Promise.F (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\core-js\library\modules\_export.js:35:28)
+    at World.executeSync (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:592:12)
+    at D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:214:29
+    at elements(".login-button") - D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\webdriverio\build\lib\commands\isVisible.js:54:17
+    at isVisible(".login-button") - D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\webdriverio\build\lib\commands\waitForVisible.js:73:22
+
+
+
+D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source>

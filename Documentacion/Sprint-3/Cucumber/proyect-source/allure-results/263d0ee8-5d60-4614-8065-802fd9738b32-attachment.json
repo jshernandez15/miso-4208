@@ -1,0 +1,9 @@
+{
+    "message": "A modal dialog was opened. The SafariDriver does not support interacting with modal dialogs. To avoid hanging your test, the alert has been dismissed. For more information, see http://code.google.com/p/selenium/issues/detail?id=3862: Email is required\nBuild info: version: '2.45.0', revision: '5017cb8e7c', time: '2017-05-30 10:13:13'\nSystem info: host: 'mac-208-52-180-76.browserstack.com', ip: '208.52.180.76', os.name: 'Mac OS X', os.arch: 'x86_64', os.version: '10.11.6', java.version: '1.8.0_144'\nDriver info: org.openqa.selenium.safari.SafariDriver\nCapabilities [{browserName=safari, takesScreenshot=true, javascriptEnabled=true, version=9.1.3, cssSelectorsEnabled=true, platform=MAC, secureSsl=true}]\nSession ID: null",
+    "type": "RuntimeError",
+    "seleniumStack": {
+        "type": "UnexpectedAlertOpen",
+        "message": "A modal dialog was open, blocking this operation",
+        "orgStatusMessage": "A modal dialog was opened. The SafariDriver does not support interacting with modal dialogs. To avoid hanging your test, the alert has been dismissed. For more information, see http://code.google.com/p/selenium/issues/detail?id=3862: Email is required\nBuild info: version: '2.45.0', revision: '5017cb8e7c', time: '2017-05-30 10:13:13'\nSystem info: host: 'mac-208-52-180-76.browserstack.com', ip: '208.52.180.76', os.name: 'Mac OS X', os.arch: 'x86_64', os.version: '10.11.6', java.version: '1.8.0_144'\nDriver info: org.openqa.selenium.safari.SafariDriver\nCapabilities [{browserName=safari, takesScreenshot=true, javascriptEnabled=true, version=9.1.3, cssSelectorsEnabled=true, platform=MAC, secureSsl=true}]\nSession ID: null"
+    }
+}

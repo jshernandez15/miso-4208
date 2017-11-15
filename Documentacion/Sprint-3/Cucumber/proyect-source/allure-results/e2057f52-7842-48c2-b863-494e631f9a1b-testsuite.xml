@@ -1,0 +1,202 @@
+<?xml version='1.0'?>
+<ns2:test-suite xmlns:ns2='urn:model.allure.qatools.yandex.ru' start='1510714426506' stop='1510714428667'>
+    <name>Acceso a la aplicación Acceso sin parámetros</name>
+    <title>Acceso a la aplicación Acceso sin parámetros</title>
+    <test-cases>
+        <test-case start='1510714426506' status='passed' stop='1510714426897'>
+            <name>que voy a la página principal</name>
+            <title>que voy a la página principal</title>
+            <labels/>
+            <parameters>
+                <parameter kind='environment-variable' name='capabilities' value='{"browser":"safari"}'/>
+                <parameter kind='environment-variable' name='spec files' value='["D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\features\\login.feature"]'/>
+            </parameters>
+            <steps>
+                <step start='1510714426507' status='passed' stop='1510714426892'>
+                    <name>POST /wd/hub/session/630a0521937eb2f005573b06943eba9e28bafb42/url</name>
+                    <title>POST /wd/hub/session/630a0521937eb2f005573b06943eba9e28bafb42/url</title>
+                    <attachments>
+                        <attachment title='Request' source='5f1a116d-787b-4ea7-819d-2c29b04e3674-attachment.json' type='application/json' size='38'/>
+                        <attachment title='Response' source='2ed42ceb-80ff-420a-871e-18deef7cb5b0-attachment.json' type='application/json' size='199'/>
+                    </attachments>
+                    <steps/>
+                </step>
+            </steps>
+            <attachments/>
+        </test-case>
+        <test-case start='1510714426899' status='passed' stop='1510714427331'>
+            <name>abro la página de acceso</name>
+            <title>abro la página de acceso</title>
+            <labels/>
+            <parameters>
+                <parameter kind='environment-variable' name='capabilities' value='{"browser":"safari"}'/>
+                <parameter kind='environment-variable' name='spec files' value='["D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\features\\login.feature"]'/>
+            </parameters>
+            <steps>
+                <step start='1510714426911' status='passed' stop='1510714427022'>
+                    <name>POST /wd/hub/session/630a0521937eb2f005573b06943eba9e28bafb42/elements</name>
+                    <title>POST /wd/hub/session/630a0521937eb2f005573b06943eba9e28bafb42/elements</title>
+                    <attachments>
+                        <attachment title='Request' source='b292c613-21c4-4784-ace7-67fe5f6bc694-attachment.json' type='application/json' size='61'/>
+                        <attachment title='Response' source='6fb5be06-f301-4f79-9390-75dae421eddf-attachment.json' type='application/json' size='249'/>
+                    </attachments>
+                    <steps/>
+                </step>
+                <step start='1510714427024' status='passed' stop='1510714427121'>
+                    <name>GET /wd/hub/session/630a0521937eb2f005573b06943eba9e28bafb42/element/5/displayed</name>
+                    <title>GET /wd/hub/session/630a0521937eb2f005573b06943eba9e28bafb42/element/5/displayed</title>
+                    <attachments>
+                        <attachment title='Response' source='c3fa8633-db65-4638-bbb8-ec837b02f75c-attachment.json' type='application/json' size='198'/>
+                    </attachments>
+                    <steps/>
+                </step>
+                <step start='1510714427131' status='passed' stop='1510714427226'>
+                    <name>POST /wd/hub/session/630a0521937eb2f005573b06943eba9e28bafb42/element</name>
+                    <title>POST /wd/hub/session/630a0521937eb2f005573b06943eba9e28bafb42/element</title>
+                    <attachments>
+                        <attachment title='Request' source='9e27cc5e-00e5-406f-83a7-3d16b8603f37-attachment.json' type='application/json' size='61'/>
+                        <attachment title='Response' source='9bfb159d-daea-44fe-bad1-9ef2d089c1a0-attachment.json' type='application/json' size='223'/>
+                    </attachments>
+                    <steps/>
+                </step>
+                <step start='1510714427229' status='passed' stop='1510714427323'>
+                    <name>POST /wd/hub/session/630a0521937eb2f005573b06943eba9e28bafb42/element/5/click</name>
+                    <title>POST /wd/hub/session/630a0521937eb2f005573b06943eba9e28bafb42/element/5/click</title>
+                    <attachments>
+                        <attachment title='Response' source='2bae6ad7-db8b-490b-9da0-a4e0b4f95eb4-attachment.json' type='application/json' size='199'/>
+                    </attachments>
+                    <steps/>
+                </step>
+            </steps>
+            <attachments/>
+        </test-case>
+        <test-case start='1510714427333' status='broken' stop='1510714428661'>
+            <name>diligencio mi  y</name>
+            <title>diligencio mi  y</title>
+            <labels/>
+            <parameters>
+                <parameter kind='environment-variable' name='capabilities' value='{"browser":"safari"}'/>
+                <parameter kind='environment-variable' name='spec files' value='["D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\features\\login.feature"]'/>
+            </parameters>
+            <steps>
+                <step start='1510714427340' status='passed' stop='1510714427449'>
+                    <name>POST /wd/hub/session/630a0521937eb2f005573b06943eba9e28bafb42/elements</name>
+                    <title>POST /wd/hub/session/630a0521937eb2f005573b06943eba9e28bafb42/elements</title>
+                    <attachments>
+                        <attachment title='Request' source='de9e896e-9a0c-4344-b62f-6506407c44f7-attachment.json' type='application/json' size='56'/>
+                        <attachment title='Response' source='1a4ccfa0-2593-4a12-b272-12341f36efdb-attachment.json' type='application/json' size='249'/>
+                    </attachments>
+                    <steps/>
+                </step>
+                <step start='1510714427452' status='passed' stop='1510714427543'>
+                    <name>GET /wd/hub/session/630a0521937eb2f005573b06943eba9e28bafb42/element/6/displayed</name>
+                    <title>GET /wd/hub/session/630a0521937eb2f005573b06943eba9e28bafb42/element/6/displayed</title>
+                    <attachments>
+                        <attachment title='Response' source='a3e86e60-aac2-42ea-8e0a-ea29a0717cb4-attachment.json' type='application/json' size='200'/>
+                    </attachments>
+                    <steps/>
+                </step>
+                <step start='1510714427555' status='passed' stop='1510714427649'>
+                    <name>POST /wd/hub/session/630a0521937eb2f005573b06943eba9e28bafb42/element</name>
+                    <title>POST /wd/hub/session/630a0521937eb2f005573b06943eba9e28bafb42/element</title>
+                    <attachments>
+                        <attachment title='Request' source='f621f0d3-d9fe-4ca2-ae55-6ca8517aadb0-attachment.json' type='application/json' size='51'/>
+                        <attachment title='Response' source='9f2d7f22-5985-46e6-b6dc-4b96627e0169-attachment.json' type='application/json' size='225'/>
+                    </attachments>
+                    <steps/>
+                </step>
+                <step start='1510714427665' status='passed' stop='1510714427761'>
+                    <name>POST /wd/hub/session/630a0521937eb2f005573b06943eba9e28bafb42/element/7/clear</name>
+                    <title>POST /wd/hub/session/630a0521937eb2f005573b06943eba9e28bafb42/element/7/clear</title>
+                    <attachments>
+                        <attachment title='Response' source='8c071080-1823-4b1e-b5bc-859965b9dc49-attachment.json' type='application/json' size='199'/>
+                    </attachments>
+                    <steps/>
+                </step>
+                <step start='1510714427767' status='passed' stop='1510714427931'>
+                    <name>POST /wd/hub/session/630a0521937eb2f005573b06943eba9e28bafb42/element/7/value</name>
+                    <title>POST /wd/hub/session/630a0521937eb2f005573b06943eba9e28bafb42/element/7/value</title>
+                    <attachments>
+                        <attachment title='Request' source='098a6eb9-11e7-41b7-afc3-b191269cb636-attachment.json' type='application/json' size='35'/>
+                        <attachment title='Response' source='ffb4d933-cb06-494a-b5ec-13a59ffde75c-attachment.json' type='application/json' size='1944'/>
+                    </attachments>
+                    <steps/>
+                </step>
+                <step start='1510714427933' status='passed' stop='1510714428655'>
+                    <name>GET /wd/hub/session/630a0521937eb2f005573b06943eba9e28bafb42/screenshot</name>
+                    <title>GET /wd/hub/session/630a0521937eb2f005573b06943eba9e28bafb42/screenshot</title>
+                    <attachments>
+                        <attachment title='Screenshot' source='8a60b7b1-fb38-470f-bc86-1f70d8c3eeb8-attachment.png' type='image/png' size='195079'/>
+                    </attachments>
+                    <steps/>
+                </step>
+            </steps>
+            <attachments/>
+            <failure>
+                <message>An unknown server-side error occurred while processing the command. (WARNING: The server did not provide any stacktrace information)
+                Command duration or timeout: 25 milliseconds
+                Build info: version: '3.0.1', revision: '1969d75', time: '2016-10-18 09:48:19 -0700'
+                System info: host: 'mac-208-78-105-34.browserstack.com', ip: '208.78.105.34', os.name: 'Mac OS X', os.arch: 'x86_64', os.version: '10.12.6', java.version: '1.8.0_51'
+                Driver info: org.openqa.selenium.safari.SafariDriver
+                Capabilities [{applicationCacheEnabled=true, rotatable=false, databaseEnabled=true, handlesAlerts=true, version=12603.3.8, cleanSession=true, platform=MAC, nativeEvents=true, locationContextEnabled=false, webStorageEnabled=true, browserName=safari, javascriptEnabled=true, platformName=macOS, cssSelectorsEnabled=true}]
+                Session ID: 6619613F-1957-4446-91F9-26736946F58C</message>
+                <stack-trace>Error: An unknown server-side error occurred while processing the command.
+                    at Object.wait (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\fibers\future.js:449:15)
+                    at Object.setValue (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:353:27)
+                    at fillLoginForm (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\features\step-definitions\index.js:17:13)
+                    at World.When (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\features\step-definitions\index.js:75:5)
+                    at D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:594:26
+                    at Promise.F (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\core-js\library\modules\_export.js:35:28)
+                    at World.executeSync (D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:592:12)
+                    at D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\wdio-sync\build\index.js:214:29
+                    at elementIdValue("7", "") - D:\4208\miso-4208\Documentacion\Sprint-3\Cucumber\proyect-source\node_modules\webdriverio\build\lib\commands\setValue.js:46:80</stack-trace>
+            </failure>
+        </test-case>
+        <test-case start='1510714428662' status='undefined'>
+            <name>intento acceder</name>
+            <title>intento acceder</title>
+            <labels/>
+            <parameters>
+                <parameter kind='environment-variable' name='capabilities' value='{"browser":"safari"}'/>
+                <parameter kind='environment-variable' name='spec files' value='["D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\features\\login.feature"]'/>
+            </parameters>
+            <steps/>
+            <attachments/>
+        </test-case>
+        <test-case start='1510714428664' status='pending' stop='1510714428664'>
+            <name>intento acceder</name>
+            <title>intento acceder</title>
+            <labels/>
+            <parameters/>
+            <steps/>
+            <attachments/>
+            <failure>
+                <message>Test ignored</message>
+                <stack-trace>undefined</stack-trace>
+            </failure>
+        </test-case>
+        <test-case start='1510714428664' status='undefined'>
+            <name>espero ver y cerrar una alerta</name>
+            <title>espero ver y cerrar una alerta</title>
+            <labels/>
+            <parameters>
+                <parameter kind='environment-variable' name='capabilities' value='{"browser":"safari"}'/>
+                <parameter kind='environment-variable' name='spec files' value='["D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\features\\login.feature"]'/>
+            </parameters>
+            <steps/>
+            <attachments/>
+        </test-case>
+        <test-case start='1510714428665' status='pending' stop='1510714428665'>
+            <name>espero ver y cerrar una alerta</name>
+            <title>espero ver y cerrar una alerta</title>
+            <labels/>
+            <parameters/>
+            <steps/>
+            <attachments/>
+            <failure>
+                <message>Test ignored</message>
+                <stack-trace>undefined</stack-trace>
+            </failure>
+        </test-case>
+    </test-cases>
+</ns2:test-suite>

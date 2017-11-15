@@ -1,0 +1,146 @@
+{
+  "uid" : "4dbf3b3caea3a74c",
+  "name" : "intento acceder",
+  "fullName" : "Acceso a la aplicación Acceso sin parámetros.intento acceder",
+  "historyId" : "693f6af5496b89fb24625f2a75ea4f96",
+  "time" : {
+    "start" : 1510712464480,
+    "stop" : 1510712465829,
+    "duration" : 1349
+  },
+  "description" : "",
+  "descriptionHtml" : "",
+  "status" : "broken",
+  "statusDetails" : {
+    "message" : "A modal dialog was opened. The SafariDriver does not support interacting with modal dialogs. To avoid hanging your test, the alert has been dismissed. For more information, see http://code.google.com/p/selenium/issues/detail?id=3862: Email is required\n                Build info: version: '2.45.0', revision: '5017cb8e7c', time: '2017-05-30 10:13:13'\n                System info: host: 'mac-208-52-180-76.browserstack.com', ip: '208.52.180.76', os.name: 'Mac OS X', os.arch: 'x86_64', os.version: '10.11.6', java.version: '1.8.0_144'\n                Driver info: org.openqa.selenium.safari.SafariDriver\n                Capabilities [{browserName=safari, takesScreenshot=true, javascriptEnabled=true, version=9.1.3, cssSelectorsEnabled=true, platform=MAC, secureSsl=true}]\n                Session ID: null",
+    "trace" : "Error: A modal dialog was open, blocking this operation\n                    at Object.wait (D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\node_modules\\fibers\\future.js:449:15)\n                    at Object.click (D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\node_modules\\wdio-sync\\build\\index.js:353:27)\n                    at World.invokeLoginFunction (D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\features\\step-definitions\\index.js:24:11)\n                    at D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\node_modules\\wdio-sync\\build\\index.js:594:26\n                    at Promise.F (D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\node_modules\\core-js\\library\\modules\\_export.js:35:28)\n                    at World.executeSync (D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\node_modules\\wdio-sync\\build\\index.js:592:12)\n                    at D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\node_modules\\wdio-sync\\build\\index.js:214:29\n                    at elementIdClick(\"9\") - D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\node_modules\\webdriverio\\build\\lib\\commands\\click.js:20:22",
+    "flaky" : false
+  },
+  "beforeStages" : [ ],
+  "testStage" : {
+    "status" : "broken",
+    "statusDetails" : {
+      "message" : "A modal dialog was opened. The SafariDriver does not support interacting with modal dialogs. To avoid hanging your test, the alert has been dismissed. For more information, see http://code.google.com/p/selenium/issues/detail?id=3862: Email is required\n                Build info: version: '2.45.0', revision: '5017cb8e7c', time: '2017-05-30 10:13:13'\n                System info: host: 'mac-208-52-180-76.browserstack.com', ip: '208.52.180.76', os.name: 'Mac OS X', os.arch: 'x86_64', os.version: '10.11.6', java.version: '1.8.0_144'\n                Driver info: org.openqa.selenium.safari.SafariDriver\n                Capabilities [{browserName=safari, takesScreenshot=true, javascriptEnabled=true, version=9.1.3, cssSelectorsEnabled=true, platform=MAC, secureSsl=true}]\n                Session ID: null",
+      "trace" : "Error: A modal dialog was open, blocking this operation\n                    at Object.wait (D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\node_modules\\fibers\\future.js:449:15)\n                    at Object.click (D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\node_modules\\wdio-sync\\build\\index.js:353:27)\n                    at World.invokeLoginFunction (D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\features\\step-definitions\\index.js:24:11)\n                    at D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\node_modules\\wdio-sync\\build\\index.js:594:26\n                    at Promise.F (D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\node_modules\\core-js\\library\\modules\\_export.js:35:28)\n                    at World.executeSync (D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\node_modules\\wdio-sync\\build\\index.js:592:12)\n                    at D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\node_modules\\wdio-sync\\build\\index.js:214:29\n                    at elementIdClick(\"9\") - D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\node_modules\\webdriverio\\build\\lib\\commands\\click.js:20:22",
+      "flaky" : false
+    },
+    "steps" : [ {
+      "name" : "POST /wd/hub/session/8197eb99e81e6484f7fe6092efd8c67d338da288/element",
+      "time" : {
+        "start" : 1510712464488,
+        "stop" : 1510712464580,
+        "duration" : 92
+      },
+      "status" : "passed",
+      "statusDetails" : {
+        "flaky" : false
+      },
+      "steps" : [ ],
+      "attachments" : [ {
+        "uid" : "b0a6b3cb3023666d",
+        "name" : "Request",
+        "source" : "b0a6b3cb3023666d.json",
+        "type" : "application/json",
+        "size" : 61
+      }, {
+        "uid" : "4310ef87a1fd0423",
+        "name" : "Response",
+        "source" : "4310ef87a1fd0423.json",
+        "type" : "application/json",
+        "size" : 226
+      } ],
+      "parameters" : [ ],
+      "attachmentsCount" : 2,
+      "shouldDisplayMessage" : false,
+      "hasContent" : true,
+      "stepsCount" : 0
+    }, {
+      "name" : "POST /wd/hub/session/8197eb99e81e6484f7fe6092efd8c67d338da288/element/9/click",
+      "time" : {
+        "start" : 1510712464581,
+        "stop" : 1510712465126,
+        "duration" : 545
+      },
+      "status" : "passed",
+      "statusDetails" : {
+        "flaky" : false
+      },
+      "steps" : [ ],
+      "attachments" : [ {
+        "uid" : "8c7e51308fe277f5",
+        "name" : "Response",
+        "source" : "8c7e51308fe277f5.json",
+        "type" : "application/json",
+        "size" : 1678
+      } ],
+      "parameters" : [ ],
+      "attachmentsCount" : 1,
+      "shouldDisplayMessage" : false,
+      "hasContent" : true,
+      "stepsCount" : 0
+    }, {
+      "name" : "GET /wd/hub/session/8197eb99e81e6484f7fe6092efd8c67d338da288/screenshot",
+      "time" : {
+        "start" : 1510712465135,
+        "stop" : 1510712465823,
+        "duration" : 688
+      },
+      "status" : "passed",
+      "statusDetails" : {
+        "flaky" : false
+      },
+      "steps" : [ ],
+      "attachments" : [ {
+        "uid" : "3640405e2cc9dd48",
+        "name" : "Screenshot",
+        "source" : "3640405e2cc9dd48.png",
+        "type" : "image/png",
+        "size" : 177218
+      } ],
+      "parameters" : [ ],
+      "attachmentsCount" : 1,
+      "shouldDisplayMessage" : false,
+      "hasContent" : true,
+      "stepsCount" : 0
+    } ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "attachmentsCount" : 4,
+    "shouldDisplayMessage" : true,
+    "hasContent" : true,
+    "stepsCount" : 3
+  },
+  "afterStages" : [ ],
+  "labels" : [ {
+    "name" : "suite",
+    "value" : "Acceso a la aplicación Acceso sin parámetros"
+  }, {
+    "name" : "testClass",
+    "value" : "Acceso a la aplicación Acceso sin parámetros"
+  }, {
+    "name" : "testMethod",
+    "value" : "intento acceder"
+  }, {
+    "name" : "package",
+    "value" : "Acceso a la aplicación Acceso sin parámetros"
+  }, {
+    "name" : "resultFormat",
+    "value" : "allure1"
+  } ],
+  "parameters" : [ ],
+  "links" : [ ],
+  "hidden" : true,
+  "extra" : {
+    "tags" : [ ]
+  },
+  "source" : "4dbf3b3caea3a74c.json",
+  "statusDetailsSafe" : {
+    "message" : "A modal dialog was opened. The SafariDriver does not support interacting with modal dialogs. To avoid hanging your test, the alert has been dismissed. For more information, see http://code.google.com/p/selenium/issues/detail?id=3862: Email is required\n                Build info: version: '2.45.0', revision: '5017cb8e7c', time: '2017-05-30 10:13:13'\n                System info: host: 'mac-208-52-180-76.browserstack.com', ip: '208.52.180.76', os.name: 'Mac OS X', os.arch: 'x86_64', os.version: '10.11.6', java.version: '1.8.0_144'\n                Driver info: org.openqa.selenium.safari.SafariDriver\n                Capabilities [{browserName=safari, takesScreenshot=true, javascriptEnabled=true, version=9.1.3, cssSelectorsEnabled=true, platform=MAC, secureSsl=true}]\n                Session ID: null",
+    "trace" : "Error: A modal dialog was open, blocking this operation\n                    at Object.wait (D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\node_modules\\fibers\\future.js:449:15)\n                    at Object.click (D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\node_modules\\wdio-sync\\build\\index.js:353:27)\n                    at World.invokeLoginFunction (D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\features\\step-definitions\\index.js:24:11)\n                    at D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\node_modules\\wdio-sync\\build\\index.js:594:26\n                    at Promise.F (D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\node_modules\\core-js\\library\\modules\\_export.js:35:28)\n                    at World.executeSync (D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\node_modules\\wdio-sync\\build\\index.js:592:12)\n                    at D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\node_modules\\wdio-sync\\build\\index.js:214:29\n                    at elementIdClick(\"9\") - D:\\4208\\miso-4208\\Documentacion\\Sprint-3\\Cucumber\\proyect-source\\node_modules\\webdriverio\\build\\lib\\commands\\click.js:20:22",
+    "flaky" : false
+  },
+  "statusMessage" : {
+    "present" : true
+  },
+  "parameterValues" : [ ]
+}

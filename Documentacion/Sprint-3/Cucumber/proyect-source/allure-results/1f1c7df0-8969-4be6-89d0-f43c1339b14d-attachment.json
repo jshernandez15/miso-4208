@@ -1,0 +1,9 @@
+{
+    "message": "sendKeysToActiveElement\nBuild info: version: '3.4.0', revision: 'unknown', time: 'unknown'\nSystem info: host: '199-7-165-31', ip: '199.7.165.31', os.name: 'windows', os.arch: 'x86', os.version: '6.1', java.version: '1.8.0_144'\nDriver info: driver.version: RemoteWebDriver",
+    "type": "RuntimeError",
+    "seleniumStack": {
+        "type": "UnknownCommand",
+        "message": "The requested resource could not be found, or a request was received using an HTTP method that is not supported by the mapped resource.",
+        "orgStatusMessage": "sendKeysToActiveElement\nBuild info: version: '3.4.0', revision: 'unknown', time: 'unknown'\nSystem info: host: '199-7-165-31', ip: '199.7.165.31', os.name: 'windows', os.arch: 'x86', os.version: '6.1', java.version: '1.8.0_144'\nDriver info: driver.version: RemoteWebDriver"
+    }
+}

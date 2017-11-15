@@ -1,0 +1,49 @@
+{
+  "uid" : "fadddba4171035d5",
+  "name" : "espero acceder a mi página personal",
+  "fullName" : "Acceso a la aplicación Acceso éxitoso.espero acceder a mi página personal",
+  "historyId" : "925c5e76e1eccdbe987efac7a3c266b3",
+  "time" : {
+    "start" : 1510712602912,
+    "stop" : 0,
+    "duration" : -1510712602912
+  },
+  "description" : "",
+  "descriptionHtml" : "",
+  "status" : "unknown",
+  "statusDetails" : {
+    "flaky" : false
+  },
+  "beforeStages" : [ ],
+  "afterStages" : [ ],
+  "labels" : [ {
+    "name" : "suite",
+    "value" : "Acceso a la aplicación Acceso éxitoso"
+  }, {
+    "name" : "testClass",
+    "value" : "Acceso a la aplicación Acceso éxitoso"
+  }, {
+    "name" : "testMethod",
+    "value" : "espero acceder a mi página personal"
+  }, {
+    "name" : "package",
+    "value" : "Acceso a la aplicación Acceso éxitoso"
+  }, {
+    "name" : "resultFormat",
+    "value" : "allure1"
+  } ],
+  "parameters" : [ ],
+  "links" : [ ],
+  "hidden" : true,
+  "extra" : {
+    "tags" : [ ]
+  },
+  "source" : "fadddba4171035d5.json",
+  "statusDetailsSafe" : {
+    "flaky" : false
+  },
+  "statusMessage" : {
+    "present" : false
+  },
+  "parameterValues" : [ ]
+}

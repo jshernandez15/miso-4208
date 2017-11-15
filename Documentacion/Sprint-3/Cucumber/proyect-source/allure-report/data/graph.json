@@ -1,0 +1,191 @@
+[ {
+  "uid" : "f7f155dc7759f35a",
+  "name" : "lo veo en el panel inferior",
+  "time" : {
+    "start" : 1510712588437,
+    "stop" : 1510712588437,
+    "duration" : 0
+  },
+  "status" : "skipped",
+  "severity" : "normal"
+}, {
+  "uid" : "df7e7090d342dbc2",
+  "name" : "registro un hábito",
+  "time" : {
+    "start" : 1510712588432,
+    "stop" : 1510712588432,
+    "duration" : 0
+  },
+  "status" : "skipped",
+  "severity" : "normal"
+}, {
+  "uid" : "f1d18bfffe0da26e",
+  "name" : "intento acceder",
+  "time" : {
+    "start" : 1510712592205,
+    "stop" : 1510712592205,
+    "duration" : 0
+  },
+  "status" : "skipped",
+  "severity" : "normal"
+}, {
+  "uid" : "acfe97f535c702b0",
+  "name" : "abro la página de acceso",
+  "time" : {
+    "start" : 1510712571223,
+    "stop" : 1510712581494,
+    "duration" : 10271
+  },
+  "status" : "broken",
+  "severity" : "normal"
+}, {
+  "uid" : "4c80455724e829cc",
+  "name" : "abro la página de acceso",
+  "time" : {
+    "start" : 1510712592640,
+    "stop" : 1510712602891,
+    "duration" : 10251
+  },
+  "status" : "broken",
+  "severity" : "normal"
+}, {
+  "uid" : "4532032e5be482d2",
+  "name" : "diligencio mi js.hernandez15@uniandes.edu.co y ASDasd123",
+  "time" : {
+    "start" : 1510712602901,
+    "stop" : 1510712602901,
+    "duration" : 0
+  },
+  "status" : "skipped",
+  "severity" : "normal"
+}, {
+  "uid" : "c656ac6f55e6b39",
+  "name" : "espero acceder a mi página personal",
+  "time" : {
+    "start" : 1510712602913,
+    "stop" : 1510712602913,
+    "duration" : 0
+  },
+  "status" : "skipped",
+  "severity" : "normal"
+}, {
+  "uid" : "c4a9a3fa1affd1da",
+  "name" : "espero ver y cerrar una alerta",
+  "time" : {
+    "start" : 1510712592207,
+    "stop" : 1510712592207,
+    "duration" : 0
+  },
+  "status" : "skipped",
+  "severity" : "normal"
+}, {
+  "uid" : "82d5840db17cb7c",
+  "name" : "que voy a la página principal",
+  "time" : {
+    "start" : 1510712569756,
+    "stop" : 1510712571220,
+    "duration" : 1464
+  },
+  "status" : "passed",
+  "severity" : "normal"
+}, {
+  "uid" : "62a3e879c32e7e87",
+  "name" : "intento acceder",
+  "time" : {
+    "start" : 1510712581509,
+    "stop" : 1510712581509,
+    "duration" : 0
+  },
+  "status" : "skipped",
+  "severity" : "normal"
+}, {
+  "uid" : "d3e59ba256139f15",
+  "name" : "intento acceder",
+  "time" : {
+    "start" : 1510712602909,
+    "stop" : 1510712602909,
+    "duration" : 0
+  },
+  "status" : "skipped",
+  "severity" : "normal"
+}, {
+  "uid" : "840122c45a9855fc",
+  "name" : "diligencio mi miso@gmail.com y 1234",
+  "time" : {
+    "start" : 1510712581504,
+    "stop" : 1510712581504,
+    "duration" : 0
+  },
+  "status" : "skipped",
+  "severity" : "normal"
+}, {
+  "uid" : "13aa61ed9bd8fd3a",
+  "name" : "que voy a la página principal",
+  "time" : {
+    "start" : 1510712581535,
+    "stop" : 1510712581873,
+    "duration" : 338
+  },
+  "status" : "passed",
+  "severity" : "normal"
+}, {
+  "uid" : "db01b423a7e6270",
+  "name" : "que voy a la página principal",
+  "time" : {
+    "start" : 1510712592231,
+    "stop" : 1510712592638,
+    "duration" : 407
+  },
+  "status" : "passed",
+  "severity" : "normal"
+}, {
+  "uid" : "90fa4f57c90ce3aa",
+  "name" : "que accedí a la página",
+  "time" : {
+    "start" : 1510712568107,
+    "stop" : 1510712588429,
+    "duration" : 20322
+  },
+  "status" : "broken",
+  "severity" : "normal"
+}, {
+  "uid" : "956f6f1ad12fcede",
+  "name" : "abro la página de acceso",
+  "time" : {
+    "start" : 1510712581877,
+    "stop" : 1510712592193,
+    "duration" : 10316
+  },
+  "status" : "broken",
+  "severity" : "normal"
+}, {
+  "uid" : "33e857c4f27c5389",
+  "name" : "diligencio mi  y",
+  "time" : {
+    "start" : 1510712592202,
+    "stop" : 1510712592202,
+    "duration" : 0
+  },
+  "status" : "skipped",
+  "severity" : "normal"
+}, {
+  "uid" : "a4f483724b7b003d",
+  "name" : "espero estar en la página de acceso",
+  "time" : {
+    "start" : 1510712581515,
+    "stop" : 1510712581515,
+    "duration" : 0
+  },
+  "status" : "skipped",
+  "severity" : "normal"
+}, {
+  "uid" : "514a346cedf681f5",
+  "name" : "diligencio mi  y ",
+  "time" : {
+    "start" : 1510712592196,
+    "stop" : 0,
+    "duration" : -1510712592196
+  },
+  "status" : "unknown",
+  "severity" : "normal"
+} ]
